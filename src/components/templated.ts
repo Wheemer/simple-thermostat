@@ -43,6 +43,7 @@ export default function renderTemplated({
   entityId,
   template = '{{state.text}}',
   label,
+  unit = '',
   hass,
   variables = {},
   config,
