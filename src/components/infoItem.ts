@@ -94,9 +94,11 @@ export default function renderInfoItem({
           locale: hass.locale,
         })
       }
+      const hasConfiguredUnit = typeof unit === 'string' && unit.length > 0
       const formattedWithHass =
         typeof hass.formatEntityState === 'function' &&
-        typeof decimals !== 'number'
+        typeof decimals !== 'number' &&
+        !hasConfiguredUnit
 
       valueCell = html`
         <div
@@ -105,7 +107,7 @@ export default function renderInfoItem({
         >
           ${value}${formattedWithHass
             ? ''
-            : ` ${unit || state.attributes.unit_of_measurement}`}
+            : `${hasConfiguredUnit ? '' : ' '}${unit || state.attributes.unit_of_measurement}`}
         </div>
       `
     }
