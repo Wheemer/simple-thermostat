@@ -104,7 +104,7 @@ export default function renderTemplated({
     label === false ||
     (config?.layout?.entities ?? config?.layout?.sensors)?.labels === false
   ) {
-    return html`<div class="entity-value">${unsafeHTML(value)}</div>`
+    return html`<div class="entity-value">${unsafeHTML(value)}${unit}</div>`
   }
 
   const safeLabel = label || '{{friendly_name}}'
