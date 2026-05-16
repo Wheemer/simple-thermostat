@@ -23,6 +23,7 @@ export interface PreparedEntity {
     template: string;
     show: boolean;
     context: LooseObject;
+    unit?: string;
 }
 export interface Entity extends ConfigEntity {
     state: any;
