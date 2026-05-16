@@ -11,7 +11,7 @@
 })();
 
 var name = "simple-thermostat";
-var version = "3.0.44.1";
+var version = "3.0.44.2";
 
 /**
  * @license
@@ -1066,8 +1066,10 @@ function renderInfoItem({ hide = false, hass, state, details, localize, openEnti
                     locale: hass.locale,
                 });
             }
+            const hasConfiguredUnit = typeof unit === 'string' && unit.length > 0;
             const formattedWithHass = typeof hass.formatEntityState === 'function' &&
-                typeof decimals !== 'number';
+                typeof decimals !== 'number' &&
+                !hasConfiguredUnit;
             valueCell = b `
         <div
           class="entity-value clickable"
@@ -1075,7 +1077,7 @@ function renderInfoItem({ hide = false, hass, state, details, localize, openEnti
         >
           ${value}${formattedWithHass
                 ? ''
-                : ` ${unit || state.attributes.unit_of_measurement}`}
+                : `${hasConfiguredUnit ? '' : ' '}${unit || state.attributes.unit_of_measurement}`}
         </div>
       `;
         }
