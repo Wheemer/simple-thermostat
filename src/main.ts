@@ -316,6 +316,7 @@ export default class SimpleThermostat extends LitElement {
           show: entity?.show !== false,
           entityId,
           context,
+          unit: entity?.unit ?? '',
         } as PreparedEntity
       })
       const ids = customEntities.map((entity) => entity.id)
