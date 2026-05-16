@@ -120,6 +120,6 @@ export default function renderTemplated({
     >
       ${unsafeHTML(heading)}
     </div>
-    <div class="entity-value">${unsafeHTML(value)}</div>
+    <div class="entity-value">${unsafeHTML(value)}${unit}</div>
   `
 }
