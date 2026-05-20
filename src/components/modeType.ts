@@ -3,6 +3,8 @@ import { ControlMode, HVAC_MODES } from '../types'
 
 interface ModeTypeOptions {
   state: string
+  entity?: any
+  hass?: any
   mode: ControlMode
   modeOptions
   localize
@@ -11,6 +13,8 @@ interface ModeTypeOptions {
 
 export default function renderModeType({
   state,
+  entity,
+  hass,
   mode: options,
   modeOptions,
   localize,
@@ -30,9 +34,33 @@ export default function renderModeType({
     localizePrefix = `state_attributes.climate.${type}_mode.`
   }
 
-  const maybeRenderName = (name: string | false) => {
+  const modeAttribute =
+    type === 'hvac'
+      ? null
+      : type === 'vane_horizontal' || type === 'vane_vertical'
+        ? type
+        : `${type}_mode`
+
+  const maybeRenderName = (name: string | false, value: string) => {
     if (name === false) return null
     if (modeOptions?.names === false) return null
+
+    if (name !== value) {
+      return localizePrefix ? localize(name, localizePrefix) : name
+    }
+
+    if (type === 'hvac' && typeof hass?.formatEntityState === 'function') {
+      return hass.formatEntityState({ ...entity, state: value })
+    }
+
+    if (
+      modeAttribute &&
+      entity &&
+      typeof hass?.formatEntityAttributeValue === 'function'
+    ) {
+      return hass.formatEntityAttributeValue(entity, modeAttribute, value)
+    }
+
     return localizePrefix ? localize(name, localizePrefix) : name
   }
   const maybeRenderIcon = (icon: string) => {
@@ -66,7 +94,7 @@ export default function renderModeType({
             class="mode-item ${value === mode ? 'active ' + mode : ''}"
             @click=${() => setMode(type, value)}
           >
-            ${maybeRenderIcon(icon)} ${maybeRenderName(name)}
+            ${maybeRenderIcon(icon)} ${maybeRenderName(name, value)}
           </div>
         `
       )}
