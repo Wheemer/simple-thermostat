@@ -11,7 +11,7 @@
 })();
 
 var name = "simple-thermostat";
-var version = "3.1";
+var version = "3.1.1";
 
 /**
  * @license
@@ -969,7 +969,9 @@ function renderTemplated({ context, entityId, template = '{{state.text}}', label
     // Prepare data to inject as variables into the template
     const data = Object.assign(Object.assign({}, attributes), { state: {
             raw: state,
-            text: localize(state, `component.${domain}.state._.`),
+            text: typeof hass.formatEntityState === 'function'
+                ? hass.formatEntityState(context)
+                : localize(state, `component.${domain}.state._.`),
         }, ui: translations, v: variables });
     // Need to define these inside the function to be able to reach local scope
     squirrelly_minExports.filters.define('formatNumber', (str, opts = { decimals: config.decimals }) => {
@@ -979,6 +981,12 @@ function renderTemplated({ context, entityId, template = '{{state.text}}', label
         return `<ha-relative-time fwd-datetime=${str} with-hass></ha-relative-time>`;
     });
     squirrelly_minExports.filters.define('translate', (str, prefix = '') => {
+        if (!prefix &&
+            typeof hass.formatEntityAttributeValue === 'function' &&
+            typeof str === 'string' &&
+            str in attributes) {
+            return hass.formatEntityAttributeValue(context, str);
+        }
         if (!prefix && (domain === 'climate' || domain === 'humidifier')) {
             return localize(str, `state_attributes.${domain}.${str}`);
         }
@@ -1119,12 +1127,14 @@ function renderEntities({ _hide, entity, unit, hass, entities, config, localize,
         ? (_a = hass.states[config.current_temperature_entity]) === null || _a === void 0 ? void 0 : _a.state
         : current_entity_temp;
     const showLabels = (_f = (_e = ((_c = (_b = config === null || config === void 0 ? void 0 : config.layout) === null || _b === void 0 ? void 0 : _b.entities) !== null && _c !== void 0 ? _c : (_d = config === null || config === void 0 ? void 0 : config.layout) === null || _d === void 0 ? void 0 : _d.sensors)) === null || _e === void 0 ? void 0 : _e.labels) !== null && _f !== void 0 ? _f : true;
-    let stateString = localize(state, 'component.climate.state._.');
+    let stateString = typeof hass.formatEntityState === 'function'
+        ? hass.formatEntityState(entity)
+        : localize(state, 'component.climate.state._.');
     if (action) {
-        stateString = [
-            localize(action, 'state_attributes.climate.hvac_action.'),
-            ` (${stateString})`,
-        ].join('');
+        const actionString = typeof hass.formatEntityAttributeValue === 'function'
+            ? hass.formatEntityAttributeValue(entity, 'hvac_action')
+            : localize(action, 'state_attributes.climate.hvac_action.');
+        stateString = [actionString, ` (${stateString})`].join('');
     }
     const entityHtml = [
         renderInfoItem({
@@ -1172,7 +1182,7 @@ var HVAC_MODES;
     HVAC_MODES["FAN_ONLY"] = "fan_only";
 })(HVAC_MODES || (HVAC_MODES = {}));
 
-function renderModeType({ state, mode: options, modeOptions, localize, setMode, }) {
+function renderModeType({ state, entity, hass, mode: options, modeOptions, localize, setMode, }) {
     var _a;
     const { type, hide_when_off, mode = 'none', list, name, icons } = options;
     if (list.length === 0 || (hide_when_off && state === HVAC_MODES.OFF)) {
@@ -1188,11 +1198,27 @@ function renderModeType({ state, mode: options, modeOptions, localize, setMode, 
     else if (type === 'swing_horizontal' || type === 'swing_vertical') {
         localizePrefix = `state_attributes.climate.${type}_mode.`;
     }
-    const maybeRenderName = (name) => {
+    const modeAttribute = type === 'hvac'
+        ? null
+        : type === 'vane_horizontal' || type === 'vane_vertical'
+            ? type
+            : `${type}_mode`;
+    const maybeRenderName = (name, value) => {
         if (name === false)
             return null;
         if ((modeOptions === null || modeOptions === void 0 ? void 0 : modeOptions.names) === false)
             return null;
+        if (name !== value) {
+            return localizePrefix ? localize(name, localizePrefix) : name;
+        }
+        if (type === 'hvac' && typeof (hass === null || hass === void 0 ? void 0 : hass.formatEntityState) === 'function') {
+            return hass.formatEntityState(Object.assign(Object.assign({}, entity), { state: value }));
+        }
+        if (modeAttribute &&
+            entity &&
+            typeof (hass === null || hass === void 0 ? void 0 : hass.formatEntityAttributeValue) === 'function') {
+            return hass.formatEntityAttributeValue(entity, modeAttribute, value);
+        }
         return localizePrefix ? localize(name, localizePrefix) : name;
     };
     const maybeRenderIcon = (icon) => {
@@ -1229,7 +1255,7 @@ function renderModeType({ state, mode: options, modeOptions, localize, setMode, 
             class="mode-item ${value === mode ? 'active ' + mode : ''}"
             @click=${() => setMode(type, value)}
           >
-            ${maybeRenderIcon(icon)} ${maybeRenderName(name)}
+            ${maybeRenderIcon(icon)} ${maybeRenderName(name, value)}
           </div>
         `)}
     </div>
@@ -1754,6 +1780,8 @@ class SimpleThermostat extends i$1 {
             var _a, _b, _c;
             return renderModeType({
                 state: entity.state,
+                entity,
+                hass: this._hass,
                 mode,
                 localize: this.localize,
                 modeOptions: (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.layout) === null || _b === void 0 ? void 0 : _b.mode) !== null && _c !== void 0 ? _c : {},
