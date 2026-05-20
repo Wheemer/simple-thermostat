@@ -68,7 +68,10 @@ export default function renderTemplated({
     ...attributes,
     state: {
       raw: state,
-      text: localize(state, `component.${domain}.state._.`),
+      text:
+        typeof hass.formatEntityState === 'function'
+          ? hass.formatEntityState(context)
+          : localize(state, `component.${domain}.state._.`),
     },
     ui: translations,
     v: variables,
