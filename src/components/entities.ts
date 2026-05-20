@@ -24,12 +24,18 @@ export default function renderEntities({
 
   const showLabels =
     (config?.layout?.entities ?? config?.layout?.sensors)?.labels ?? true
-  let stateString = localize(state, 'component.climate.state._.')
+  let stateString =
+    typeof hass.formatEntityState === 'function'
+      ? hass.formatEntityState(entity)
+      : localize(state, 'component.climate.state._.')
+
   if (action) {
-    stateString = [
-      localize(action, 'state_attributes.climate.hvac_action.'),
-      ` (${stateString})`,
-    ].join('')
+    const actionString =
+      typeof hass.formatEntityAttributeValue === 'function'
+        ? hass.formatEntityAttributeValue(entity, 'hvac_action')
+        : localize(action, 'state_attributes.climate.hvac_action.')
+
+    stateString = [actionString, ` (${stateString})`].join('')
   }
   const entityHtml = [
     renderInfoItem({
