@@ -499,6 +499,8 @@ export default class SimpleThermostat extends LitElement {
         ${this.modes.map((mode) =>
           renderModeType({
             state: entity.state,
+            entity,
+            hass: this._hass,
             mode,
             localize: this.localize,
             modeOptions: this.config?.layout?.mode ?? {},
