@@ -11,7 +11,7 @@
 })();
 
 var name = "simple-thermostat";
-var version = "3.1.1";
+var version = "3.1.2";
 
 /**
  * @license
@@ -1736,10 +1736,12 @@ class SimpleThermostat extends i$1 {
         })}
         <section class="body">
           ${entitiesHtml}
-          ${Object.entries(_values).map(([field, value]) => {
-            const hasValue = ['string', 'number'].includes(typeof value);
-            const showUnit = unit !== false && hasValue;
-            return b `
+          ${config.hide_setpoint === true
+            ? A
+            : Object.entries(_values).map(([field, value]) => {
+                const hasValue = ['string', 'number'].includes(typeof value);
+                const showUnit = unit !== false && hasValue;
+                return b `
               <div class="current-wrapper ${stepLayout}">
                 <ha-icon-button
                   ?disabled=${maxTemp !== null && value >= maxTemp}
@@ -1753,15 +1755,15 @@ class SimpleThermostat extends i$1 {
                 <h3
                   @click=${() => this.openEntityPopover()}
                   class=${_updatingValues
-                ? 'current--value updating'
-                : 'current--value'}
+                    ? 'current--value updating'
+                    : 'current--value'}
                 >
                   ${formatNumber(value, Object.assign(Object.assign({}, config), { fallback: entity.state === HVAC_MODES.OFF
-                    ? 'OFF'
-                    : config.fallback, locale: this._hass.locale }))}
+                        ? 'OFF'
+                        : config.fallback, locale: this._hass.locale }))}
                   ${showUnit
-                ? b `<span class="current--unit">${unit}</span>`
-                : A}
+                    ? b `<span class="current--unit">${unit}</span>`
+                    : A}
                 </h3>
                 <ha-icon-button
                   ?disabled=${minTemp !== null && value <= minTemp}
@@ -1773,7 +1775,7 @@ class SimpleThermostat extends i$1 {
                 </ha-icon-button>
               </div>
             `;
-        })}
+            })}
         </section>
 
         ${this.modes.map((mode) => {
