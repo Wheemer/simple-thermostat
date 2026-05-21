@@ -50,6 +50,7 @@ If you already installed `simple-thermostat` from another repository, uninstall 
 
 | Version | Changes |
 |---------|---------|
+| 3.1.2 | Added `hide_setpoint` to hide target temperature controls while keeping mode controls visible. |
 | 3.1.1 | Fixed untranslated state and mode labels in newer Home Assistant versions. |
 | 3.1 | Release new tidy version number. |
 | 3.0.44.2 | Fixed configured `unit` suffixes not displaying on extra entity rows. |
