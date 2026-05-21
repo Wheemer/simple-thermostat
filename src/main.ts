@@ -451,7 +451,9 @@ export default class SimpleThermostat extends LitElement {
         })}
         <section class="body">
           ${entitiesHtml}
-          ${Object.entries(_values).map(([field, value]) => {
+          ${config.hide_setpoint === true
+            ? nothing
+            : Object.entries(_values).map(([field, value]) => {
             const hasValue = ['string', 'number'].includes(typeof value)
             const showUnit = unit !== false && hasValue
             return html`
