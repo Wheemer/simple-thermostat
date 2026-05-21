@@ -80,6 +80,7 @@ interface CardConfig {
   unit?: boolean | string
   fallback?: string
   service?: Service
+  hide_setpoint?: boolean
   hide?: {
     temperature?: boolean
     state?: boolean
