@@ -143,6 +143,7 @@ control:
 | `decimals` | number | Decimal places for temperature display. |
 | `step_size` | number | Amount changed by the temperature buttons. Default `0.5`. |
 | `fallback` | string | Text shown when no valid setpoint exists. Default `N/A`. |
+| `hide_setpoint` | boolean | Hide the target temperature display and +/- setpoint controls. |
 | `header` | object or `false` | Header configuration. |
 | `hide` | object | Hide built-in state or temperature rows. |
 | `layout` | object | Layout settings. |
@@ -159,6 +160,14 @@ hide:
   state: true
   temperature: true
 ```
+
+### Hide Setpoint Controls
+
+```yaml
+hide_setpoint: true
+```
+
+This hides the target temperature display and +/- controls while keeping mode controls visible.
 
 ### Layout
 
