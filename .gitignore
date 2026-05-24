@@ -2,5 +2,6 @@ node_modules
 *.min.js
 .nvmrc
 .idea
+dist/
 package-lock.json
 simple-thermostat.debug.js
