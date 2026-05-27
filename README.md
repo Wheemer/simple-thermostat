@@ -50,6 +50,7 @@ If you already installed `simple-thermostat` from another repository, uninstall 
 
 | Version | Changes |
 |---------|---------|
+| 3.1.3 | Changed release packaging so the HACS bundle is built as `simple-thermostat.js` at the repository root instead of tracking generated `dist/` files. Updated release and HACS workflows to build from source and publish the root bundle. Thanks to [@nateww](https://github.com/nateww) for the cleanup request. |
 | 3.1.2 | Added `hide_setpoint` to hide target temperature controls while keeping mode controls visible. |
 | 3.1.1 | Fixed untranslated state and mode labels in newer Home Assistant versions. |
 | 3.1 | Release new tidy version number. |
