@@ -3,3 +3,4 @@ node_modules
 .nvmrc
 .idea
 package-lock.json
+simple-thermostat.debug.js

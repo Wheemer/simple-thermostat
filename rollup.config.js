@@ -6,7 +6,6 @@ import commonjs from '@rollup/plugin-commonjs'
 import postCSS from 'rollup-plugin-postcss'
 import postCSSLit from 'rollup-plugin-postcss-lit'
 import postCSSPresetEnv from 'postcss-preset-env'
-import dts from 'rollup-plugin-dts'
 import inject from 'rollup-plugin-inject-process-env'
 
 const shared = (DEBUG) => [
@@ -42,7 +41,8 @@ export default [
   {
     input: 'src/simple-thermostat.ts',
     output: {
-      file: 'dist/simple-thermostat.js',
+      dir: '.',
+      entryFileNames: 'simple-thermostat.js',
       format: 'es',
       name: 'SimpleThermostat',
     },
@@ -58,15 +58,11 @@ export default [
   {
     input: 'src/simple-thermostat.ts',
     output: {
-      file: 'dist/simple-thermostat.debug.js',
+      dir: '.',
+      entryFileNames: 'simple-thermostat.debug.js',
       format: 'es',
       name: 'SimpleThermostat',
     },
     plugins: shared(true),
   },
-  // {
-  //   input: './dist/config/card.d.ts',
-  //   output: [{ file: 'dist/st.d.ts', format: 'es' }],
-  //   plugins: [dts()],
-  // },
 ]

@@ -8,7 +8,7 @@
       {
         "assets": [
           {
-            "path": "dist/simple-thermostat.js",
+            "path": "simple-thermostat.js",
             "label": "simple-thermostat.js"
           }
         ]

@@ -27,18 +27,10 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
 
-      - name: Commit dist to master
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dist/
-          git diff --staged --quiet || git commit -m "chore: update dist for release"
-          git push origin master
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/simple-thermostat.js
-            dist/simple-thermostat.debug.js
+            simple-thermostat.js
+            simple-thermostat.debug.js
           generate_release_notes: true

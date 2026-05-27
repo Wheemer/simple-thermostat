@@ -16,13 +16,13 @@ npm test
 ```bash
 npm run build
 ```
-This creates `dist/simple-thermostat.js`
+This creates `simple-thermostat.js` in the repository root for HACS.
 
 ### 4. Test in Home Assistant
 
 **Option A: Direct file copy**
 1. Build: `npm run build`
-2. Copy `dist/simple-thermostat.js` to your HA config: `<config>/www/simple-thermostat.js`
+2. Copy `simple-thermostat.js` to your HA config: `<config>/www/simple-thermostat.js`
 3. In HA, add resource (if not already added via HACS):
    ```yaml
    resources:
@@ -53,11 +53,11 @@ This watches files and rebuilds automatically. Copy the updated file to HA's www
 3. Commit changes: `git commit -am "chore: bump version to X.X.X"`
 4. Tag: `git tag vX.X.X`
 5. Push: `git push && git push --tags`
-6. GitHub Actions will automatically create the release with built files
+6. GitHub Actions will automatically build and attach the root `simple-thermostat.js` file to the release
 
 ## File Structure
 
 - `src/` - TypeScript source files
-- `dist/` - Built output (generated, not committed)
+- `simple-thermostat.js` - Built HACS plugin file committed at the repository root
 - `.github/workflows/` - CI/CD automation
 - `hacs.json` - HACS metadata
