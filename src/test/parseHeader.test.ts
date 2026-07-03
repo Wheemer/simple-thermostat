@@ -1,4 +1,8 @@
-import parseHeader, { DOMAIN_STATE_ICONS } from '../config/header'
+import parseHeader, {
+  CLIMATE_COOLING_STATE_ICONS,
+  CLIMATE_HEATING_STATE_ICONS,
+  DOMAIN_STATE_ICONS,
+} from '../config/header'
 
 const hass = { states: {}, performAction: () => undefined }
 
@@ -50,6 +54,66 @@ test('slashes custom climate icons when off', () => {
   )
 
   expect(result && result.icon).toBe('mdi:garage')
+  expect(result && result.slashOffIcon).toBe(true)
+})
+
+test('uses cooling climate fallback for cooling-capable climate entities', () => {
+  const result = parseHeader(
+    {},
+    {
+      entity_id: 'climate.swing_ac',
+      state: 'off',
+      attributes: {
+        friendly_name: 'Swing AC',
+        hvac_modes: ['off', 'cool', 'dry', 'fan_only'],
+      },
+    },
+    hass
+  )
+
+  expect(result && typeof result.icon === 'object' && result.icon.off).toBe(
+    CLIMATE_COOLING_STATE_ICONS.off
+  )
+  expect(result && result.slashOffIcon).toBe(true)
+})
+
+test('uses action-specific cooling icon for active cooling climate entities', () => {
+  const result = parseHeader(
+    {},
+    {
+      entity_id: 'climate.swing_ac',
+      state: 'cool',
+      attributes: {
+        friendly_name: 'Swing AC',
+        hvac_action: 'cooling',
+        hvac_modes: ['off', 'cool', 'dry', 'fan_only'],
+      },
+    },
+    hass
+  )
+
+  expect(result && typeof result.icon === 'object' && result.icon.cooling).toBe(
+    CLIMATE_COOLING_STATE_ICONS.cooling
+  )
+})
+
+test('keeps heat-only climate fallback as radiator', () => {
+  const result = parseHeader(
+    {},
+    {
+      entity_id: 'climate.garage_heat',
+      state: 'off',
+      attributes: {
+        friendly_name: 'Garage Heat',
+        hvac_modes: ['off', 'heat'],
+      },
+    },
+    hass
+  )
+
+  expect(result && typeof result.icon === 'object' && result.icon.off).toBe(
+    CLIMATE_HEATING_STATE_ICONS.off
+  )
   expect(result && result.slashOffIcon).toBe(true)
 })
 

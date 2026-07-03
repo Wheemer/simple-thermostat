@@ -31,10 +31,6 @@ import { CardConfig, ModeValue, ModeControlObject, MODES } from './config/card'
 
 import { ControlMode, LooseObject, Entity, HASS, HVAC_MODES } from './types'
 
-interface HANode extends Element {
-  hass: HASS
-}
-
 const DEBOUNCE_TIMEOUT = 500
 const STEP_SIZE = 0.5
 const DECIMALS = 1
@@ -336,11 +332,11 @@ export default class SimpleThermostat extends LitElement {
   )
 
   _callAction(action: string, data: object) {
-    if (typeof this._hass.performAction === 'function') {
-      this._hass.performAction({ action, data })
-    } else {
+    if (typeof this._hass.callService === 'function') {
       const [domain, service] = action.split('.')
       this._hass.callService(domain, service, data)
+    } else if (typeof this._hass.performAction === 'function') {
+      this._hass.performAction({ action, data })
     }
   }
 
@@ -363,28 +359,15 @@ export default class SimpleThermostat extends LitElement {
       decimals: DECIMALS,
       ...config,
     })
-
-    if (this._hass?.states?.[this.config.entity]) {
+    if (this._hass?.states) {
       this.updateFromHass(this._hass)
     }
   }
 
-  updated() {
-    const patchHass: Array<HANode> = Array.from(
-      this.renderRoot.querySelectorAll('[with-hass]')
-    )
-    for (const child of Array.from(patchHass)) {
-      Array.from(child.attributes).forEach((attr) => {
-        if (attr.name.startsWith('fwd-')) {
-          child[attr.name.replace('fwd-', '')] = attr.value
-        }
-      })
-      child.hass = this._hass
-    }
-  }
-
   set hass(hass: HASS) {
-    this._hass = hass
+    if (hass?.states) {
+      this._hass = hass
+    }
 
     if (!this.config?.entity) {
       return
@@ -508,7 +491,7 @@ export default class SimpleThermostat extends LitElement {
 
   render({ _hide, _values, _updatingValues, config, entity } = this) {
     if (!config) {
-      return nothing
+      return html`<ha-card class="loading"></ha-card>`
     }
 
     const warnings = []
@@ -522,9 +505,25 @@ export default class SimpleThermostat extends LitElement {
       `)
     }
 
+    if (!entity && !this._hass?.states) {
+      return html`<ha-card
+        class="loading ${config.enhanced_visuals === false
+          ? 'standard-visuals'
+          : ''}"
+      ></ha-card>`
+    }
+
     if (!entity) {
       return html`
-        <hui-warning> Entity not available: ${config.entity} </hui-warning>
+        <ha-card
+          class="missing-entity ${config.enhanced_visuals === false
+            ? 'standard-visuals'
+            : ''}"
+        >
+          <ha-alert alert-type="error">
+            Entity not available: ${config.entity}
+          </ha-alert>
+        </ha-card>
       `
     }
 

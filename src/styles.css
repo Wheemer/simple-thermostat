@@ -5,6 +5,9 @@
 
 :host {
   display: block;
+  isolation: isolate;
+  max-width: 100%;
+  min-width: 0;
   --st-default-spacing: 4px;
   --st-default-mode-radius: var(--ha-card-border-radius, 4px);
   --st-default-mode-transition: 200ms ease;
@@ -29,6 +32,9 @@
 }
 ha-card {
   -webkit-font-smoothing: var(--ha-font-smoothing, antialiased);
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
   font-size: var(--ha-font-size-m, 14px);
   font-weight: var(--ha-font-weight-normal, 400);
   line-height: var(--ha-line-height-normal, 1.5);
@@ -47,6 +53,11 @@ ha-card {
     var(--state-fan-active-color, var(--manual-color))
   );
   --dry-color: var(--state-climate-dry-color, var(--primary-color));
+  --st-mode-surface-background: color-mix(
+    in srgb,
+    var(--card-background-color) 84%,
+    var(--primary-text-color) 16%
+  );
   --st-interactive-tint: color-mix(
     in srgb,
     currentColor 50%,
@@ -178,9 +189,15 @@ ha-card.loading {
 .body {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(min-content, auto);
+  grid-auto-columns: minmax(0, 1fr);
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
   place-items: center;
   padding: 0 calc(var(--st-spacing, var(--st-default-spacing)) * 4);
+}
+.body > * {
+  min-width: 0;
 }
 
 .toggle-label {
@@ -680,7 +697,7 @@ ha-card.cooling .header__icon {
   min-width: min(100%, var(--st-mode-min-width, 72px));
   min-height: 24px;
   padding: var(--st-spacing, var(--st-default-spacing)) 0;
-  background: var(--st-mode-background, var(--secondary-background-color));
+  background: var(--st-mode-background, var(--st-mode-surface-background));
   color: var(--secondary-text-color);
   cursor: pointer;
   border-radius: var(--st-mode-border-radius, var(--st-default-mode-radius));

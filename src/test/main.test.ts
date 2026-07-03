@@ -25,12 +25,12 @@ test('does not throw if Home Assistant is assigned before config', () => {
   }).not.toThrow()
 })
 
-test('hydrates from Home Assistant assignment that arrived before config', async () => {
+test('hydrates when Home Assistant is assigned before config', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)
 
-  card.hass = {
+  const hass = {
     states: {
       'climate.living_room': {
         entity_id: 'climate.living_room',
@@ -50,6 +50,8 @@ test('hydrates from Home Assistant assignment that arrived before config', async
     },
     localize: (key: string) => key,
   }
+
+  card.hass = hass
   card.setConfig({
     entity: 'climate.living_room',
     header: false,
@@ -62,18 +64,17 @@ test('hydrates from Home Assistant assignment that arrived before config', async
   expect(card.shadowRoot?.textContent).toContain('19.0')
 })
 
-test('renders nothing before config is assigned', async () => {
+test('keeps a card shell before config is assigned', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)
 
   await card.updateComplete
 
-  expect(card.shadowRoot?.querySelector('ha-card')).toBe(null)
-  expect(card.shadowRoot?.textContent).toBe('')
+  expect(card.shadowRoot?.querySelector('ha-card.loading')).not.toBe(null)
 })
 
-test('renders entity missing warning after config before Home Assistant is assigned', async () => {
+test('renders a loading shell after config before Home Assistant is assigned', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)
@@ -84,10 +85,8 @@ test('renders entity missing warning after config before Home Assistant is assig
 
   await card.updateComplete
 
-  expect(card.shadowRoot?.querySelector('ha-card')).toBe(null)
-  expect(card.shadowRoot?.textContent).toContain(
-    'Entity not available: climate.living_room'
-  )
+  expect(card.shadowRoot?.querySelector('ha-card.loading')).not.toBe(null)
+  expect(card.shadowRoot?.textContent).not.toContain('Entity not available')
 })
 
 test('keeps last rendered entity during transient missing hass updates', async () => {
@@ -140,6 +139,148 @@ test('keeps last rendered entity during transient missing hass updates', async (
   expect(card.shadowRoot?.textContent).toContain('19.0')
 })
 
+test('renders the main dashboard thermostat config through detach and reattach', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  const config = {
+    type: 'custom:simple-thermostat',
+    entity: 'climate.thermostat',
+    step_size: 0.1,
+    hide: {
+      state: true,
+      temperature: true,
+    },
+    header: {
+      toggle: {
+        entity: 'switch.furnace_heat',
+        name: 'Furnace',
+      },
+    },
+    entities: [
+      {
+        entity: 'sensor.average_temperature_group',
+        icon: 'mdi:thermometer',
+      },
+      {
+        entity: 'sensor.average_humidity_group',
+        icon: 'mdi:water-percent',
+      },
+      {
+        entity: 'fan.furnacerelay_l4',
+        icon: 'mdi:fan',
+      },
+      {
+        entity: 'sensor.pid_output',
+        icon: 'mdi:calculator-variant-outline',
+      },
+    ],
+    layout: {
+      entities: {
+        labels: true,
+      },
+    },
+    label: {},
+  }
+  const hass = {
+    states: {
+      'climate.thermostat': {
+        entity_id: 'climate.thermostat',
+        state: 'heat',
+        attributes: {
+          hvac_modes: ['heat', 'off'],
+          min_temp: 7,
+          max_temp: 35,
+          target_temp_step: 0.1,
+          preset_modes: [
+            'none',
+            'away',
+            'eco',
+            'boost',
+            'comfort',
+            'home',
+            'sleep',
+            'activity',
+          ],
+          current_temperature: 23.2,
+          temperature: 22.4,
+          hvac_action: 'idle',
+          preset_mode: 'none',
+          friendly_name: 'Thermostat',
+          supported_features: 401,
+        },
+      },
+      'switch.furnace_heat': {
+        entity_id: 'switch.furnace_heat',
+        state: 'off',
+        attributes: {
+          icon: 'mdi:fire',
+          friendly_name: 'Furnace Heat',
+        },
+      },
+      'sensor.average_temperature_group': {
+        entity_id: 'sensor.average_temperature_group',
+        state: '23.1299436102973',
+        attributes: {
+          unit_of_measurement: '°C',
+          device_class: 'temperature',
+          friendly_name: 'Average Temperature Group',
+        },
+      },
+      'sensor.average_humidity_group': {
+        entity_id: 'sensor.average_humidity_group',
+        state: '54.0043373786079',
+        attributes: {
+          unit_of_measurement: '%',
+          device_class: 'humidity',
+          friendly_name: 'Average Humidity Group',
+        },
+      },
+      'fan.furnacerelay_l4': {
+        entity_id: 'fan.furnacerelay_l4',
+        state: 'on',
+        attributes: {
+          friendly_name: 'CircFan',
+          supported_features: 48,
+        },
+      },
+      'sensor.pid_output': {
+        entity_id: 'sensor.pid_output',
+        state: '0.0',
+        attributes: {
+          unit_of_measurement: '%',
+          friendly_name: 'PID Output',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+    formatEntityName: (entity) => entity.attributes.friendly_name,
+    formatEntityState: (entity) => entity.state,
+  }
+
+  document.body.appendChild(card)
+  expect(() => card.setConfig(config as any)).not.toThrow()
+  expect(() => {
+    card.hass = hass as any
+  }).not.toThrow()
+  await card.updateComplete
+
+  expect(card.shadowRoot?.querySelector('ha-card')).not.toBe(null)
+  expect(card.shadowRoot?.textContent).toContain('Thermostat')
+
+  card.remove()
+  document.body.appendChild(card)
+  card.hass = hass as any
+  await card.updateComplete
+
+  expect(card.shadowRoot?.querySelector('ha-card')).not.toBe(null)
+  expect(card.shadowRoot?.textContent).toContain('Thermostat')
+})
+
 test('keeps rendered state across temporary Lovelace detach and reattach', async () => {
   document.body.innerHTML = ''
   const card = createCard()
@@ -183,7 +324,7 @@ test('keeps rendered state across temporary Lovelace detach and reattach', async
   expect(card.shadowRoot?.textContent).toContain('19.0')
 })
 
-test('renders entity-missing warning without adding a card shell', async () => {
+test('renders entity-missing warning inside a card shell', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)
@@ -202,8 +343,10 @@ test('renders entity-missing warning without adding a card shell', async () => {
 
   await card.updateComplete
 
-  expect(card.shadowRoot?.querySelector('ha-card')).toBe(null)
-  expect(card.shadowRoot?.querySelector('hui-warning')).not.toBe(null)
+  expect(card.shadowRoot?.querySelector('ha-card.missing-entity')).not.toBe(
+    null
+  )
+  expect(card.shadowRoot?.querySelector('ha-card ha-alert')).not.toBe(null)
   expect(card.shadowRoot?.textContent).toContain(
     'Entity not available: climate.missing'
   )
@@ -480,7 +623,7 @@ test('fan card does not fall back to climate current value or headings', async (
 
 test('null climate setpoint disables decrease and seeds min temp on increase', async () => {
   document.body.innerHTML = ''
-  const performAction = jest.fn()
+  const callService = jest.fn()
   const card = createCard()
   document.body.appendChild(card)
   card.setConfig({
@@ -507,7 +650,7 @@ test('null climate setpoint disables decrease and seeds min temp on increase', a
       },
     },
     localize: (key: string) => key,
-    performAction,
+    callService,
   }
 
   await card.updateComplete
@@ -525,12 +668,9 @@ test('null climate setpoint disables decrease and seeds min temp on increase', a
   increase.click()
 
   expect(card._values.temperature).toBe(7)
-  expect(performAction).toHaveBeenCalledWith({
-    action: 'climate.set_temperature',
-    data: {
-      entity_id: 'climate.comet_dect',
-      temperature: 7,
-    },
+  expect(callService).toHaveBeenCalledWith('climate', 'set_temperature', {
+    entity_id: 'climate.comet_dect',
+    temperature: 7,
   })
 })
 

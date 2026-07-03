@@ -4,7 +4,7 @@
 
 ### A HVAC, thermostat, climate, fan, and humidifier card for Home Assistant Lovelace UI
 
-[![HACS Custom](https://img.shields.io/badge/HACS-CUSTOM-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://github.com/hacs/integration)
+[![HACS Default](https://img.shields.io/badge/HACS-DEFAULT-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://github.com/hacs/integration)
 [![Home Assistant 2024.8+](https://img.shields.io/badge/HOME%20ASSISTANT-2024.8%2B-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://www.home-assistant.io/)
 [![Latest release](https://img.shields.io/github/v/release/Wheemer/simple-thermostat?style=for-the-badge&logo=github&logoColor=white&label=RELEASE&labelColor=555555&color=22C55E)](https://github.com/Wheemer/simple-thermostat/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Wheemer/simple-thermostat/total?style=for-the-badge&logo=github&logoColor=white&label=DOWNLOADS&labelColor=555555&color=8A2BE2)](https://github.com/Wheemer/simple-thermostat/releases)
@@ -14,9 +14,13 @@
   Fan, humidifier, dehumidifier, modern actions, and enhanced visuals
 </p>
 
+<p>
+  <strong>Now available in the default HACS catalog.</strong>
+</p>
+
 </div>
 
-A Codex assisted, community maintained fork of [simple-thermostat](https://github.com/nervetattoo/simple-thermostat) by [@nervetattoo](https://github.com/nervetattoo), kept working with current Home Assistant releases. The v4 modernization was heavily influenced by [duczz/ha-simple-thermostat](https://github.com/duczz/ha-simple-thermostat).
+A community maintained fork of [simple-thermostat](https://github.com/nervetattoo/simple-thermostat) by [@nervetattoo](https://github.com/nervetattoo), kept working with current Home Assistant releases. The v4 modernization was heavily influenced by [duczz/ha-simple-thermostat](https://github.com/duczz/ha-simple-thermostat).
 
 A compact Lovelace card for Home Assistant climate, fan, humidifier, and dehumidifier entities. It keeps the original small-card style while adding domain-aware setpoints, current values, action handling, richer mode controls, and enhanced visuals.
 
@@ -40,19 +44,11 @@ A compact Lovelace card for Home Assistant climate, fan, humidifier, and dehumid
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Wheemer&repository=simple-thermostat&category=plugin)
 
-Or add it manually in HACS:
-
 1. Open **HACS** in Home Assistant.
-2. Open **Custom repositories**.
-3. Add this repository:
-
-   ```text
-   https://github.com/Wheemer/simple-thermostat
-   ```
-
-4. Choose type **Dashboard**.
-5. Install **Simple Thermostat**.
-6. Refresh Home Assistant and clear the browser cache if the old card is still loaded.
+2. Go to **Frontend** or search for **Simple Thermostat**.
+3. Install **Simple Thermostat**.
+4. Enable prereleases if you want to try the latest v4 release candidate.
+5. Refresh Home Assistant and clear the browser cache if the old card is still loaded.
 
 ### Migrating from another fork
 
@@ -127,6 +123,20 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="5" nowrap><strong>v4.0.0-rc.8</strong></td>
+      <td>Improved inactive mode button contrast on tinted or custom card backgrounds.</td>
+    </tr>
+    <tr><td>Used AC-aware default header icons for cooling-capable climate entities.</td></tr>
+    <tr><td>Kept off-icon slash overlays working with fallback climate icons.</td></tr>
+    <tr><td>Contained card sizing and internal layers inside dashboard wrappers.</td></tr>
+    <tr><td>Preferred Home Assistant's service-call path for card actions when available.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.0-rc.7</strong></td>
+      <td>Kept the latest Home Assistant state when <code>hass</code> arrives before <code>setConfig</code>.</td>
+    </tr>
+    <tr><td>Hydrated the card as soon as config is assigned.</td></tr>
+    <tr><td>Added regression coverage for Home Assistant state/config ordering.</td></tr>
     <tr>
       <td rowspan="4" nowrap><strong>v4.0.0-rc.6</strong></td>
       <td>Polished the visual editor into a clearer setup flow.</td>

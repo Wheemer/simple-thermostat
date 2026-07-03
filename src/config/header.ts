@@ -25,6 +25,23 @@ export const STATE_ICONS = {
   off: 'mdi:radiator-off',
 }
 
+export const CLIMATE_COOLING_STATE_ICONS = {
+  auto: 'mdi:air-conditioner',
+  cooling: 'mdi:snowflake',
+  fan: 'mdi:fan',
+  heating: 'mdi:radiator',
+  idle: 'mdi:air-conditioner',
+  on: 'mdi:air-conditioner',
+  off: 'mdi:air-conditioner',
+}
+
+export const CLIMATE_HEATING_STATE_ICONS = {
+  ...STATE_ICONS,
+  auto: 'mdi:radiator',
+  idle: 'mdi:radiator',
+  off: 'mdi:radiator',
+}
+
 export const DOMAIN_STATE_ICONS = {
   fan: {
     on: 'mdi:fan',
@@ -217,6 +234,7 @@ function getDefaultHeaderIcon(entity: HAState): Icon {
 
   return (
     entity.attributes.icon ??
+    getClimateHeaderIcons(entity) ??
     DOMAIN_STATE_ICONS[entityDomain]?.[entity.state] ??
     (getEntityAction(entity) ? STATE_ICONS : MODE_ICONS)
   )
@@ -226,8 +244,33 @@ function getLegacyHeaderIcon(entity: HAState): Icon {
   return getEntityAction(entity) ? STATE_ICONS : MODE_ICONS
 }
 
+function getClimateHeaderIcons(entity: HAState): typeof STATE_ICONS | undefined {
+  const [entityDomain] = entity.entity_id.split('.')
+  if (entityDomain !== 'climate') return undefined
+
+  const hvacModes = Array.isArray(entity.attributes?.hvac_modes)
+    ? entity.attributes.hvac_modes
+    : []
+  const action = getEntityAction(entity)
+  const modeOrAction = String(action || entity.state)
+  const isCoolingMode =
+    hvacModes.includes('cool') ||
+    hvacModes.includes('dry') ||
+    hvacModes.includes('fan_only') ||
+    ['cool', 'cooling', 'dry', 'fan_only', 'fan'].includes(modeOrAction)
+
+  return isCoolingMode ? CLIMATE_COOLING_STATE_ICONS : CLIMATE_HEATING_STATE_ICONS
+}
+
 function shouldSlashOffIcon(entity: HAState, icon: Icon) {
-  if (entity.state !== 'off' || typeof icon !== 'string') return false
+  if (entity.state !== 'off') return false
+
+  const resolvedIcon =
+    typeof icon === 'object'
+      ? icon[getEntityAction(entity) || entity.state] ?? false
+      : icon
+
+  if (typeof resolvedIcon !== 'string') return false
 
   const [entityDomain] = entity.entity_id.split('.')
   const domainOffIcon =
@@ -236,7 +279,9 @@ function shouldSlashOffIcon(entity: HAState, icon: Icon) {
       : DOMAIN_STATE_ICONS[entityDomain]?.off
 
   return (
-    Boolean(domainOffIcon) && icon !== domainOffIcon && !icon.endsWith('-off')
+    Boolean(domainOffIcon) &&
+    resolvedIcon !== domainOffIcon &&
+    !resolvedIcon.endsWith('-off')
   )
 }
 
