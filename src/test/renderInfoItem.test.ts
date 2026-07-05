@@ -222,3 +222,64 @@ test('toggle entity rows expose domain, state, and icon classes for styling', ()
   expect(value.classList.contains('state-on')).toBe(true)
   expect(value.querySelector('ha-switch')).not.toBeNull()
 })
+
+test('active timer entity rows render a live remaining countdown', async () => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-07-04T12:00:00Z'))
+
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      formatEntityState: () => 'Active',
+    },
+    state: {
+      entity_id: 'timer.turn_fan_off',
+      state: 'active',
+      attributes: {
+        finishes_at: '2026-07-04T12:01:05Z',
+        remaining: '0:10:00',
+      },
+    },
+    details: { heading: 'Fan timer' },
+    openEntityPopover: () => undefined,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+  await customElements.whenDefined('simple-thermostat-timer-remaining')
+  await Promise.resolve()
+
+  expect(
+    container.querySelector('simple-thermostat-timer-remaining')?.textContent
+  ).toBe('1:05')
+
+  jest.useRealTimers()
+})
+
+test('paused timer entity rows render the remaining attribute', async () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      formatEntityState: () => 'Paused',
+    },
+    state: {
+      entity_id: 'timer.turn_fan_off',
+      state: 'paused',
+      attributes: {
+        remaining: '0:03:21',
+      },
+    },
+    details: { heading: 'Fan timer' },
+    openEntityPopover: () => undefined,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+  await customElements.whenDefined('simple-thermostat-timer-remaining')
+  await Promise.resolve()
+
+  expect(
+    container.querySelector('simple-thermostat-timer-remaining')?.textContent
+  ).toBe('0:03:21')
+})

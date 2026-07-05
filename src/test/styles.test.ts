@@ -52,7 +52,7 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(bodyChildrenRule).toContain('min-width: 0')
 })
 
-test('inactive mode buttons use a lifted card surface by default', () => {
+test('inactive mode buttons use a consistent theme-derived overlay surface', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -61,7 +61,63 @@ test('inactive mode buttons use a lifted card surface by default', () => {
   const modeItemRule = styles.match(/\.mode-item\s*\{[^}]*\}/)?.[0] ?? ''
 
   expect(baseCardRule).toContain('--st-mode-surface-background')
+  expect(baseCardRule).toContain('var(--primary-text-color) 14%')
+  expect(baseCardRule).toContain('transparent')
+  expect(baseCardRule).not.toContain(
+    '--st-mode-surface-background: var(--secondary-background-color)'
+  )
+  expect(baseCardRule).toContain(
+    '--st-mode-surface-background: color-mix'
+  )
   expect(modeItemRule).toContain(
     'background: var(--st-mode-background, var(--st-mode-surface-background))'
   )
+})
+
+test('active header glow is applied to the icon wrapper for active domains', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+
+  expect(styles).toContain(
+    'ha-card.domain-fan:not(.state-off) .header__icon-wrap'
+  )
+  expect(styles).toContain('ha-card.humidifying .header__icon-wrap')
+  expect(styles).toContain('ha-card.dehumidifying .header__icon-wrap')
+  expect(styles).toContain('ha-card.drying .header__icon-wrap')
+  expect(styles).toContain('ha-card.heating .header__icon-wrap')
+  expect(styles).toContain('ha-card.cooling .header__icon-wrap')
+  expect(styles).toContain('--st-active-icon-glow-duration: 4s')
+  expect(styles).toContain('--st-active-icon-glow-max-size: 6px')
+  expect(styles).toContain('--st-active-icon-glow-max-strength: 60%')
+  expect(styles).toContain('opacity: 0.42')
+  expect(styles).toContain('--st-active-icon-glow-color: var(--dry-color)')
+  expect(styles).toContain('.header__icon-wrap::before')
+  expect(styles).toContain('will-change: opacity, transform')
+  expect(styles).toContain('ha-card.cooling .header__icon-wrap::before')
+  const glowStart = styles.indexOf('@keyframes st-active-icon-glow')
+  const glowEnd = styles.indexOf('@keyframes st-value-pulse')
+  const glowKeyframes = styles.slice(glowStart, glowEnd)
+  expect(glowKeyframes).not.toContain('filter:')
+  expect(styles).toContain('left: 50%')
+  expect(styles).toContain('top: 50%')
+  expect(glowKeyframes).toContain('translate(-50%, -50%) scale')
+  expect(glowKeyframes).not.toContain('25%')
+  expect(glowKeyframes).not.toContain('75%')
+  expect(styles).toContain(
+    'ha-card.standard-visuals .header__icon-wrap'
+  )
+})
+
+test('group card has no shared embedded stylesheet path in the normal card', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+
+  expect(styles).not.toContain('ha-card.embedded')
+  expect(styles).not.toContain('.embedded .body')
+  expect(styles).not.toContain('.embedded .controls')
+  expect(styles).not.toContain('.embedded .entities')
 })

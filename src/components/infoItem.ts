@@ -3,6 +3,7 @@ import formatNumber from '../formatNumber'
 import { appendUnit } from '../unitFormat'
 import { LooseObject } from '../types'
 import { getToggleKind, getToggleKindClass } from '../toggleKind'
+import './timerRemaining'
 
 const TOGGLE_DOMAINS = [
   'automation',
@@ -110,7 +111,22 @@ export default function renderInfoItem({
       .filter(Boolean)
       .join(' ')
 
-    if (isToggleEntity) {
+    if (domain === 'timer') {
+      valueCell = html`
+        <div
+          class="entity-value ${canOpenEntity ? 'clickable' : ''}"
+          title=${entityTooltip}
+          @click="${canOpenEntity
+            ? () => openEntityPopover(state.entity_id)
+            : null}"
+        >
+          <simple-thermostat-timer-remaining
+            .stateObj=${state}
+            .hass=${hass}
+          ></simple-thermostat-timer-remaining>
+        </div>
+      `
+    } else if (isToggleEntity) {
       valueCell = html`
         <div class="entity-value ${entityClasses}">
           <ha-switch

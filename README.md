@@ -91,11 +91,11 @@ The editor handles the common v4 setup:
 
 The card chooses sensible defaults from the selected entity:
 
-| Domain | Target | Current value | Default controls |
-| --- | --- | --- | --- |
-| `climate` | Temperature | `current_temperature` or configured current value entity | HVAC, preset, fan, swing, vane |
-| `fan` | Percentage | Percentage when available | Fan speeds, direction, oscillating, state |
-| `humidifier` | Humidity | `current_humidity` | Mode, state |
+| Domain       | Target      | Current value                                            | Default controls                          |
+| ------------ | ----------- | -------------------------------------------------------- | ----------------------------------------- |
+| `climate`    | Temperature | `current_temperature` or configured current value entity | HVAC, preset, fan, swing, vane            |
+| `fan`        | Percentage  | Percentage when available                                | Fan speeds, direction, oscillating, state |
+| `humidifier` | Humidity    | `current_humidity`                                       | Mode, state                               |
 
 Dehumidifiers use the Home Assistant `humidifier` domain.
 
@@ -106,7 +106,7 @@ YAML is still supported for advanced customization, migration, and manual dashbo
 Use the [YAML reference](YAML_REFERENCE.md) for:
 
 - advanced mode filtering,
-- extra entity attributes, units, decimals, relative time, and templates,
+- extra entity attributes, units, decimals, timer countdowns, relative time, and templates,
 - manual setpoint definitions,
 - service overrides,
 - target value tap, hold, and double tap actions,

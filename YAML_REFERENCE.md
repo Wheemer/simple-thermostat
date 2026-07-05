@@ -315,11 +315,15 @@ entities:
   - entity: sensor.living_room_humidity
   - entity: sensor.living_room_energy
     name: Energy today
+  - entity: timer.turn_fan_off
+    name: Fan timer
   - attribute: min_temp
     name: Min temp
   - entity: input_boolean.heating_boost
     name: Boost
 ```
+
+Timer entities show a live remaining countdown while active and the `remaining` attribute while paused.
 
 Toggle-capable entities render as switches automatically.
 

@@ -22,13 +22,13 @@
     --st-font-size-compact-mode,
     var(--ha-font-size-m, 14px)
   );
-  --st-active-icon-glow-duration: 5s;
-  --st-active-icon-glow-min-size: 4px;
-  --st-active-icon-glow-mid-size: 9px;
-  --st-active-icon-glow-max-size: 14px;
-  --st-active-icon-glow-min-strength: 36%;
-  --st-active-icon-glow-mid-strength: 52%;
-  --st-active-icon-glow-max-strength: 70%;
+  --st-active-icon-glow-duration: 4s;
+  --st-active-icon-glow-min-size: 1px;
+  --st-active-icon-glow-mid-size: 4px;
+  --st-active-icon-glow-max-size: 6px;
+  --st-active-icon-glow-min-strength: 28%;
+  --st-active-icon-glow-mid-strength: 44%;
+  --st-active-icon-glow-max-strength: 60%;
 }
 ha-card {
   -webkit-font-smoothing: var(--ha-font-smoothing, antialiased);
@@ -55,8 +55,8 @@ ha-card {
   --dry-color: var(--state-climate-dry-color, var(--primary-color));
   --st-mode-surface-background: color-mix(
     in srgb,
-    var(--card-background-color) 84%,
-    var(--primary-text-color) 16%
+    var(--primary-text-color) 14%,
+    transparent
   );
   --st-interactive-tint: color-mix(
     in srgb,
@@ -122,45 +122,19 @@ ha-card.loading {
 }
 
 @keyframes st-active-icon-glow {
-  0%,
-  100% {
-    filter: drop-shadow(
-      0 0 var(--st-active-icon-glow-min-size)
-        color-mix(
-          in srgb,
-          var(--st-active-icon-glow-color)
-            var(--st-active-icon-glow-min-strength),
-          transparent
-        )
-    );
-    opacity: 0.94;
-  }
-
-  25%,
-  75% {
-    filter: drop-shadow(
-      0 0 var(--st-active-icon-glow-mid-size)
-        color-mix(
-          in srgb,
-          var(--st-active-icon-glow-color)
-            var(--st-active-icon-glow-mid-strength),
-          transparent
-        )
-    );
-    opacity: 0.98;
+  0% {
+    opacity: 0.16;
+    transform: translate(-50%, -50%) scale(0.72);
   }
 
   50% {
-    filter: drop-shadow(
-      0 0 var(--st-active-icon-glow-max-size)
-        color-mix(
-          in srgb,
-          var(--st-active-icon-glow-color)
-            var(--st-active-icon-glow-max-strength),
-          transparent
-        )
-    );
-    opacity: 1;
+    opacity: 0.42;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  100% {
+    opacity: 0.16;
+    transform: translate(-50%, -50%) scale(0.72);
   }
 }
 
@@ -369,6 +343,7 @@ header {
   height: var(--st-control-icon-size);
   margin-right: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
   color: var(--state-icon-color, var(--secondary-text-color));
+  isolation: isolate;
 
   &.on {
     color: var(
@@ -380,6 +355,39 @@ header {
   &.off {
     color: var(--state-icon-color, var(--disabled-text-color));
   }
+}
+.header__icon-wrap::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--st-control-icon-size) + (var(--st-active-icon-glow-max-size) * 2));
+  height: calc(var(--st-control-icon-size) + (var(--st-active-icon-glow-max-size) * 2));
+  z-index: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.72);
+  transform-origin: center;
+  background: radial-gradient(
+    circle,
+    color-mix(
+        in srgb,
+        var(--st-active-icon-glow-color, currentColor)
+          var(--st-active-icon-glow-max-strength),
+        transparent
+      )
+      0%,
+    color-mix(
+        in srgb,
+        var(--st-active-icon-glow-color, currentColor)
+          var(--st-active-icon-glow-mid-strength),
+        transparent
+      )
+      42%,
+    transparent 72%
+  );
+  will-change: opacity, transform;
 }
 .header__icon-wrap.slash-off::before,
 .header__icon-wrap.slash-off::after {
@@ -419,29 +427,38 @@ header {
     transform 180ms var(--st-motion-ease),
     opacity 180ms var(--st-motion-ease);
 }
+ha-card.domain-fan:not(.state-off) .header__icon-wrap,
+ha-card.humidifying .header__icon-wrap {
+  --st-active-icon-glow-color: var(--primary-color);
+}
+ha-card.domain-fan:not(.state-off) .header__icon-wrap::before,
+ha-card.humidifying .header__icon-wrap::before {
+  animation: st-active-icon-glow var(--st-active-icon-glow-duration) ease-in-out
+    infinite;
+}
 ha-card.domain-fan:not(.state-off) .header__icon {
   animation: st-fan-spin var(--st-fan-spin-duration, 2.4s) linear infinite;
 }
-ha-card.humidifying .header__icon,
-ha-card.dehumidifying .header__icon,
-ha-card.drying .header__icon {
-  --st-active-icon-glow-color: var(--primary-color);
+ha-card.dehumidifying .header__icon-wrap,
+ha-card.drying .header__icon-wrap {
+  --st-active-icon-glow-color: var(--dry-color);
+}
+ha-card.dehumidifying .header__icon-wrap::before,
+ha-card.drying .header__icon-wrap::before {
   animation: st-active-icon-glow var(--st-active-icon-glow-duration) ease-in-out
     infinite;
 }
-ha-card.heating .header__icon {
+ha-card.heating .header__icon-wrap {
   --st-active-icon-glow-color: var(--heat-color);
+}
+ha-card.heating .header__icon-wrap::before {
   animation: st-active-icon-glow var(--st-active-icon-glow-duration) ease-in-out
     infinite;
 }
-ha-card.cooling .header__icon {
+ha-card.cooling .header__icon-wrap {
   --st-active-icon-glow-color: var(--cool-color);
-  --st-active-icon-glow-min-size: 6px;
-  --st-active-icon-glow-mid-size: 12px;
-  --st-active-icon-glow-max-size: 18px;
-  --st-active-icon-glow-min-strength: 52%;
-  --st-active-icon-glow-mid-strength: 70%;
-  --st-active-icon-glow-max-strength: 86%;
+}
+ha-card.cooling .header__icon-wrap::before {
   animation: st-active-icon-glow var(--st-active-icon-glow-duration) ease-in-out
     infinite;
 }
@@ -1225,6 +1242,7 @@ ha-card.loading.standard-visuals {
   animation: none;
 }
 
+ha-card.standard-visuals .header__icon-wrap,
 ha-card.standard-visuals .header__icon,
 ha-card.standard-visuals .current--value,
 ha-card.standard-visuals .mode-item,
