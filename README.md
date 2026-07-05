@@ -87,6 +87,23 @@ The editor handles the common v4 setup:
 - Setpoint visibility and v4 enhanced visuals.
 - Advanced labels, precision, action type, and mode display options.
 
+## Group Card
+
+Use **Simple Thermostat Group** when you want several climate, fan, or humidifier cards to share one dashboard footprint. The group card keeps each selected Simple Thermostat card intact and adds a compact header for moving between them.
+
+Add `custom:simple-thermostat-group` from the visual editor, choose the entities or cards you want in the group, then use the arrows or menu to switch between them.
+
+```yaml
+type: custom:simple-thermostat-group
+cards:
+  - entity: climate.living_room_ac
+    header:
+      name: Living Room AC
+  - entity: climate.bedroom_ac
+    header:
+      name: Bedroom AC
+```
+
 ## Domain Defaults
 
 The card chooses sensible defaults from the selected entity:
@@ -123,6 +140,13 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.0-rc.10</strong></td>
+      <td>Added <code>custom:simple-thermostat-group</code> for switching between multiple thermostat cards in one dashboard footprint.</td>
+    </tr>
+    <tr><td>Kept each grouped card rendered by the normal Simple Thermostat card so existing per-card layouts and controls stay intact.</td></tr>
+    <tr><td>Added carousel arrows, direct selection menu, optional header toggles, remembered selection, and a visual editor for grouped cards.</td></tr>
+    <tr><td>Added regression coverage for group rendering, selection, menu behavior, title fitting, and embedded card isolation.</td></tr>
     <tr>
       <td rowspan="5" nowrap><strong>v4.0.0-rc.8</strong></td>
       <td>Improved inactive mode button contrast on tinted or custom card backgrounds.</td>

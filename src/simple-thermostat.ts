@@ -1,5 +1,7 @@
 import { name as CARD_NAME, version } from '../package.json'
 import SimpleThermostatEditor from './editor'
+import SimpleThermostatGroupEditor from './group-editor'
+import SimpleThermostatGroup from './group'
 import SimpleThermostat from './main'
 
 if (!customElements.get(CARD_NAME)) {
@@ -8,6 +10,14 @@ if (!customElements.get(CARD_NAME)) {
 
 if (!customElements.get(`${CARD_NAME}-editor`)) {
   customElements.define(`${CARD_NAME}-editor`, SimpleThermostatEditor)
+}
+
+if (!customElements.get(`${CARD_NAME}-group`)) {
+  customElements.define(`${CARD_NAME}-group`, SimpleThermostatGroup)
+}
+
+if (!customElements.get(`${CARD_NAME}-group-editor`)) {
+  customElements.define(`${CARD_NAME}-group-editor`, SimpleThermostatGroupEditor)
 }
 
 console.info(
@@ -23,6 +33,15 @@ if (!w.customCards.find((c: any) => c.type === CARD_NAME)) {
     name: 'Simple Thermostat',
     preview: true,
     description: 'A different take on the thermostat card',
+    documentationURL: 'https://github.com/Wheemer/simple-thermostat',
+  })
+}
+if (!w.customCards.find((c: any) => c.type === `${CARD_NAME}-group`)) {
+  w.customCards.push({
+    type: `${CARD_NAME}-group`,
+    name: 'Simple Thermostat Group',
+    preview: true,
+    description: 'Switch between multiple thermostat cards in one footprint',
     documentationURL: 'https://github.com/Wheemer/simple-thermostat',
   })
 }
