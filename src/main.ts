@@ -403,6 +403,7 @@ export default class SimpleThermostat extends LitElement {
         hvac_action: action,
       },
     } = entity
+    const setpointSteppersDisabled = entity.state === HVAC_MODES.OFF
 
     const unit = this.getUnit()
 
@@ -459,7 +460,8 @@ export default class SimpleThermostat extends LitElement {
             return html`
               <div class="current-wrapper ${stepLayout}">
                 <ha-icon-button
-                  ?disabled=${maxTemp !== null && value >= maxTemp}
+                  ?disabled=${setpointSteppersDisabled ||
+                  (maxTemp !== null && value >= maxTemp)}
                   class="thermostat-trigger"
                   icon=${row ? ICONS.PLUS : ICONS.UP}
                   @click="${() => this.setTemperature(this.stepSize, field)}"
@@ -486,7 +488,8 @@ export default class SimpleThermostat extends LitElement {
                     : nothing}
                 </h3>
                 <ha-icon-button
-                  ?disabled=${minTemp !== null && value <= minTemp}
+                  ?disabled=${setpointSteppersDisabled ||
+                  (minTemp !== null && value <= minTemp)}
                   class="thermostat-trigger"
                   icon=${row ? ICONS.MINUS : ICONS.DOWN}
                   @click="${() => this.setTemperature(-this.stepSize, field)}"
