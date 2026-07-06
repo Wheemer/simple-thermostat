@@ -276,6 +276,7 @@ interface SetpointRenderOptions {
   row: boolean
   stepLayout: string
   isOff: boolean
+  disableSteppers: boolean
 }
 
 export default class SimpleThermostat extends LitElement {
@@ -588,6 +589,8 @@ export default class SimpleThermostat extends LitElement {
             row,
             stepLayout,
             isOff: entity.state === HVAC_MODES.OFF,
+            disableSteppers:
+              entityDomain === 'climate' && entity.state === HVAC_MODES.OFF,
           })}
         </section>
 
@@ -630,6 +633,7 @@ export default class SimpleThermostat extends LitElement {
     row,
     stepLayout,
     isOff,
+    disableSteppers,
   }: {
     values: Values
     minValue: number | null
@@ -638,6 +642,7 @@ export default class SimpleThermostat extends LitElement {
     row: boolean
     stepLayout: string
     isOff: boolean
+    disableSteppers: boolean
   }) {
     if (this.config.hide_setpoint === true) return nothing
 
@@ -651,6 +656,7 @@ export default class SimpleThermostat extends LitElement {
         row,
         stepLayout,
         isOff,
+        disableSteppers,
       })
     )
   }
@@ -688,20 +694,29 @@ export default class SimpleThermostat extends LitElement {
   }
 
   renderSetpointStepper(
-    { field, value, minValue, maxValue, row }: SetpointRenderOptions,
+    {
+      field,
+      value,
+      minValue,
+      maxValue,
+      row,
+      disableSteppers,
+    }: SetpointRenderOptions,
     direction: 'increase' | 'decrease'
   ) {
     const numericValue = Number(value)
     const hasNumericValue = !Number.isNaN(numericValue)
     const decreasing = direction === 'decrease'
-    const disabled = decreasing
-      ? value === null ||
-        (minValue !== null && hasNumericValue && numericValue <= minValue)
-      : (value === null && minValue === null) ||
-        (value !== null &&
-          maxValue !== null &&
-          hasNumericValue &&
-          numericValue >= maxValue)
+    const disabled =
+      disableSteppers ||
+      (decreasing
+        ? value === null ||
+          (minValue !== null && hasNumericValue && numericValue <= minValue)
+        : (value === null && minValue === null) ||
+          (value !== null &&
+            maxValue !== null &&
+            hasNumericValue &&
+            numericValue >= maxValue))
     const icon = decreasing
       ? row
         ? ICONS.MINUS

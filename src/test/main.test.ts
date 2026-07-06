@@ -621,7 +621,7 @@ test('fan card does not fall back to climate current value or headings', async (
   ).toBe('mdi:fan-off')
 })
 
-test('null climate setpoint disables decrease and seeds min temp on increase', async () => {
+test('off climate setpoint disables both setpoint steppers', async () => {
   document.body.innerHTML = ''
   const callService = jest.fn()
   const card = createCard()
@@ -636,6 +636,55 @@ test('null climate setpoint disables decrease and seeds min temp on increase', a
       'climate.comet_dect': {
         entity_id: 'climate.comet_dect',
         state: 'off',
+        attributes: {
+          temperature: null,
+          current_temperature: 18,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+    callService,
+  }
+
+  await card.updateComplete
+
+  const decrease = card.shadowRoot?.querySelector(
+    'button.decrease'
+  ) as HTMLButtonElement
+  const increase = card.shadowRoot?.querySelector(
+    'button.increase'
+  ) as HTMLButtonElement
+
+  expect(decrease.disabled).toBe(true)
+  expect(increase.disabled).toBe(true)
+
+  increase.click()
+
+  expect(callService).not.toHaveBeenCalled()
+})
+
+test('non-off null climate setpoint seeds min temp on increase', async () => {
+  document.body.innerHTML = ''
+  const callService = jest.fn()
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.comet_dect',
+    header: false,
+    control: false,
+  } as any)
+  card.hass = {
+    states: {
+      'climate.comet_dect': {
+        entity_id: 'climate.comet_dect',
+        state: 'heat',
         attributes: {
           temperature: null,
           current_temperature: 18,

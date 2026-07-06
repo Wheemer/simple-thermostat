@@ -141,6 +141,11 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.0.0-rc.11</strong></td>
+      <td>Disabled climate setpoint step buttons while the climate entity is <code>off</code>.</td>
+    </tr>
+    <tr><td>Added regression coverage for TRV-style <code>OFF</code> target values so the card no longer steps from <code>OFF</code> into invalid low temperatures.</td></tr>
+    <tr>
       <td rowspan="4" nowrap><strong>v4.0.0-rc.10</strong></td>
       <td>Added <code>custom:simple-thermostat-group</code> for switching between multiple thermostat cards in one dashboard footprint.</td>
     </tr>
