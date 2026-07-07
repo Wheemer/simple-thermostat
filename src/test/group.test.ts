@@ -506,3 +506,143 @@ test('keeps the embedded card responsible for its own surface while switching', 
 
   expect(childCard.style.background).toBe('transparent')
 })
+
+test('fades the embedded card during selector changes', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
+  expect(styles).toContain('.embedded-card-host.fading')
+  expect(styles).toContain('transition: opacity 120ms ease')
+
+  const nextButton = group.shadowRoot?.querySelector(
+    'button[aria-label="Next device"]'
+  ) as HTMLButtonElement
+  nextButton.click()
+  await group.updateComplete
+
+  expect(
+    group.shadowRoot
+      ?.querySelector('.embedded-card-host')
+      ?.classList.contains('fading')
+  ).toBe(true)
+})
+
+test('auto-selects the device with recent meaningful activity', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    auto_select: { mode: 'recent_activity', cooldown_ms: 0 },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        state: 'heat',
+        last_updated: '2026-07-05T12:00:00.000Z',
+        attributes: {
+          ...hass.states['climate.bedroom'].attributes,
+          hvac_action: 'heating',
+        },
+      },
+    },
+  } as any
+  await group.updateComplete
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Bedroom AC'
+  )
+})
+
+test('does not auto-select for current temperature updates', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    auto_select: { mode: 'recent_activity', cooldown_ms: 0 },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        last_updated: '2026-07-05T12:00:00.000Z',
+        attributes: {
+          ...hass.states['climate.bedroom'].attributes,
+          current_temperature: 21.5,
+        },
+      },
+    },
+  } as any
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Living AC'
+  )
+})
+
+test('does not auto-select while the selector menu is open', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    auto_select: { mode: 'recent_activity', cooldown_ms: 0 },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const menuButton = group.shadowRoot?.querySelector(
+    'button[aria-label="Select device"]'
+  ) as HTMLButtonElement
+  menuButton.click()
+  await group.updateComplete
+
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        state: 'heat',
+        last_updated: '2026-07-05T12:00:00.000Z',
+        attributes: {
+          ...hass.states['climate.bedroom'].attributes,
+          hvac_action: 'heating',
+        },
+      },
+    },
+  } as any
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Living AC'
+  )
+})

@@ -406,7 +406,8 @@ export default class SimpleThermostat extends LitElement {
     let values = parseSetpoints(
       this.config?.setpoints ?? null,
       attributes,
-      adapter
+      adapter,
+      entity.state
     )
 
     if (this._updatingValues && isEqual(values, this._values)) {

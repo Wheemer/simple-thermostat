@@ -121,3 +121,38 @@ test('group editor preserves detailed card config from the nested editor', async
     })
   )
 })
+
+test('group editor toggles recent activity auto-select', async () => {
+  const editor = createEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+
+  editor.setConfig({
+    cards: [{ entity: 'climate.living_room' }],
+  })
+
+  await editor.updateComplete
+
+  const autoSelectField = Array.from(
+    editor.shadowRoot?.querySelectorAll('ha-formfield') ?? []
+  ).find((field) => field.getAttribute('label') === 'Follow active device')
+  const autoSelectSwitch = autoSelectField?.querySelector(
+    'ha-switch'
+  ) as HTMLInputElement
+
+  Object.defineProperty(autoSelectSwitch, 'checked', {
+    configurable: true,
+    value: true,
+  })
+  autoSelectSwitch.dispatchEvent(new Event('change', { bubbles: true }))
+
+  expect(configChanged).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: expect.objectContaining({
+        config: expect.objectContaining({
+          auto_select: { mode: 'recent_activity' },
+        }),
+      }),
+    })
+  )
+})

@@ -128,7 +128,6 @@ export default class SimpleThermostatGroupEditor extends LitElement {
       cards: normalizeTargets(config),
       entities: undefined,
       selector: {
-        mode: config.selector?.mode ?? 'auto',
         icons: config.selector?.icons !== false,
         names: config.selector?.names !== false,
         states: config.selector?.states === true,
@@ -186,16 +185,29 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     })
   }
 
-  private updateSelector(
-    path: 'mode' | 'icons' | 'names' | 'states',
-    value: unknown
-  ) {
+  private updateSelector(path: 'icons' | 'names' | 'states', value: unknown) {
     const selector = { ...(this.config.selector ?? {}) }
-    if (path === 'mode')
-      selector.mode = value as GroupConfig['selector']['mode']
-    else selector[path] = Boolean(value)
+    selector[path] = Boolean(value)
 
     this.commit({ ...this.config, selector })
+  }
+
+  private isAutoSelectEnabled() {
+    const autoSelect = this.config.auto_select
+    return (
+      autoSelect === true ||
+      autoSelect === 'recent_activity' ||
+      (typeof autoSelect === 'object' &&
+        autoSelect?.mode === 'recent_activity')
+    )
+  }
+
+  private updateAutoSelect(enabled: boolean) {
+    const { auto_select: _autoSelect, ...config } = this.config
+    this.commit({
+      ...config,
+      ...(enabled ? { auto_select: { mode: 'recent_activity' } } : {}),
+    })
   }
 
   private getTargetCardConfig(target: EditableTarget) {
@@ -345,21 +357,6 @@ export default class SimpleThermostatGroupEditor extends LitElement {
       </div>
 
       <div class="selector-options">
-        <label>
-          Selector style
-          <select
-            .value=${selector.mode ?? 'auto'}
-            @change=${(ev: Event) =>
-              this.updateSelector(
-                'mode',
-                (ev.currentTarget as HTMLSelectElement).value
-              )}
-          >
-            <option value="auto">Auto</option>
-            <option value="carousel">Arrows</option>
-            <option value="tabs">Tabs</option>
-          </select>
-        </label>
         <ha-formfield label="Show icons">
           <ha-switch
             .checked=${selector.icons !== false}
@@ -386,6 +383,15 @@ export default class SimpleThermostatGroupEditor extends LitElement {
             @change=${(ev: Event) =>
               this.updateSelector(
                 'states',
+                (ev.currentTarget as HTMLInputElement).checked
+              )}
+          ></ha-switch>
+        </ha-formfield>
+        <ha-formfield label="Follow active device">
+          <ha-switch
+            .checked=${this.isAutoSelectEnabled()}
+            @change=${(ev: Event) =>
+              this.updateAutoSelect(
                 (ev.currentTarget as HTMLInputElement).checked
               )}
           ></ha-switch>

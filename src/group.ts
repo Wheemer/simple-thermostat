@@ -6,7 +6,7 @@ import parseHeader from './config/header'
 import { getEntityAction } from './entityAction'
 import { HASS, LooseObject } from './types'
 
-type SelectorMode = 'auto' | 'carousel' | 'tabs'
+type AutoSelectMode = 'off' | 'recent_activity'
 
 export type GroupTargetConfig =
   | string
@@ -23,8 +23,14 @@ export interface GroupConfig {
   selected?: string
   storage_key?: string
   remember_selection?: boolean
+  auto_select?:
+    | boolean
+    | AutoSelectMode
+    | {
+        mode?: AutoSelectMode
+        cooldown_ms?: number
+      }
   selector?: {
-    mode?: SelectorMode
     icons?: boolean
     names?: boolean
     states?: boolean
@@ -38,13 +44,13 @@ interface GroupTarget {
 }
 
 const DEFAULT_SELECTOR = {
-  mode: 'auto' as SelectorMode,
   icons: true,
   names: true,
   states: false,
 }
 
 const SUPPORTED_DOMAINS = ['climate', 'fan', 'humidifier']
+const DEFAULT_AUTO_SELECT_COOLDOWN_MS = 8000
 
 function getDomain(entityId: string) {
   return entityId.split('.')[0]
@@ -113,11 +119,16 @@ export default class SimpleThermostatGroup extends LitElement {
   @state() private targets: Array<GroupTarget> = []
   @state() private selectedEntity = ''
   @state() private menuOpen = false
+  @state() private cardFading = false
   private embeddedCard?: HTMLElement & {
     hass?: HASS
     setConfig?: (config: LooseObject) => void
   }
   private removeOutsideClickListener?: () => void
+  private fadeInAfterSync = false
+  private activitySignatures = new Map<string, string>()
+  private activitySignaturesInitialized = false
+  private lastManualSelectionAt = 0
 
   static get styles() {
     return css`
@@ -362,10 +373,24 @@ export default class SimpleThermostatGroup extends LitElement {
       .embedded-card-host {
         display: block;
         overflow: hidden;
+        opacity: 1;
+        transition: opacity 120ms ease;
+        will-change: opacity;
+      }
+
+      .embedded-card-host.fading {
+        opacity: 0;
+        pointer-events: none;
       }
 
       .embedded-card-host simple-thermostat {
         display: block;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .embedded-card-host {
+          transition: none;
+        }
       }
 
       .header__main {
@@ -550,7 +575,6 @@ export default class SimpleThermostatGroup extends LitElement {
 
     return {
       entities: entities.slice(0, 2),
-      selector: { mode: 'auto' },
       card: {},
     }
   }
@@ -574,9 +598,12 @@ export default class SimpleThermostatGroup extends LitElement {
     }
     this.targets = targets
     this.selectedEntity = this.getInitialSelection(config, targets)
+    this.activitySignatures.clear()
+    this.activitySignaturesInitialized = false
   }
 
   protected updated() {
+    this.syncAutoSelectRecentActivity()
     this.syncEmbeddedCard()
     this.syncOutsideClickListener()
     this.syncTitleFit()
@@ -671,6 +698,111 @@ export default class SimpleThermostatGroup extends LitElement {
       (target) => target.entity === this.selectedEntity
     )
     return index === -1 ? 0 : index
+  }
+
+  private isRecentActivityAutoSelectEnabled() {
+    const autoSelect = this.config?.auto_select
+    if (!autoSelect) return false
+    if (autoSelect === true || autoSelect === 'recent_activity') return true
+    if (typeof autoSelect === 'object') {
+      return autoSelect.mode === 'recent_activity'
+    }
+
+    return false
+  }
+
+  private getAutoSelectCooldownMs() {
+    const autoSelect = this.config?.auto_select
+    if (autoSelect && typeof autoSelect === 'object') {
+      const cooldown = Number(autoSelect.cooldown_ms)
+      if (Number.isFinite(cooldown) && cooldown >= 0) return cooldown
+    }
+
+    return DEFAULT_AUTO_SELECT_COOLDOWN_MS
+  }
+
+  private getActivitySignature(target: GroupTarget) {
+    const state = this.hass?.states?.[target.entity]
+    if (!state) return ''
+
+    const domain = getDomain(target.entity)
+    const attributes = state.attributes ?? {}
+    const action = getEntityAction(state) ?? ''
+    const keys =
+      domain === 'climate'
+        ? [
+            'hvac_action',
+            'temperature',
+            'target_temp_low',
+            'target_temp_high',
+            'preset_mode',
+            'fan_mode',
+            'swing_mode',
+            'swing_horizontal_mode',
+            'swing_vertical_mode',
+          ]
+        : domain === 'fan'
+          ? ['percentage', 'preset_mode', 'direction', 'oscillating']
+          : domain === 'humidifier'
+            ? ['action', 'humidity', 'mode']
+            : []
+
+    const parts = [`state:${state.state}`, `action:${action}`]
+    keys.forEach((key) => {
+      parts.push(`${key}:${JSON.stringify(attributes[key] ?? null)}`)
+    })
+
+    return parts.join('|')
+  }
+
+  private getActivityTimestamp(target: GroupTarget) {
+    const state = this.hass?.states?.[target.entity]
+    const value = state?.last_updated ?? state?.last_changed
+    const timestamp = typeof value === 'string' ? Date.parse(value) : NaN
+    return Number.isFinite(timestamp) ? timestamp : 0
+  }
+
+  private syncAutoSelectRecentActivity() {
+    if (!this.config || !this.hass || !this.targets.length) return
+
+    const changedTargets: Array<{ target: GroupTarget; timestamp: number }> = []
+    const nextSignatures = new Map<string, string>()
+
+    this.targets.forEach((target) => {
+      const signature = this.getActivitySignature(target)
+      nextSignatures.set(target.entity, signature)
+
+      if (
+        this.activitySignaturesInitialized &&
+        signature &&
+        signature !== this.activitySignatures.get(target.entity)
+      ) {
+        changedTargets.push({
+          target,
+          timestamp: this.getActivityTimestamp(target),
+        })
+      }
+    })
+
+    this.activitySignatures = nextSignatures
+    if (!this.activitySignaturesInitialized) {
+      this.activitySignaturesInitialized = true
+      return
+    }
+
+    if (
+      !changedTargets.length ||
+      !this.isRecentActivityAutoSelectEnabled() ||
+      this.menuOpen ||
+      Date.now() - this.lastManualSelectionAt < this.getAutoSelectCooldownMs()
+    ) {
+      return
+    }
+
+    const latest = changedTargets.reduce((selected, candidate) =>
+      candidate.timestamp >= selected.timestamp ? candidate : selected
+    )
+    this.selectEntity(latest.target.entity, false)
   }
 
   private getTargetLabel(target: GroupTarget) {
@@ -810,14 +942,36 @@ export default class SimpleThermostatGroup extends LitElement {
       header.style.visibility = 'hidden'
       header.style.pointerEvents = 'none'
     }
+
+    if (this.fadeInAfterSync) {
+      this.fadeInAfterSync = false
+      window.requestAnimationFrame(() => {
+        this.cardFading = false
+      })
+    }
   }
 
-  private selectEntity(entity: string) {
+  private selectEntity(entity: string, manual = true) {
     if (entity === this.selectedEntity) return
 
-    this.selectedEntity = entity
     this.menuOpen = false
-    this.writeStoredSelection(entity)
+    if (manual) this.lastManualSelectionAt = Date.now()
+
+    const prefersReducedMotion = window.matchMedia?.(
+      '(prefers-reduced-motion: reduce)'
+    ).matches
+    if (!this.embeddedCard || prefersReducedMotion) {
+      this.fadeInAfterSync = false
+      this.cardFading = false
+      this.selectedEntity = entity
+      if (manual) this.writeStoredSelection(entity)
+      return
+    }
+
+    this.cardFading = true
+    this.fadeInAfterSync = true
+    this.selectedEntity = entity
+    if (manual) this.writeStoredSelection(entity)
   }
 
   private selectOffset(offset: number) {
@@ -1057,7 +1211,9 @@ export default class SimpleThermostatGroup extends LitElement {
     return html`
       <div class=${this.getGroupCardClasses()} style=${this.getGroupCardStyle()}>
         ${this.renderSelector()}
-        <div class="embedded-card-host"></div>
+        <div
+          class=${`embedded-card-host${this.cardFading ? ' fading' : ''}`}
+        ></div>
       </div>
     `
   }

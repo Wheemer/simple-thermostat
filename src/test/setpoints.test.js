@@ -41,3 +41,31 @@ test('dual setpoint hide one', () => {
 
   expect(result).toEqual({ target_temp_high: 20 })
 })
+
+test('dual setpoint hide by entity state', () => {
+  const result = parseSetpoints(
+    {
+      target_temp_low: { hide_when: 'cool' },
+      target_temp_high: { hide_when: 'heat' },
+    },
+    { target_temp_high: 20, target_temp_low: 19 },
+    undefined,
+    'cool'
+  )
+
+  expect(result).toEqual({ target_temp_high: 20 })
+})
+
+test('dual setpoint hide by any configured entity state', () => {
+  const result = parseSetpoints(
+    {
+      target_temp_low: { hide_when: ['cool', 'dry'] },
+      target_temp_high: { hide_when: ['heat'] },
+    },
+    { target_temp_high: 20, target_temp_low: 19 },
+    undefined,
+    'dry'
+  )
+
+  expect(result).toEqual({ target_temp_high: 20 })
+})

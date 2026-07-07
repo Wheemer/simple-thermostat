@@ -141,6 +141,13 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="4" nowrap><strong>v4.0.12</strong></td>
+      <td>Added <code>hide_when</code> for mode-aware setpoint visibility.</td>
+    </tr>
+    <tr><td>Added optional activity-following selection to <code>custom:simple-thermostat-group</code>.</td></tr>
+    <tr><td>Added a quick fade when switching grouped cards.</td></tr>
+    <tr><td>Removed the unused group selector style editor option.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.0.0-rc.11</strong></td>
       <td>Disabled climate setpoint step buttons while the climate entity is <code>off</code>.</td>
     </tr>
@@ -212,23 +219,5 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     <tr><td>Added v4 enhanced visuals.</td></tr>
     <tr><td>Added Home Assistant 2024.8+ action support.</td></tr>
     <tr><td>Kept legacy config aliases supported.</td></tr>
-    <tr>
-      <td rowspan="15" nowrap><strong>v4.0.0</strong></td>
-      <td>Requires Home Assistant 2024.8+.</td>
-    </tr>
-    <tr><td>Added climate, fan, humidifier, and dehumidifier domain-aware behavior.</td></tr>
-    <tr><td>Added fan percentage setpoints, speed/preset modes, direction, oscillation, and state controls.</td></tr>
-    <tr><td>Added humidifier and dehumidifier humidity setpoints, current humidity, modes, and state controls.</td></tr>
-    <tr><td>Added generic <code>current_value_entity</code> and <code>entities</code> options.</td></tr>
-    <tr><td>Imported legacy <code>current_temperature_entity</code>, <code>sensors</code>, and <code>layout.sensors</code> config names.</td></tr>
-    <tr><td>Kept <code>version: 3</code> templated entity rows supported.</td></tr>
-    <tr><td>Added automatic current value defaults for supported domains.</td></tr>
-    <tr><td>Added <code>hide_setpoint</code>.</td></tr>
-    <tr><td>Added state-aware headers, header toggles, off-icon slash overlays, and fault icons.</td></tr>
-    <tr><td>Added richer mode controls, mode icons, compact tooltips, and hidden headings by default.</td></tr>
-    <tr><td>Added horizontal setpoint controls and target value tap, hold, and double tap actions.</td></tr>
-    <tr><td>Added entity-aware visual editor options.</td></tr>
-    <tr><td>Added <code>enhanced_visuals</code> and documented CSS variables.</td></tr>
-    <tr><td>Updated service calls, custom element registration, HACS packaging, and GitHub Actions builds.</td></tr>
   </tbody>
 </table>

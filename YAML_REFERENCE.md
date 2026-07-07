@@ -398,6 +398,18 @@ setpoints:
   target_temp_high:
 ```
 
+Hide setpoints by current HVAC mode:
+
+```yaml
+setpoints:
+  target_temp_low:
+    hide_when: cool
+  target_temp_high:
+    hide_when: heat
+```
+
+`hide_when` can also accept a list of HVAC modes for unusual setups.
+
 ## Service Override
 
 Override the service used when setting the target value:
