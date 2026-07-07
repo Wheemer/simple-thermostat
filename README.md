@@ -93,7 +93,7 @@ Use the YAML reference for specialized extra row formatting such as attributes, 
 
 Use **Simple Thermostat Group** when you want several climate, fan, humidifier, or dehumidifier cards to share one dashboard footprint. The group card keeps each selected Simple Thermostat card intact and adds a compact header for moving between them.
 
-Add `custom:simple-thermostat-group` from the visual editor, choose the cards you want in the group, then use the arrows or menu to switch between them. If activity-following is enabled, manual navigation pauses automatic switching for 30 seconds before returning to the most recently active card. The group editor keeps normal per-card options behind each card's **Configure** button so advanced layouts stay scoped to the selected card.
+Add `custom:simple-thermostat-group` from the visual editor, choose the cards you want in the group, then use the arrows or menu to switch between them. The group header shows the selected card's state and current value when available, while controls such as fan modes stay in each card's normal **Configure** options. If activity-following is enabled, manual navigation pauses automatic switching for 30 seconds before returning to the most recently active card.
 
 ```yaml
 type: custom:simple-thermostat-group
@@ -127,6 +127,7 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
 - advanced mode filtering,
 - extra entity attributes, units, decimals, timer countdowns, and relative time,
 - manual setpoint definitions,
+- off-mode target step behavior,
 - service overrides,
 - target value tap, hold, and double tap actions,
 - scoped custom CSS,
@@ -142,6 +143,16 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.17</strong></td>
+      <td>Restored off-mode climate target changes by default and added <code>disable_setpoint_change_when_off</code> for TRV-style setups that need the buttons locked while off.</td>
+    </tr>
+    <tr><td>Show current temperature on fan-based AC cards when the fan entity exposes a temperature attribute.</td></tr>
+    <tr><td>Tightened the Simple Thermostat Group menu button while keeping the embedded card isolated from the group header.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.16</strong></td>
+      <td>Restored support for <code>name: false</code> on individual mode controls so buttons can be shown as icon-only again.</td>
+    </tr>
     <tr>
       <td rowspan="6" nowrap><strong>v4.0.15</strong></td>
       <td>Restored the original Simple Thermostat active mode color assignments for Heat, Cool, Heat/Cool, Dry, Auto, Fan only, and Off.</td>

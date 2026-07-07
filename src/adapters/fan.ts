@@ -15,12 +15,34 @@ export const fanAdapter: EntityAdapter = {
     return { min: 0, max: 100, step: 1 }
   },
 
-  getCurrentValue(_attributes: LooseObject) {
-    return null
+  getCurrentValue(attributes: LooseObject) {
+    return attributes?.current_temperature ?? attributes?.temperature ?? null
+  },
+
+  getCurrentValueUnit(attributes: LooseObject, hassConfig?: LooseObject) {
+    if (
+      attributes?.current_temperature !== null &&
+      typeof attributes?.current_temperature !== 'undefined'
+    ) {
+      return hassConfig?.unit_system?.temperature ?? false
+    }
+
+    if (
+      attributes?.temperature !== null &&
+      typeof attributes?.temperature !== 'undefined'
+    ) {
+      return (
+        attributes?.unit_of_measurement ??
+        hassConfig?.unit_system?.temperature ??
+        false
+      )
+    }
+
+    return false
   },
 
   getCurrentValueTemplate(): string {
-    return '{{percentage|formatNumber}}'
+    return '{{current_temperature|formatNumber}}'
   },
 
   getSetpointService(): SetpointService {

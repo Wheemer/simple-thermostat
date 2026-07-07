@@ -171,6 +171,23 @@ test('setpoint controls are hidden when the selected fan has no percentage suppo
   expect(names).not.toContain('step_size')
 })
 
+test('target section exposes off-mode setpoint lock', () => {
+  const schema = buildSchema({ entity: 'climate.living_room' } as any, {
+    performAction,
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'off',
+        attributes: { hvac_modes: ['off', 'heat'], temperature: null },
+      },
+    },
+  })
+
+  expect(schemaNames([findSection(schema, 'Target')])).toContain(
+    'disable_setpoint_change_when_off'
+  )
+})
+
 test('vane controls only show when the selected entity exposes vane attributes', () => {
   const baseHass = {
     performAction,

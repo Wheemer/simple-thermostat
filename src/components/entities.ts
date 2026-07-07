@@ -22,6 +22,9 @@ export default function renderEntities({
   const current = currentValueEntityId
     ? currentValueEntity?.state
     : adapter.getCurrentValue(entity.attributes)
+  const currentUnit = currentValueEntityId
+    ? (currentValueEntity?.attributes?.unit_of_measurement ?? unit)
+    : (adapter.getCurrentValueUnit?.(entity.attributes, hass.config) ?? unit)
 
   const showLabels = config?.layout?.entities?.labels ?? true
   const stateString = getEntityStateText(entity, hass, localize)
@@ -34,7 +37,7 @@ export default function renderEntities({
           ...config,
           locale: hass.locale,
         }),
-        unit
+        currentUnit
       ),
       hass,
       openEntityPopover,

@@ -79,6 +79,7 @@ const LABELS: Record<string, string> = {
   'hide.state': 'Hide state',
   'hide.setpoint_label': 'Hide target label',
   hide_setpoint: 'Hide target controls',
+  disable_setpoint_change_when_off: 'Disable target changes while off',
   'label.temperature': 'Current value label',
   'label.state': 'State label',
   'label.setpoint': 'Target label',
@@ -144,6 +145,7 @@ const DIRECT_FORM_PATHS = [
   'hide.state',
   'hide.setpoint_label',
   'hide_setpoint',
+  'disable_setpoint_change_when_off',
   'label.temperature',
   'label.state',
   'label.setpoint',
@@ -410,6 +412,10 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
                 schema: [
                   { name: 'hide_setpoint', selector: { boolean: {} } },
                   { name: 'hide.setpoint_label', selector: { boolean: {} } },
+                  {
+                    name: 'disable_setpoint_change_when_off',
+                    selector: { boolean: {} },
+                  },
                 ],
               },
             ],
@@ -570,6 +576,8 @@ export default class SimpleThermostatEditor extends LitElement {
       'hide.temperature': this.config.hide?.temperature === true,
       'hide.state': this.config.hide?.state === true,
       hide_setpoint: this.config.hide_setpoint === true,
+      disable_setpoint_change_when_off:
+        this.config.disable_setpoint_change_when_off === true,
       'hide.setpoint_label': this.config.hide?.setpoint_label === true,
       'label.temperature': this.config.label?.temperature ?? '',
       'label.state': this.config.label?.state ?? '',

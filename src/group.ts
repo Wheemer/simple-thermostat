@@ -272,8 +272,13 @@ export default class SimpleThermostatGroup extends LitElement {
 
       .group-menu {
         grid-area: menu;
+        width: 20px;
         background: transparent;
         color: var(--secondary-text-color);
+      }
+
+      .group-menu ha-icon {
+        transform: translateY(-1px);
       }
 
       .group-nav.previous {

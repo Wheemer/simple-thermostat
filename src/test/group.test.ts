@@ -63,6 +63,7 @@ const hass = {
       attributes: {
         friendly_name: 'Living Room',
         icon: 'mdi:air-conditioner',
+        current_temperature: 22.4,
       },
     },
     'climate.bedroom': {
@@ -74,6 +75,9 @@ const hass = {
     },
   },
   formatEntityName: (entity: any) => entity.attributes.friendly_name,
+  formatEntityState: (entity: any) => entity.state,
+  localize: (key: string) => key,
+  config: { unit_system: { temperature: '°C' } },
 }
 
 beforeEach(() => {
@@ -172,6 +176,42 @@ test('switches the embedded card without rewriting the selected card config', as
   expect(
     group.shadowRoot?.querySelector('.embedded-card-host simple-thermostat')
   ).toBe(initialChild)
+})
+
+test('keeps nested fan controls on grouped climate cards', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      {
+        entity: 'climate.living_room',
+        header: { name: 'Living AC' },
+        control: ['hvac', 'fan'],
+      },
+    ],
+  })
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.living_room': {
+        ...hass.states['climate.living_room'],
+        attributes: {
+          ...hass.states['climate.living_room'].attributes,
+          fan_modes: ['auto', 'low', 'medium', 'high'],
+          fan_mode: 'auto',
+        },
+      },
+    },
+  } as any
+  await group.updateComplete
+
+  expect(embeddedSetConfig).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      entity: 'climate.living_room',
+      control: ['hvac', 'fan'],
+    })
+  )
 })
 
 test('moves header toggles into the group selector and hides the embedded header', async () => {
@@ -332,6 +372,26 @@ test('keeps header controls in fixed columns so embedded content cannot nudge th
   expect(styles).toContain('grid-area: nav')
   expect(styles).toContain('justify-self: end')
   expect(styles).toContain('width: 78px')
+  expect(styles).toContain('width: 24px')
+  expect(styles).toContain('width: 20px')
+  expect(styles).toContain('height: 24px')
+  expect(styles).toContain('transform: translateY(-1px)')
+})
+
+test('does not hide selected card current value or state rows', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [{ entity: 'climate.living_room', header: { name: 'Living AC' } }],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const embeddedConfig = embeddedSetConfig.mock.calls.at(-1)?.[0]
+
+  expect(group.shadowRoot?.querySelector('.group-current')).toBe(null)
+  expect(embeddedConfig?.hide?.temperature).not.toBe(true)
+  expect(embeddedConfig?.hide?.state).not.toBe(true)
 })
 
 test('uses fit-to-space group title sizing without changing normal card titles', () => {

@@ -86,6 +86,7 @@ interface CardConfig {
   styles?: string
   service?: Service
   hide_setpoint?: boolean
+  disable_setpoint_change_when_off?: boolean
   hide?: {
     temperature?: boolean
     state?: boolean

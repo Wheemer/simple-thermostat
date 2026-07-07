@@ -611,7 +611,9 @@ export default class SimpleThermostat extends LitElement {
             stepLayout,
             isOff: entity.state === HVAC_MODES.OFF,
             disableSteppers:
-              entityDomain === 'climate' && entity.state === HVAC_MODES.OFF,
+              entityDomain === 'climate' &&
+              entity.state === HVAC_MODES.OFF &&
+              this.config.disable_setpoint_change_when_off === true,
           })}
         </section>
 

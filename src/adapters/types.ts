@@ -21,6 +21,12 @@ export interface EntityAdapter {
   /** Return the current measured value, for example current_temperature, current_humidity, or percentage. */
   getCurrentValue(attributes: LooseObject): number | string | null
 
+  /** Optionally return a unit for the built-in current value row. */
+  getCurrentValueUnit?(
+    attributes: LooseObject,
+    hassConfig?: LooseObject
+  ): string | boolean | null
+
   /** Return the default current-value display key for built-in entity rows. */
   getCurrentValueTemplate(): string
 

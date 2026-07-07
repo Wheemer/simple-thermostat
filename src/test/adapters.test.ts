@@ -56,10 +56,19 @@ test('fan adapter skips missing percentage setpoint', () => {
   })
 })
 
-test('fan adapter maps percentage setpoint service without duplicate current value', () => {
+test('fan adapter shows temperature as current value without duplicating percentage', () => {
   expect(fanAdapter.getCurrentValue({ percentage: 55 })).toBe(null)
+  expect(fanAdapter.getCurrentValue({ current_temperature: 22.4 })).toBe(22.4)
+  expect(
+    fanAdapter.getCurrentValueUnit(
+      { current_temperature: 22.4 },
+      { unit_system: { temperature: '°C' } }
+    )
+  ).toBe('°C')
   expect(fanAdapter.getCurrentValue({})).toBe(null)
-  expect(fanAdapter.getCurrentValueTemplate()).toBe('{{percentage|formatNumber}}')
+  expect(fanAdapter.getCurrentValueTemplate()).toBe(
+    '{{current_temperature|formatNumber}}'
+  )
   expect(fanAdapter.getSetpointService()).toEqual({
     domain: 'fan',
     service: 'set_percentage',
