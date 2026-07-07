@@ -122,8 +122,16 @@ function getModeList(
           : typeof specification[normalizedModeKey] === 'object'
             ? specification[normalizedModeKey]
             : {}
+      const { name: configuredName, ...modeValues } = values
+      const name: string | false =
+        configuredName === false
+          ? false
+          : typeof configuredName === 'string'
+            ? configuredName
+            : getModeName(modeKey)
+
       return {
-        ...values,
+        ...modeValues,
         icon:
           values.icon ??
           (type === MODES.FAN
@@ -131,10 +139,7 @@ function getModeList(
             : undefined) ??
           getModeIcon(modeKey),
         value: modeKey,
-        name:
-          values.name === false
-            ? modeKey
-            : (values.name ?? getModeName(modeKey)),
+        name,
       }
     })
 }

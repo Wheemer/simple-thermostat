@@ -573,6 +573,69 @@ test('climate controls keep fan above hvac without moving swing first', () => {
   expect(card.modes.map(({ type }) => type)).toEqual(['fan', 'hvac', 'swing'])
 })
 
+test('mode controls preserve explicit hidden names', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    layout: {
+      mode: {
+        headings: false,
+        icons: true,
+        names: true,
+      },
+    },
+    control: {
+      hvac: {
+        off: {
+          name: false,
+        },
+        heat: {
+          name: false,
+        },
+        cool: {
+          name: false,
+        },
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          hvac_modes: ['off', 'heat', 'cool'],
+          temperature: 20,
+          current_temperature: 19,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+    formatEntityState: (entity: any) => entity.state,
+  }
+
+  await card.updateComplete
+
+  expect(card.modes[0].list.map(({ name }) => name)).toEqual([
+    false,
+    false,
+    false,
+  ])
+  expect(card.shadowRoot?.querySelectorAll('.hvac .mode-item')).toHaveLength(3)
+  expect(card.shadowRoot?.querySelector('.hvac .mode-label')).toBe(null)
+})
+
 test('fan card does not fall back to climate current value or headings', async () => {
   document.body.innerHTML = ''
   const card = createCard()
