@@ -87,7 +87,7 @@ The editor handles the common v4 setup:
 - Setpoint visibility and v4 enhanced visuals.
 - Advanced labels, precision, action type, and mode display options.
 
-Use the YAML reference for specialized extra row formatting such as attributes, units, decimals, relative time, timer countdowns, templates, and custom CSS.
+Use the YAML reference for specialized extra row formatting such as attributes, units, decimals, relative time, timer countdowns, and custom CSS.
 
 ## Group Card
 
@@ -125,7 +125,7 @@ YAML is still supported for advanced customization, migration, and manual dashbo
 Use the [YAML reference](YAML_REFERENCE.md) for:
 
 - advanced mode filtering,
-- extra entity attributes, units, decimals, timer countdowns, relative time, and templates,
+- extra entity attributes, units, decimals, timer countdowns, and relative time,
 - manual setpoint definitions,
 - service overrides,
 - target value tap, hold, and double tap actions,
@@ -142,6 +142,11 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.0.14</strong></td>
+      <td>Fixed object-style <code>control</code> configs so entries set to <code>false</code> stay hidden.</td>
+    </tr>
+    <tr><td>Removed outdated README wording for unsupported extra-row templates.</td></tr>
     <tr>
       <td rowspan="4" nowrap><strong>v4.0.13</strong></td>
       <td>Fixed legacy <code>sensors:</code> labels importing as long Home Assistant friendly names.</td>

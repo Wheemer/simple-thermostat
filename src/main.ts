@@ -204,12 +204,18 @@ function buildConfiguredControlModes(
     const entries = Object.entries(config.control)
     if (entries.length > 0) {
       return entries
+        .filter(([, definition]) => definition !== false)
         .filter(([type]) =>
           supportsModeType(type, entityDomain, attributes, adapter)
         )
-        .map(([type, definition]: [string, ModeControlObject]) => {
-          const { _name, _hide_when_off, _icons, _heading, ...controlField } =
-            definition
+        .map(([type, definition]: [string, ModeControlObject | true]) => {
+          const {
+            _name,
+            _hide_when_off,
+            _icons,
+            _heading,
+            ...controlField
+          } = definition === true ? {} : definition
           return {
             type,
             hide_when_off: _hide_when_off,

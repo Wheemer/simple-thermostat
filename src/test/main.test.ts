@@ -987,6 +987,48 @@ test('legacy sensors render cleanly with heat_cool dual setpoints', async () => 
   expect(card.shadowRoot?.textContent).not.toContain('State')
 })
 
+test('object control config respects false entries', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    control: {
+      hvac: false,
+      preset: true,
+    },
+  } as any)
+
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: {
+          current_temperature: 20,
+          temperature: 21,
+          hvac_modes: ['off', 'heat', 'cool'],
+          preset_modes: ['eco', 'comfort'],
+          friendly_name: 'Living Room',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  } as any
+  await card.updateComplete
+
+  const text = card.shadowRoot?.textContent ?? ''
+  expect(text).toContain('eco')
+  expect(text).toContain('comfort')
+  expect(text).not.toContain('cool')
+})
+
 test('hass setter rebuilds even when state object references are unchanged', () => {
   const card = createCard()
   card.setConfig({
