@@ -10,6 +10,7 @@ export interface ConfigEntity {
   decimals?: number
   show?: boolean
   type?: 'relativetime'
+  template?: string
 }
 
 export interface Entity extends ConfigEntity {

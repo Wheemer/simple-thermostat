@@ -465,17 +465,17 @@ export default class SimpleThermostat extends LitElement {
       this.showEntities = false
     } else if (configuredEntities) {
       this.entities = configuredEntities.map(
-        ({ name, entity, attribute, unit = '', ...rest }) => {
+        ({ name, entity, attribute, template, unit = '', ...rest }) => {
           let state
           const names = [name]
           if (entity) {
             state = hass.states[entity]
             names.push(state?.attributes?.friendly_name)
-            if (attribute) {
+            if (attribute && !template) {
               state = state?.attributes?.[attribute]
             }
           } else if (attribute && attribute in (this.entity.attributes ?? {})) {
-            state = this.entity.attributes[attribute]
+            state = template ? this.entity : this.entity.attributes[attribute]
             names.push(attribute)
           }
           names.push(entity)
@@ -485,6 +485,8 @@ export default class SimpleThermostat extends LitElement {
             name: names.find((n) => !!n),
             state,
             entity,
+            attribute,
+            template,
             unit,
           } as Entity
         }

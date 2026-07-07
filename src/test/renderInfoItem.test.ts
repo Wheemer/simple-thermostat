@@ -150,6 +150,70 @@ test('does not render undefined when entity unit is missing', () => {
   expect(value.trim()).toBe('123')
 })
 
+test('entity row template can format state.raw like v3 sensors', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      locale: { language: 'en' },
+      formatEntityState: () => '20.44',
+    },
+    state: {
+      entity_id: 'sensor.guest_room_temperature',
+      state: '20.44',
+      attributes: {
+        friendly_name: 'Guest Room Temperature',
+      },
+    },
+    details: {
+      heading: 'Guest',
+      template: '{{state.raw|formatNumber}}',
+      config: { decimals: 0 },
+    },
+    openEntityPopover: () => undefined,
+    localize: (value: string) => value,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  const value = container.querySelector('.entity-value')?.textContent
+  expect(value?.trim()).toBe('20')
+})
+
+test('entity row template can use an attribute value as a top-level variable', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      locale: { language: 'en' },
+      formatEntityState: () => 'Partly cloudy',
+      formatEntityAttributeValue: () => '73 °F',
+    },
+    state: {
+      entity_id: 'sensor.outside_temperature_source',
+      state: 'partlycloudy',
+      attributes: {
+        friendly_name: 'Outside',
+        temperature: 73,
+      },
+    },
+    details: {
+      heading: 'Outside',
+      attribute: 'temperature',
+      template: '{{((temperature - 32) * 5 / 9)|formatNumber({decimals: 1})}} °C',
+    },
+    openEntityPopover: () => undefined,
+    localize: (value: string) => value,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  const value = container.querySelector('.entity-value')?.textContent
+  expect(value?.trim()).toBe('22.8 °C')
+})
+
 test('plain text rows with an entity id open more info from label and value', () => {
   const openEntityPopover = jest.fn()
   const result = renderInfoItem({

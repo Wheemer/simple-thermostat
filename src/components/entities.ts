@@ -72,6 +72,8 @@ export default function renderEntities({
           ...rest,
           heading: showLabels && name,
           tooltip: name,
+          config,
+          variables: config.variables,
         },
       })
     }) || null),

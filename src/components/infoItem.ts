@@ -1,8 +1,10 @@
 import { html, nothing } from 'lit'
+import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 import formatNumber from '../formatNumber'
 import { appendUnit } from '../unitFormat'
 import { LooseObject } from '../types'
 import { getToggleKind, getToggleKindClass } from '../toggleKind'
+import { renderTemplate } from '../template'
 import './timerRemaining'
 
 const TOGGLE_DOMAINS = [
@@ -22,6 +24,10 @@ interface InfoItemDetails extends LooseObject {
   tooltip?: string
   entity?: string
   type?: string
+  template?: string
+  attribute?: string
+  variables?: LooseObject
+  config?: LooseObject
 }
 
 interface InfoItemOptions {
@@ -67,6 +73,10 @@ export default function renderInfoItem({
     decimals,
     tooltip: configuredTooltip,
     entity,
+    template,
+    attribute,
+    variables,
+    config,
   } = details
   const hasConfiguredUnit = typeof unit === 'string' && unit.length > 0
   const entityId = typeof state === 'object' ? state.entity_id : entity
@@ -83,7 +93,24 @@ export default function renderInfoItem({
   let isToggleEntity = false
 
   let valueCell
-  if (type === 'relativetime') {
+  if (template && typeof state === 'object') {
+    const value = renderTemplate({
+      template,
+      stateObj: state,
+      attribute,
+      hass,
+      config,
+      variables,
+      localize,
+    })
+    valueCell = html`<div
+      class="entity-value ${canOpenEntity ? 'clickable' : ''}"
+      title=${entityTooltip}
+      @click="${canOpenEntity ? () => openEntityPopover(entityId) : null}"
+    >
+      ${unsafeHTML(appendUnit(value, hasConfiguredUnit ? unit : false))}
+    </div>`
+  } else if (type === 'relativetime') {
     valueCell = html`
       <div class="entity-value">
         <ha-relative-time .datetime=${state} .hass=${hass}></ha-relative-time>
