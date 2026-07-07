@@ -657,7 +657,7 @@ test('seeds recent activity from active devices before inactive timestamp noise'
   )
 })
 
-test('keeps persisted recent activity ahead of newer state timestamps', async () => {
+test('keeps persisted active activity ahead of newer inactive state timestamps', async () => {
   const config = {
     auto_select: { mode: 'recent_activity' as const, cooldown_ms: 0 },
     cards: [
@@ -686,6 +686,7 @@ test('keeps persisted recent activity ahead of newer state timestamps', async ()
       ...activeBedroomHass.states,
       'climate.living_room': {
         ...activeBedroomHass.states['climate.living_room'],
+        last_changed: '2026-07-05T11:00:00.000Z',
         last_updated: '2026-07-05T12:30:00.000Z',
       },
     },
@@ -708,6 +709,82 @@ test('keeps persisted recent activity ahead of newer state timestamps', async ()
 
   expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
     'Bedroom AC'
+  )
+})
+
+test('prefers newer active climate activity over stale persisted humidifier selection', async () => {
+  const config = {
+    auto_select: { mode: 'recent_activity' as const, cooldown_ms: 0 },
+    cards: [
+      {
+        entity: 'humidifier.basement_dehumidifiers',
+        header: { name: 'Basement Dehumidifiers' },
+      },
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+    ],
+  }
+  const humidifierHass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'humidifier.basement_dehumidifiers': {
+        entity_id: 'humidifier.basement_dehumidifiers',
+        state: 'on',
+        last_changed: '2026-07-05T12:00:00.000Z',
+        last_updated: '2026-07-05T12:00:00.000Z',
+        attributes: {
+          friendly_name: 'Basement Dehumidifiers',
+          action: 'idle',
+          humidity: 55,
+        },
+      },
+      'climate.living_room': {
+        ...hass.states['climate.living_room'],
+        state: 'cool',
+        last_changed: '2026-07-05T11:00:00.000Z',
+        last_updated: '2026-07-05T11:00:00.000Z',
+        attributes: {
+          ...hass.states['climate.living_room'].attributes,
+          hvac_action: 'idle',
+        },
+      },
+    },
+  }
+  const coolingHass = {
+    ...humidifierHass,
+    states: {
+      ...humidifierHass.states,
+      'climate.living_room': {
+        ...humidifierHass.states['climate.living_room'],
+        state: 'cool',
+        last_changed: '2026-07-05T11:00:00.000Z',
+        last_updated: '2026-07-05T13:00:00.000Z',
+        attributes: {
+          ...humidifierHass.states['climate.living_room'].attributes,
+          hvac_action: 'cooling',
+        },
+      },
+    },
+  }
+
+  const firstGroup = createGroup()
+  firstGroup.setConfig(config)
+  firstGroup.hass = humidifierHass as any
+  await firstGroup.updateComplete
+  await firstGroup.updateComplete
+
+  expect(firstGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Basement Dehumidifiers'
+  )
+
+  const secondGroup = createGroup()
+  secondGroup.setConfig(config)
+  secondGroup.hass = coolingHass as any
+  await secondGroup.updateComplete
+  await secondGroup.updateComplete
+
+  expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Living AC'
   )
 })
 

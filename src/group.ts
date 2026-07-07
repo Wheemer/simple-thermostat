@@ -49,6 +49,12 @@ interface ActivityRecord {
   timestamp: number
 }
 
+interface ActivityCandidate {
+  target: GroupTarget
+  timestamp: number
+  activeRank: number
+}
+
 const DEFAULT_SELECTOR = {
   icons: true,
   names: true,
@@ -806,9 +812,47 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private getActivityTimestamp(target: GroupTarget) {
     const state = this.hass?.states?.[target.entity]
-    const value = state?.last_updated ?? state?.last_changed
+    const activeRank = this.getActivityActiveRank(target)
+    const value =
+      activeRank > 1
+        ? state?.last_updated ?? state?.last_changed
+        : state?.last_changed ?? state?.last_updated
     const timestamp = typeof value === 'string' ? Date.parse(value) : NaN
     return Number.isFinite(timestamp) ? timestamp : 0
+  }
+
+  private getActivityCandidate(
+    target: GroupTarget,
+    timestamp = this.getActivityTimestamp(target)
+  ): ActivityCandidate {
+    return {
+      target,
+      timestamp,
+      activeRank: this.getActivityActiveRank(target),
+    }
+  }
+
+  private isBetterActivityCandidate(
+    candidate: ActivityCandidate,
+    selected?: ActivityCandidate
+  ) {
+    if (!selected) return true
+    if (candidate.activeRank !== selected.activeRank) {
+      return candidate.activeRank > selected.activeRank
+    }
+
+    return candidate.timestamp >= selected.timestamp
+  }
+
+  private getMostRecentStateActivityCandidate() {
+    return this.targets
+      .map((target) => this.getActivityCandidate(target))
+      .filter((candidate) => candidate.timestamp > 0)
+      .reduce<ActivityCandidate | undefined>((selected, candidate) => {
+        return this.isBetterActivityCandidate(candidate, selected)
+          ? candidate
+          : selected
+      }, undefined)
   }
 
   private applyPersistedActivitySelection(nextSignatures: Map<string, string>) {
@@ -834,8 +878,21 @@ export default class SimpleThermostatGroup extends LitElement {
       return
     }
 
+    const storedTarget = this.targets.find(
+      (target) => target.entity === stored.entity
+    )
     const currentSignature = nextSignatures.get(stored.entity)
-    if (currentSignature && currentSignature === stored.signature) {
+    if (storedTarget && currentSignature && currentSignature === stored.signature) {
+      const storedCandidate = this.getActivityCandidate(
+        storedTarget,
+        stored.timestamp
+      )
+      const latest = this.getMostRecentStateActivityCandidate()
+      if (latest && this.isBetterActivityCandidate(latest, storedCandidate)) {
+        this.selectMostRecentStateActivity(nextSignatures)
+        return
+      }
+
       this.selectEntity(stored.entity, false)
       return
     }
@@ -846,27 +903,7 @@ export default class SimpleThermostatGroup extends LitElement {
   private selectMostRecentStateActivity(
     nextSignatures?: Map<string, string>
   ) {
-    const latest = this.targets
-      .map((target) => ({
-        target,
-        timestamp: this.getActivityTimestamp(target),
-        activeRank: this.getActivityActiveRank(target),
-      }))
-      .filter((candidate) => candidate.timestamp > 0)
-      .reduce<
-        { target: GroupTarget; timestamp: number; activeRank: number } | undefined
-      >((selected, candidate) => {
-        if (
-          !selected ||
-          candidate.activeRank > selected.activeRank ||
-          (candidate.activeRank === selected.activeRank &&
-            candidate.timestamp >= selected.timestamp)
-        ) {
-          return candidate
-        }
-
-        return selected
-      }, undefined)
+    const latest = this.getMostRecentStateActivityCandidate()
 
     if (latest && latest.target.entity !== this.selectedEntity) {
       this.selectEntity(latest.target.entity, false)
@@ -896,10 +933,7 @@ export default class SimpleThermostatGroup extends LitElement {
       typeof action === 'string' ? action.toLowerCase() : ''
 
     if (domain === 'climate') {
-      if (
-        ['heating', 'cooling', 'drying'].includes(normalizedAction) ||
-        ['heat', 'cool', 'dry', 'fan_only'].includes(normalizedState)
-      ) {
+      if (['heating', 'cooling', 'drying'].includes(normalizedAction)) {
         return 2
       }
 
@@ -913,10 +947,7 @@ export default class SimpleThermostatGroup extends LitElement {
     }
 
     if (domain === 'humidifier') {
-      if (
-        ['drying', 'humidifying'].includes(normalizedAction) ||
-        normalizedState === 'on'
-      ) {
+      if (['drying', 'humidifying'].includes(normalizedAction)) {
         return 2
       }
 
@@ -931,7 +962,7 @@ export default class SimpleThermostatGroup extends LitElement {
   private syncAutoSelectRecentActivity() {
     if (!this.config || !this.hass || !this.targets.length) return
 
-    const changedTargets: Array<{ target: GroupTarget; timestamp: number }> = []
+    const changedTargets: ActivityCandidate[] = []
     const nextSignatures = new Map<string, string>()
 
     this.targets.forEach((target) => {
@@ -948,10 +979,7 @@ export default class SimpleThermostatGroup extends LitElement {
           signature,
           timestamp: Date.now(),
         })
-        changedTargets.push({
-          target,
-          timestamp: this.getActivityTimestamp(target),
-        })
+        changedTargets.push(this.getActivityCandidate(target, Date.now()))
       }
     })
 
@@ -972,7 +1000,7 @@ export default class SimpleThermostatGroup extends LitElement {
     }
 
     const latest = changedTargets.reduce((selected, candidate) =>
-      candidate.timestamp >= selected.timestamp ? candidate : selected
+      this.isBetterActivityCandidate(candidate, selected) ? candidate : selected
     )
     this.selectEntity(latest.target.entity, false)
   }
