@@ -77,6 +77,61 @@ test('inactive mode buttons use a consistent theme-derived overlay surface', () 
   )
 })
 
+test('mode colors keep the original simple-thermostat assignments', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const baseCardRule = styles.match(/ha-card\s*\{[^}]*\}/)?.[0] ?? ''
+
+  expect(baseCardRule).toContain('--auto-color: green')
+  expect(baseCardRule).toContain('--heat_cool-color: springgreen')
+  expect(baseCardRule).toContain('--cool-color: #2b9af9')
+  expect(baseCardRule).toContain('--heat-color: #ff8100')
+  expect(baseCardRule).toContain('--manual-color: #44739e')
+  expect(baseCardRule).toContain('--off-color: #8a8a8a')
+  expect(baseCardRule).toContain('--fan_only-color: #8a8a8a')
+  expect(baseCardRule).toContain('--dry-color: #efbd07')
+  expect(baseCardRule).not.toContain('--state-climate-heat-color')
+  expect(baseCardRule).not.toContain('--state-climate-cool-color')
+  expect(baseCardRule).not.toContain('--state-climate-heat-cool-color')
+})
+
+test('active mode backgrounds keep semantic mode colors', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const activeRule =
+    styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
+
+  expect(activeRule).toContain(
+    'var(--st-mode-color, var(--primary-color))'
+  )
+
+  const modeColors: Record<string, string> = {
+    heat: '--heat-color',
+    cool: '--cool-color',
+    heat_cool: '--heat_cool-color',
+    auto: '--auto-color',
+    dry: '--dry-color',
+    fan_only: '--fan_only-color',
+  }
+
+  for (const [mode, color] of Object.entries(modeColors)) {
+    const rule =
+      styles.match(
+        new RegExp(
+          `ha-card\\.standard-visuals \\.mode-item\\.active\\.${mode} \\{[^}]*\\}`
+        )
+      )?.[0] ?? ''
+
+    expect(rule).toContain(
+      `background: var(--st-mode-active-background, var(${color}))`
+    )
+  }
+})
+
 test('active header glow is applied to the icon wrapper for active domains', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),

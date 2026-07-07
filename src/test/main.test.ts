@@ -858,10 +858,33 @@ test('legacy config names are normalized to v4 names', () => {
   expect((card.config as any).sensors).toBeUndefined()
   expect(card.config.layout?.entities).toEqual({ type: 'table', labels: true })
   expect(card.config.layout?.step).toBe('column')
+  expect(card.config.enhanced_visuals).toBeUndefined()
   expect((card.config.layout as any)?.sensors).toBeUndefined()
   expect(card.config.label?.temperature).toBe('Currently')
   expect(card.config.label?.state).toBe('State')
   expect(card.config.hide?.state).toBe(true)
+  expect((card.config as any).version).toBeUndefined()
+})
+
+test('legacy version 3 import does not change enhanced visuals choice', () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    version: 3,
+  } as any)
+
+  expect(card.config.enhanced_visuals).toBeUndefined()
+  expect((card.config as any).version).toBeUndefined()
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    version: 3,
+    enhanced_visuals: true,
+  } as any)
+
+  expect(card.config.enhanced_visuals).toBe(true)
   expect((card.config as any).version).toBeUndefined()
 })
 
