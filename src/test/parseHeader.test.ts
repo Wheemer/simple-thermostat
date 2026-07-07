@@ -97,6 +97,26 @@ test('uses action-specific cooling icon for active cooling climate entities', ()
   )
 })
 
+test('uses a neutral thermostat icon for idle cooling-capable climate entities', () => {
+  const result = parseHeader(
+    {},
+    {
+      entity_id: 'climate.swing_ac',
+      state: 'heat_cool',
+      attributes: {
+        friendly_name: 'Swing AC',
+        hvac_action: 'idle',
+        hvac_modes: ['off', 'heat', 'cool', 'heat_cool'],
+      },
+    },
+    hass
+  )
+
+  expect(result && typeof result.icon === 'object' && result.icon.idle).toBe(
+    'mdi:thermostat'
+  )
+})
+
 test('keeps heat-only climate fallback as radiator', () => {
   const result = parseHeader(
     {},

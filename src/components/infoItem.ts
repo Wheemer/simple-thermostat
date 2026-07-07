@@ -260,7 +260,7 @@ export default function renderInfoItem({
           @click=${canOpenEntity ? () => openEntityPopover(entityId) : null}
         ></ha-icon>
       `
-    : ` ${heading}: `
+    : heading
 
   return html`<div
       class=${headingClasses}

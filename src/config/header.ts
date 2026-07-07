@@ -30,7 +30,7 @@ export const CLIMATE_COOLING_STATE_ICONS = {
   cooling: 'mdi:snowflake',
   fan: 'mdi:fan',
   heating: 'mdi:radiator',
-  idle: 'mdi:air-conditioner',
+  idle: 'mdi:thermostat',
   on: 'mdi:air-conditioner',
   off: 'mdi:air-conditioner',
 }

@@ -13,7 +13,7 @@
   --st-default-mode-transition: 200ms ease;
   --st-motion-ease: cubic-bezier(0.2, 0, 0, 1);
   --st-control-icon-size: var(--st-font-size-xl, 32px);
-  --st-header-icon-size: var(--st-font-size-header-icon, 26px);
+  --st-header-icon-size: var(--st-font-size-header-icon, 24px);
   --st-preset-icon-size: var(
     --st-font-size-preset-icon,
     var(--ha-font-size-xl, 20px)
@@ -42,15 +42,15 @@ ha-card {
 
   padding-bottom: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
 
-  --auto-color: green;
-  --heat_cool-color: springgreen;
-  --cool-color: #2b9af9;
-  --heat-color: #ff8100;
+  --auto-color: #66bb6a;
+  --heat_cool-color: #4ade80;
+  --cool-color: #60a5fa;
+  --heat-color: #fb923c;
   --manual-color: #44739e;
   --on-color: var(--primary-color);
   --off-color: #8a8a8a;
   --fan_only-color: #8a8a8a;
-  --dry-color: #efbd07;
+  --dry-color: #facc15;
   --st-mode-surface-background: color-mix(
     in srgb,
     var(--primary-text-color) 14%,
@@ -300,6 +300,7 @@ ha-card.loading {
   }
   &.with-labels {
     grid: auto-flow / auto auto;
+    column-gap: 8px;
     place-items: start;
   }
 }
@@ -322,9 +323,9 @@ ha-card.loading {
   white-space: normal;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  justify-self: end;
-  text-align: right;
+  justify-content: flex-start;
+  justify-self: start;
+  text-align: left;
   transition:
     color 180ms var(--st-motion-ease),
     filter 180ms var(--st-motion-ease);
@@ -861,7 +862,7 @@ ha-card.cooling .header__icon-wrap::before {
   transition: none;
 }
 ha-card:not(.standard-visuals) .mode-item.active .mode-icon {
-  color: var(--st-mode-active-icon-color);
+  color: var(--st-mode-active-color, var(--text-primary-color));
 }
 .mode-item .mode-icon {
   transition:

@@ -36,7 +36,7 @@ test('render into dom', () => {
   const heading = document.body.querySelector('div').textContent
   const value = document.body.querySelector('div:last-child').textContent
 
-  expect(heading.trim()).toBe(`${spec.heading}:`)
+  expect(heading.trim()).toBe(spec.heading)
   expect(value.trim()).toBe(spec.value)
 })
 
@@ -179,6 +179,25 @@ test('entity row template can format state.raw like v3 sensors', () => {
 
   const value = container.querySelector('.entity-value')?.textContent
   expect(value?.trim()).toBe('20')
+})
+
+test('entity row text headings render without a separator suffix', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {},
+    state: '73',
+    details: {
+      heading: 'Currently',
+    },
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  const heading = container.querySelector('.entity-heading')?.textContent
+  expect(heading?.trim()).toBe('Currently')
+  expect(heading).not.toContain(':')
 })
 
 test('entity row template can use an attribute value as a top-level variable', () => {

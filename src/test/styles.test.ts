@@ -60,7 +60,7 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('minmax(max-content, 1fr)')
 })
 
-test('entity table labels can wrap while values stay on one line', () => {
+test('entity table labels keep v3-style column alignment', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -70,11 +70,12 @@ test('entity table labels can wrap while values stay on one line', () => {
   const headingRule = styles.match(/\.entity-heading\s*\{[^}]*\}/)?.[0] ?? ''
   const valueRule = styles.match(/\.entity-value\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(tableLabelsRule).toContain(
-    'grid: auto-flow / auto auto'
-  )
+  expect(tableLabelsRule).toContain('grid: auto-flow / auto auto')
+  expect(tableLabelsRule).toContain('column-gap: 8px')
   expect(headingRule).toContain('min-width: 0')
   expect(headingRule).toContain('white-space: normal')
+  expect(headingRule).toContain('justify-self: start')
+  expect(headingRule).toContain('text-align: left')
   expect(valueRule).toContain('min-width: max-content')
   expect(valueRule).toContain('white-space: nowrap')
 })
@@ -108,7 +109,7 @@ test('standard visuals keep upstream-style header icon sizing', () => {
   expect(standardHeaderIconRule).toContain('height: 24px')
 })
 
-test('layout compatibility fixes do not retune semantic colors or icons', () => {
+test('layout compatibility fixes use softer semantic colors and a neutral idle icon', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -119,18 +120,18 @@ test('layout compatibility fixes do not retune semantic colors or icons', () => 
   )
 
   const baseCardRule = styles.match(/ha-card\s*\{[^}]*\}/)?.[0] ?? ''
-  expect(baseCardRule).toContain('--auto-color: green')
-  expect(baseCardRule).toContain('--heat_cool-color: springgreen')
-  expect(baseCardRule).toContain('--cool-color: #2b9af9')
-  expect(baseCardRule).toContain('--heat-color: #ff8100')
-  expect(baseCardRule).toContain('--dry-color: #efbd07')
-  expect(styles).not.toContain('--auto-color: #66bb6a')
-  expect(styles).not.toContain('--heat_cool-color: #4ade80')
-  expect(styles).not.toContain('--cool-color: #60a5fa')
-  expect(styles).not.toContain('--heat-color: #fb923c')
-  expect(styles).not.toContain('--dry-color: #facc15')
-  expect(headerConfig).toContain("idle: 'mdi:air-conditioner'")
-  expect(headerConfig).not.toContain("idle: 'mdi:thermostat'")
+  expect(baseCardRule).toContain('--auto-color: #66bb6a')
+  expect(baseCardRule).toContain('--heat_cool-color: #4ade80')
+  expect(baseCardRule).toContain('--cool-color: #60a5fa')
+  expect(baseCardRule).toContain('--heat-color: #fb923c')
+  expect(baseCardRule).toContain('--dry-color: #facc15')
+  expect(styles).not.toContain('--auto-color: green')
+  expect(styles).not.toContain('--heat_cool-color: springgreen')
+  expect(styles).not.toContain('--cool-color: #2b9af9')
+  expect(styles).not.toContain('--heat-color: #ff8100')
+  expect(styles).not.toContain('--dry-color: #efbd07')
+  expect(headerConfig).toContain("idle: 'mdi:thermostat'")
+  expect(headerConfig).not.toContain("idle: 'mdi:air-conditioner'")
 })
 
 test('inactive mode buttons use a consistent theme-derived overlay surface', () => {
@@ -155,21 +156,21 @@ test('inactive mode buttons use a consistent theme-derived overlay surface', () 
   )
 })
 
-test('mode colors keep the original simple-thermostat assignments', () => {
+test('mode colors use a softer semantic palette', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
   const baseCardRule = styles.match(/ha-card\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(baseCardRule).toContain('--auto-color: green')
-  expect(baseCardRule).toContain('--heat_cool-color: springgreen')
-  expect(baseCardRule).toContain('--cool-color: #2b9af9')
-  expect(baseCardRule).toContain('--heat-color: #ff8100')
+  expect(baseCardRule).toContain('--auto-color: #66bb6a')
+  expect(baseCardRule).toContain('--heat_cool-color: #4ade80')
+  expect(baseCardRule).toContain('--cool-color: #60a5fa')
+  expect(baseCardRule).toContain('--heat-color: #fb923c')
   expect(baseCardRule).toContain('--manual-color: #44739e')
   expect(baseCardRule).toContain('--off-color: #8a8a8a')
   expect(baseCardRule).toContain('--fan_only-color: #8a8a8a')
-  expect(baseCardRule).toContain('--dry-color: #efbd07')
+  expect(baseCardRule).toContain('--dry-color: #facc15')
   expect(baseCardRule).not.toContain('--state-climate-heat-color')
   expect(baseCardRule).not.toContain('--state-climate-cool-color')
   expect(baseCardRule).not.toContain('--state-climate-heat-cool-color')
@@ -182,9 +183,16 @@ test('active mode backgrounds keep semantic mode colors', () => {
   )
   const activeRule =
     styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
+  const activeIconRule =
+    styles.match(
+      /ha-card:not\(\.standard-visuals\) \.mode-item\.active \.mode-icon\s*\{[^}]*\}/
+    )?.[0] ?? ''
 
   expect(activeRule).toContain(
     'var(--st-mode-color, var(--primary-color))'
+  )
+  expect(activeIconRule).toContain(
+    'color: var(--st-mode-active-color, var(--text-primary-color))'
   )
 
   const modeColors: Record<string, string> = {
@@ -258,7 +266,7 @@ test('header icons keep their own compact size without shrinking controls', () =
 
   expect(hostRule).toContain('--st-control-icon-size: var(--st-font-size-xl, 32px)')
   expect(hostRule).toContain(
-    '--st-header-icon-size: var(--st-font-size-header-icon, 26px)'
+    '--st-header-icon-size: var(--st-font-size-header-icon, 24px)'
   )
   expect(headerIconRule).toContain('var(--st-header-icon-size)')
   expect(headerIconRule).not.toContain('var(--st-control-icon-size)')
