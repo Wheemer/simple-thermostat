@@ -572,6 +572,145 @@ test('auto-selects the device with recent meaningful activity', async () => {
   )
 })
 
+test('uses persisted recent activity when the group reloads', async () => {
+  const config = {
+    auto_select: { mode: 'recent_activity' as const, cooldown_ms: 0 },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  }
+  const activeHass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        state: 'heat',
+        last_updated: '2026-07-05T12:00:00.000Z',
+        attributes: {
+          ...hass.states['climate.bedroom'].attributes,
+          hvac_action: 'heating',
+        },
+      },
+    },
+  }
+
+  const firstGroup = createGroup()
+  firstGroup.setConfig(config)
+  firstGroup.hass = hass as any
+  await firstGroup.updateComplete
+
+  firstGroup.hass = activeHass as any
+  await firstGroup.updateComplete
+  await firstGroup.updateComplete
+
+  const secondGroup = createGroup()
+  secondGroup.setConfig(config)
+  secondGroup.hass = activeHass as any
+  await secondGroup.updateComplete
+  await secondGroup.updateComplete
+
+  expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Bedroom AC'
+  )
+})
+
+test('seeds recent activity from active devices before inactive timestamp noise', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    auto_select: { mode: 'recent_activity' as const, cooldown_ms: 0 },
+    cards: [
+      { entity: 'climate.garage', header: { name: 'Garage Heat' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.garage': {
+        entity_id: 'climate.garage',
+        state: 'off',
+        last_updated: '2026-07-05T12:10:00.000Z',
+        attributes: {
+          friendly_name: 'Garage Heat',
+        },
+      },
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        state: 'cool',
+        last_updated: '2026-07-05T12:00:00.000Z',
+        attributes: {
+          ...hass.states['climate.bedroom'].attributes,
+          hvac_action: 'cooling',
+        },
+      },
+    },
+  } as any
+  await group.updateComplete
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Bedroom AC'
+  )
+})
+
+test('keeps persisted recent activity ahead of newer state timestamps', async () => {
+  const config = {
+    auto_select: { mode: 'recent_activity' as const, cooldown_ms: 0 },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  }
+  const activeBedroomHass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        state: 'heat',
+        last_updated: '2026-07-05T12:00:00.000Z',
+        attributes: {
+          ...hass.states['climate.bedroom'].attributes,
+          hvac_action: 'heating',
+        },
+      },
+    },
+  }
+  const noisyTimestampHass = {
+    ...activeBedroomHass,
+    states: {
+      ...activeBedroomHass.states,
+      'climate.living_room': {
+        ...activeBedroomHass.states['climate.living_room'],
+        last_updated: '2026-07-05T12:30:00.000Z',
+      },
+    },
+  }
+
+  const firstGroup = createGroup()
+  firstGroup.setConfig(config)
+  firstGroup.hass = hass as any
+  await firstGroup.updateComplete
+
+  firstGroup.hass = activeBedroomHass as any
+  await firstGroup.updateComplete
+  await firstGroup.updateComplete
+
+  const secondGroup = createGroup()
+  secondGroup.setConfig(config)
+  secondGroup.hass = noisyTimestampHass as any
+  await secondGroup.updateComplete
+  await secondGroup.updateComplete
+
+  expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Bedroom AC'
+  )
+})
+
 test('does not auto-select for current temperature updates', async () => {
   const group = createGroup()
 

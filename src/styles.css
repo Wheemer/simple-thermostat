@@ -174,6 +174,12 @@ ha-card.loading {
   min-width: 0;
 }
 
+.body.has-entities.setpoint-count-2 {
+  grid-template-columns:
+    minmax(min-content, max-content) minmax(max-content, 1fr)
+    minmax(max-content, 1fr);
+}
+
 .toggle-label {
   color: var(--st-toggle-label-color, var(--primary-text-color));
   --st-toggle-color: var(--primary-color);

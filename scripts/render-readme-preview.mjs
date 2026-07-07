@@ -1,11 +1,31 @@
 import { readFileSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { marked } from 'marked'
 
 const markdown = readFileSync('README.md', 'utf8')
-const rendered = marked.parse(markdown)
+const repoContext = 'Wheemer/simple-thermostat'
 
-const style = `body { margin: 0; background: #0d1117; }
-      .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; padding: 45px; }
+function renderMarkdown() {
+  try {
+    return execFileSync('gh', ['api', '/markdown', '--input', '-'], {
+      input: JSON.stringify({
+        text: markdown,
+        mode: 'gfm',
+        context: repoContext,
+      }),
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore'],
+    })
+  } catch (_err) {
+    return marked.parse(markdown)
+  }
+}
+
+const rendered = renderMarkdown()
+
+const style = `body { margin: 0; background: #0d1117; color-scheme: dark; }
+      .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 1012px; margin: 0 auto; padding: 32px; }
+      .markdown-body img { max-width: 100%; }
       @media (max-width: 767px) { .markdown-body { padding: 24px; } }`
 
 const page = (body) => `<!doctype html>

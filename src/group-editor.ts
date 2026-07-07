@@ -13,6 +13,11 @@ type EditableTarget = Record<string, any> & {
 }
 
 const SUPPORTED_DOMAINS = ['climate', 'fan', 'humidifier']
+const DEFAULT_SELECTOR = {
+  icons: true,
+  names: true,
+  states: false,
+}
 
 function toEditableTarget(target: GroupTargetConfig): EditableTarget {
   if (typeof target === 'string') return { entity: target }
@@ -47,7 +52,7 @@ export default class SimpleThermostatGroupEditor extends LitElement {
 
       .section {
         display: grid;
-        gap: 12px;
+        gap: 16px;
       }
 
       .target {
@@ -58,6 +63,30 @@ export default class SimpleThermostatGroupEditor extends LitElement {
         padding: 12px;
         border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
         border-radius: 8px;
+      }
+
+      .editor-section {
+        display: grid;
+        gap: 10px;
+      }
+
+      .section-heading {
+        display: grid;
+        gap: 2px;
+      }
+
+      .section-heading h3 {
+        margin: 0;
+        color: var(--primary-text-color);
+        font-size: var(--ha-font-size-l, 16px);
+        font-weight: 500;
+      }
+
+      .section-heading p {
+        margin: 0;
+        color: var(--secondary-text-color);
+        font-size: var(--ha-font-size-s, 13px);
+        line-height: 1.35;
       }
 
       .target-fields {
@@ -93,51 +122,76 @@ export default class SimpleThermostatGroupEditor extends LitElement {
 
       .selector-options {
         display: grid;
+        gap: 8px;
+      }
+
+      .option-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         gap: 12px;
-        margin-top: 16px;
-      }
-
-      label {
-        display: grid;
-        gap: 4px;
-        color: var(--secondary-text-color);
-        font-size: 12px;
-      }
-
-      input,
-      select {
         min-height: 40px;
-        box-sizing: border-box;
-        border-radius: 6px;
-        border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
-        background: var(--card-background-color);
+      }
+
+      .option-text {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .option-title {
         color: var(--primary-text-color);
-        padding: 0 10px;
-        font: inherit;
+        font-size: var(--ha-font-size-m, 14px);
+      }
+
+      .option-description {
+        color: var(--secondary-text-color);
+        font-size: var(--ha-font-size-s, 13px);
+        line-height: 1.25;
       }
 
       ha-icon-button {
         color: var(--secondary-text-color);
       }
+
+      @media (max-width: 500px) {
+        .target {
+          grid-template-columns: 1fr;
+        }
+
+        .target-actions {
+          flex-direction: row;
+          justify-content: flex-end;
+        }
+
+        .target-meta {
+          grid-template-columns: 1fr;
+        }
+      }
     `
   }
 
   setConfig(config: GroupConfig) {
-    this.config = {
-      ...config,
-      cards: normalizeTargets(config),
-      entities: undefined,
-      selector: {
-        icons: config.selector?.icons !== false,
-        names: config.selector?.names !== false,
-        states: config.selector?.states === true,
-      },
-    }
+    this.config = { ...config }
   }
 
   private commit(config: GroupConfig) {
-    this.config = config
-    fireEvent(this, 'config-changed', { config })
+    const cleanConfig = this.cleanConfig(config)
+    this.config = cleanConfig
+    fireEvent(this, 'config-changed', { config: cleanConfig })
+  }
+
+  private cleanConfig(config: GroupConfig): GroupConfig {
+    const clean = { ...config }
+    for (const key of Object.keys(clean)) {
+      if ((clean as Record<string, unknown>)[key] === undefined) {
+        delete (clean as Record<string, unknown>)[key]
+      }
+    }
+    if (clean.selector && Object.keys(clean.selector).length === 0) {
+      delete clean.selector
+    }
+    return clean
   }
 
   private getTargets() {
@@ -147,7 +201,7 @@ export default class SimpleThermostatGroupEditor extends LitElement {
   private updateTarget(index: number, patch: Partial<EditableTarget>) {
     const targets = this.getTargets()
     targets[index] = { ...targets[index], ...patch }
-    this.commit({ ...this.config, cards: this.cleanTargets(targets) })
+    this.commitTargets(targets)
   }
 
   private cleanTargets(
@@ -172,22 +226,30 @@ export default class SimpleThermostatGroupEditor extends LitElement {
 
   private addTarget() {
     const targets = [...this.getTargets(), { entity: '' }]
-    this.commit({ ...this.config, cards: this.cleanTargets(targets) })
+    this.commitTargets(targets)
   }
 
   private removeTarget(index: number) {
     const targets = this.getTargets().filter(
       (_, targetIndex) => targetIndex !== index
     )
-    this.commit({
-      ...this.config,
-      cards: this.cleanTargets(targets.length ? targets : [{ entity: '' }]),
-    })
+    this.commitTargets(targets.length ? targets : [{ entity: '' }])
+  }
+
+  private commitTargets(targets: Array<EditableTarget>) {
+    const { entities: _entities, ...config } = this.config
+    this.commit({ ...config, cards: this.cleanTargets(targets) })
   }
 
   private updateSelector(path: 'icons' | 'names' | 'states', value: unknown) {
     const selector = { ...(this.config.selector ?? {}) }
-    selector[path] = Boolean(value)
+    const boolValue = Boolean(value)
+
+    if (boolValue === DEFAULT_SELECTOR[path]) {
+      delete selector[path]
+    } else {
+      selector[path] = boolValue
+    }
 
     this.commit({ ...this.config, selector })
   }
@@ -256,7 +318,7 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     ev.stopPropagation()
     const targets = this.getTargets()
     targets[index] = toEditableTarget(ev.detail.config)
-    this.commit({ ...this.config, cards: this.cleanTargets(targets) })
+    this.commitTargets(targets)
   }
 
   private toggleTargetEditor(index: number) {
@@ -265,14 +327,11 @@ export default class SimpleThermostatGroupEditor extends LitElement {
   }
 
   private renderEntityPicker(target: EditableTarget, index: number) {
-    const domains = SUPPORTED_DOMAINS.map((domain) => ({ domain }))
-
     return html`
       <ha-entity-picker
         .hass=${this.hass}
         .value=${target.entity}
         .includeDomains=${SUPPORTED_DOMAINS}
-        .include_entities=${domains}
         allow-custom-entity
         label="Entity"
         @value-changed=${(ev: CustomEvent) =>
@@ -289,27 +348,21 @@ export default class SimpleThermostatGroupEditor extends LitElement {
         <div class="target-fields">
           ${this.renderEntityPicker(target, index)}
           <div class="target-meta">
-            <label>
-              Name
-              <input
-                .value=${target.name ?? ''}
-                @input=${(ev: Event) =>
-                  this.updateTarget(index, {
-                    name: (ev.currentTarget as HTMLInputElement).value,
-                  })}
-              />
-            </label>
-            <label>
-              Icon
-              <input
-                .value=${target.icon ?? ''}
-                placeholder="mdi:air-conditioner"
-                @input=${(ev: Event) =>
-                  this.updateTarget(index, {
-                    icon: (ev.currentTarget as HTMLInputElement).value,
-                  })}
-              />
-            </label>
+            <ha-textfield
+              label="Name"
+              .value=${target.name ?? ''}
+              @input=${(ev: Event) =>
+                this.updateTarget(index, {
+                  name: (ev.currentTarget as HTMLInputElement).value,
+                })}
+            ></ha-textfield>
+            <ha-icon-picker
+              .hass=${this.hass}
+              label="Icon"
+              .value=${target.icon ?? ''}
+              @value-changed=${(ev: CustomEvent) =>
+                this.updateTarget(index, { icon: ev.detail.value })}
+            ></ha-icon-picker>
           </div>
         </div>
         <div class="target-actions">
@@ -349,53 +402,69 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     const targets = this.getTargets()
 
     return html`
-      <div class="section">
+      <div class="section editor-section">
+        <div class="section-heading">
+          <h3>Cards</h3>
+          <p>Choose the cards this group switches between.</p>
+        </div>
         ${targets.map((target, index) => this.renderTarget(target, index))}
         <div class="actions">
-          <ha-button size="s" @click=${this.addTarget}>Add entity</ha-button>
+          <ha-button size="s" @click=${this.addTarget}>Add card</ha-button>
         </div>
       </div>
 
-      <div class="selector-options">
-        <ha-formfield label="Show icons">
-          <ha-switch
-            .checked=${selector.icons !== false}
-            @change=${(ev: Event) =>
-              this.updateSelector(
-                'icons',
-                (ev.currentTarget as HTMLInputElement).checked
-              )}
-          ></ha-switch>
-        </ha-formfield>
-        <ha-formfield label="Show names">
-          <ha-switch
-            .checked=${selector.names !== false}
-            @change=${(ev: Event) =>
-              this.updateSelector(
-                'names',
-                (ev.currentTarget as HTMLInputElement).checked
-              )}
-          ></ha-switch>
-        </ha-formfield>
-        <ha-formfield label="Show states">
-          <ha-switch
-            .checked=${selector.states === true}
-            @change=${(ev: Event) =>
-              this.updateSelector(
-                'states',
-                (ev.currentTarget as HTMLInputElement).checked
-              )}
-          ></ha-switch>
-        </ha-formfield>
-        <ha-formfield label="Follow active device">
-          <ha-switch
-            .checked=${this.isAutoSelectEnabled()}
-            @change=${(ev: Event) =>
-              this.updateAutoSelect(
-                (ev.currentTarget as HTMLInputElement).checked
-              )}
-          ></ha-switch>
-        </ha-formfield>
+      <div class="editor-section">
+        <div class="section-heading">
+          <h3>Behavior</h3>
+          <p>Control how the group chooses and labels the active card.</p>
+        </div>
+        <div class="selector-options">
+          ${this.renderOption(
+            'Follow active device',
+            'Switch to a card when its mode or on/off activity changes.',
+            this.isAutoSelectEnabled(),
+            (checked) => this.updateAutoSelect(checked)
+          )}
+          ${this.renderOption(
+            'Show icons',
+            'Show each card icon in the selector and menu.',
+            selector.icons !== false,
+            (checked) => this.updateSelector('icons', checked)
+          )}
+          ${this.renderOption(
+            'Show names',
+            'Show card names in the selector and menu.',
+            selector.names !== false,
+            (checked) => this.updateSelector('names', checked)
+          )}
+          ${this.renderOption(
+            'Show states',
+            'Show current states in the selector menu.',
+            selector.states === true,
+            (checked) => this.updateSelector('states', checked)
+          )}
+        </div>
+      </div>
+    `
+  }
+
+  private renderOption(
+    title: string,
+    description: string,
+    checked: boolean,
+    update: (checked: boolean) => void
+  ) {
+    return html`
+      <div class="option-row">
+        <div class="option-text">
+          <span class="option-title">${title}</span>
+          <span class="option-description">${description}</span>
+        </div>
+        <ha-switch
+          .checked=${checked}
+          @change=${(ev: Event) =>
+            update((ev.currentTarget as HTMLInputElement).checked)}
+        ></ha-switch>
       </div>
     `
   }

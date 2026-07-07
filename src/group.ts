@@ -43,6 +43,12 @@ interface GroupTarget {
   config: LooseObject
 }
 
+interface ActivityRecord {
+  entity: string
+  signature: string
+  timestamp: number
+}
+
 const DEFAULT_SELECTOR = {
   icons: true,
   names: true,
@@ -128,6 +134,7 @@ export default class SimpleThermostatGroup extends LitElement {
   private fadeInAfterSync = false
   private activitySignatures = new Map<string, string>()
   private activitySignaturesInitialized = false
+  private persistedActivityApplied = false
   private lastManualSelectionAt = 0
 
   static get styles() {
@@ -600,6 +607,7 @@ export default class SimpleThermostatGroup extends LitElement {
     this.selectedEntity = this.getInitialSelection(config, targets)
     this.activitySignatures.clear()
     this.activitySignaturesInitialized = false
+    this.persistedActivityApplied = false
   }
 
   protected updated() {
@@ -647,12 +655,53 @@ export default class SimpleThermostatGroup extends LitElement {
     }
   }
 
+  private readStoredActivity(config: GroupConfig): ActivityRecord | undefined {
+    try {
+      const value = window.localStorage?.getItem(this.getActivityStorageKey(config))
+      if (!value) return undefined
+
+      const parsed = JSON.parse(value) as Partial<ActivityRecord>
+      if (
+        typeof parsed.entity === 'string' &&
+        typeof parsed.signature === 'string' &&
+        Number.isFinite(parsed.timestamp)
+      ) {
+        return {
+          entity: parsed.entity,
+          signature: parsed.signature,
+          timestamp: Number(parsed.timestamp),
+        }
+      }
+    } catch (_err) {
+      return undefined
+    }
+
+    return undefined
+  }
+
+  private writeStoredActivity(record: ActivityRecord) {
+    if (!this.config) return
+
+    try {
+      window.localStorage?.setItem(
+        this.getActivityStorageKey(this.config),
+        JSON.stringify(record)
+      )
+    } catch (_err) {
+      // Browsers can block localStorage in private contexts; live auto-select still works.
+    }
+  }
+
   private getStorageKey(config: GroupConfig) {
     if (config.storage_key)
       return `simple-thermostat-group:${config.storage_key}`
 
     const entities = this.targets.map((target) => target.entity).join('|')
     return `simple-thermostat-group:${entities}`
+  }
+
+  private getActivityStorageKey(config: GroupConfig) {
+    return `${this.getStorageKey(config)}:recent-activity`
   }
 
   private getSelectedTarget() {
@@ -762,6 +811,123 @@ export default class SimpleThermostatGroup extends LitElement {
     return Number.isFinite(timestamp) ? timestamp : 0
   }
 
+  private applyPersistedActivitySelection(nextSignatures: Map<string, string>) {
+    if (
+      this.persistedActivityApplied ||
+      !this.config ||
+      !this.isRecentActivityAutoSelectEnabled()
+    ) {
+      return
+    }
+
+    this.persistedActivityApplied = true
+
+    const stored = this.readStoredActivity(this.config)
+    if (!stored) {
+      this.selectMostRecentStateActivity(nextSignatures)
+      return
+    }
+
+    const valid = this.targets.some((target) => target.entity === stored.entity)
+    if (!valid) {
+      this.selectMostRecentStateActivity(nextSignatures)
+      return
+    }
+
+    const currentSignature = nextSignatures.get(stored.entity)
+    if (currentSignature && currentSignature === stored.signature) {
+      this.selectEntity(stored.entity, false)
+      return
+    }
+
+    this.selectMostRecentStateActivity(nextSignatures)
+  }
+
+  private selectMostRecentStateActivity(
+    nextSignatures?: Map<string, string>
+  ) {
+    const latest = this.targets
+      .map((target) => ({
+        target,
+        timestamp: this.getActivityTimestamp(target),
+        activeRank: this.getActivityActiveRank(target),
+      }))
+      .filter((candidate) => candidate.timestamp > 0)
+      .reduce<
+        { target: GroupTarget; timestamp: number; activeRank: number } | undefined
+      >((selected, candidate) => {
+        if (
+          !selected ||
+          candidate.activeRank > selected.activeRank ||
+          (candidate.activeRank === selected.activeRank &&
+            candidate.timestamp >= selected.timestamp)
+        ) {
+          return candidate
+        }
+
+        return selected
+      }, undefined)
+
+    if (latest && latest.target.entity !== this.selectedEntity) {
+      this.selectEntity(latest.target.entity, false)
+    }
+
+    if (latest && nextSignatures) {
+      const signature = nextSignatures.get(latest.target.entity)
+      if (signature) {
+        this.writeStoredActivity({
+          entity: latest.target.entity,
+          signature,
+          timestamp: latest.timestamp,
+        })
+      }
+    }
+  }
+
+  private getActivityActiveRank(target: GroupTarget) {
+    const state = this.hass?.states?.[target.entity]
+    if (!state) return 0
+
+    const domain = getDomain(target.entity)
+    const action = getEntityAction(state) ?? state.attributes?.action
+    const normalizedState =
+      typeof state.state === 'string' ? state.state.toLowerCase() : ''
+    const normalizedAction =
+      typeof action === 'string' ? action.toLowerCase() : ''
+
+    if (domain === 'climate') {
+      if (
+        ['heating', 'cooling', 'drying'].includes(normalizedAction) ||
+        ['heat', 'cool', 'dry', 'fan_only'].includes(normalizedState)
+      ) {
+        return 2
+      }
+
+      return normalizedState && normalizedState !== 'off' ? 1 : 0
+    }
+
+    if (domain === 'fan') {
+      const percentage = Number(state.attributes?.percentage)
+      if (normalizedState === 'on' || percentage > 0) return 2
+      return 0
+    }
+
+    if (domain === 'humidifier') {
+      if (
+        ['drying', 'humidifying'].includes(normalizedAction) ||
+        normalizedState === 'on'
+      ) {
+        return 2
+      }
+
+      return normalizedState && !['off', 'idle'].includes(normalizedState)
+        ? 1
+        : 0
+    }
+
+    return normalizedState && normalizedState !== 'off' ? 1 : 0
+  }
+
   private syncAutoSelectRecentActivity() {
     if (!this.config || !this.hass || !this.targets.length) return
 
@@ -777,6 +943,11 @@ export default class SimpleThermostatGroup extends LitElement {
         signature &&
         signature !== this.activitySignatures.get(target.entity)
       ) {
+        this.writeStoredActivity({
+          entity: target.entity,
+          signature,
+          timestamp: Date.now(),
+        })
         changedTargets.push({
           target,
           timestamp: this.getActivityTimestamp(target),
@@ -787,6 +958,7 @@ export default class SimpleThermostatGroup extends LitElement {
     this.activitySignatures = nextSignatures
     if (!this.activitySignaturesInitialized) {
       this.activitySignaturesInitialized = true
+      this.applyPersistedActivitySelection(nextSignatures)
       return
     }
 

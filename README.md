@@ -2,7 +2,7 @@
 
 # Simple Thermostat
 
-### A HVAC, thermostat, climate, fan, and humidifier card for Home Assistant Lovelace UI
+### An HVAC, thermostat, climate, fan, and humidifier card for Home Assistant Lovelace UI
 
 [![HACS Default](https://img.shields.io/badge/HACS-DEFAULT-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://github.com/hacs/integration)
 [![Home Assistant 2024.8+](https://img.shields.io/badge/HOME%20ASSISTANT-2024.8%2B-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://www.home-assistant.io/)
@@ -47,12 +47,12 @@ A compact Lovelace card for Home Assistant climate, fan, humidifier, and dehumid
 1. Open **HACS** in Home Assistant.
 2. Go to **Frontend** or search for **Simple Thermostat**.
 3. Install **Simple Thermostat**.
-4. Enable prereleases if you want to try the latest v4 release candidate.
+4. Enable prereleases only if you want to test upcoming builds before they are promoted.
 5. Refresh Home Assistant and clear the browser cache if the old card is still loaded.
 
 ### Migrating from another fork
 
-If you installed `simple-thermostat` from another repository, uninstall the old HACS entry first. Then add this repository as the dashboard custom repository and install it again.
+If you installed `simple-thermostat` from another repository, uninstall the old HACS entry first. Then install **Simple Thermostat** from the default HACS catalog.
 
 If you are not upgrading to v4, keep using the [v3 documentation](https://github.com/Wheemer/simple-thermostat/tree/v3) for the older config surface.
 
@@ -87,11 +87,13 @@ The editor handles the common v4 setup:
 - Setpoint visibility and v4 enhanced visuals.
 - Advanced labels, precision, action type, and mode display options.
 
+Use the YAML reference for specialized extra row formatting such as attributes, units, decimals, relative time, timer countdowns, templates, and custom CSS.
+
 ## Group Card
 
-Use **Simple Thermostat Group** when you want several climate, fan, or humidifier cards to share one dashboard footprint. The group card keeps each selected Simple Thermostat card intact and adds a compact header for moving between them.
+Use **Simple Thermostat Group** when you want several climate, fan, humidifier, or dehumidifier cards to share one dashboard footprint. The group card keeps each selected Simple Thermostat card intact and adds a compact header for moving between them.
 
-Add `custom:simple-thermostat-group` from the visual editor, choose the entities or cards you want in the group, then use the arrows or menu to switch between them.
+Add `custom:simple-thermostat-group` from the visual editor, choose the cards you want in the group, then use the arrows or menu to switch between them. The group editor keeps normal per-card options behind each card's **Configure** button so advanced layouts stay scoped to the selected card.
 
 ```yaml
 type: custom:simple-thermostat-group
@@ -140,6 +142,13 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.13</strong></td>
+      <td>Fixed legacy <code>sensors:</code> labels importing as long Home Assistant friendly names.</td>
+    </tr>
+    <tr><td>Restored legacy <code>show: false</code> behavior for imported sensor rows.</td></tr>
+    <tr><td>Preserved the old vertical setpoint stepper default for imported <code>version: 3</code> cards unless <code>layout.step</code> is explicitly configured.</td></tr>
+    <tr><td>Improved dual-setpoint layout so entity rows do not collide with heat/cool target controls.</td></tr>
     <tr>
       <td rowspan="4" nowrap><strong>v4.0.12</strong></td>
       <td>Added <code>hide_when</code> for mode-aware setpoint visibility.</td>

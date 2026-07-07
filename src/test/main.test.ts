@@ -837,7 +837,11 @@ test('legacy config names are normalized to v4 names', () => {
   card.setConfig({
     entity: 'climate.living_room',
     current_temperature_entity: 'sensor.living_room_temperature',
-    sensors: [{ entity: 'sensor.living_room_humidity' }],
+    sensors: [
+      { id: 'temperature', label: 'Currently' },
+      { id: 'state', label: 'State', show: false },
+      { entity: 'sensor.living_room_humidity', label: 'Humidity' },
+    ],
     layout: {
       sensors: { type: 'table', labels: true },
     },
@@ -849,12 +853,138 @@ test('legacy config names are normalized to v4 names', () => {
   )
   expect((card.config as any).current_temperature_entity).toBeUndefined()
   expect(card.config.entities).toEqual([
-    { entity: 'sensor.living_room_humidity' },
+    { entity: 'sensor.living_room_humidity', name: 'Humidity' },
   ])
   expect((card.config as any).sensors).toBeUndefined()
   expect(card.config.layout?.entities).toEqual({ type: 'table', labels: true })
+  expect(card.config.layout?.step).toBe('column')
   expect((card.config.layout as any)?.sensors).toBeUndefined()
+  expect(card.config.label?.temperature).toBe('Currently')
+  expect(card.config.label?.state).toBe('State')
+  expect(card.config.hide?.state).toBe(true)
   expect((card.config as any).version).toBeUndefined()
+})
+
+test('legacy version 3 import preserves explicit row step layout', () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    version: 3,
+    layout: {
+      step: 'row',
+    },
+  } as any)
+
+  expect(card.config.layout?.step).toBe('row')
+  expect((card.config as any).version).toBeUndefined()
+})
+
+test('legacy sensors render cleanly with heat_cool dual setpoints', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.upstairs',
+    version: 3,
+    step_size: 1,
+    decimals: 0,
+    sensors: [
+      { id: 'temperature', label: 'Currently' },
+      { id: 'state', label: 'State', show: false },
+      {
+        entity: 'sensor.guest_room_sensor_temperature',
+        label: 'Guest',
+      },
+      {
+        entity: 'binary_sensor.upstairs_motion',
+        label: 'Motion',
+      },
+      {
+        entity: 'sensor.office',
+        label: 'Office',
+      },
+    ],
+    unit: ' ',
+    fallback: 'Off',
+    control: ['hvac'],
+    layout: {
+      mode: {
+        headings: false,
+      },
+    },
+  } as any)
+
+  card.hass = {
+    states: {
+      'climate.upstairs': {
+        entity_id: 'climate.upstairs',
+        state: 'heat_cool',
+        attributes: {
+          current_temperature: 73,
+          target_temp_low: 67,
+          target_temp_high: 73,
+          min_temp: 45,
+          max_temp: 95,
+          hvac_modes: ['off', 'heat', 'cool', 'heat_cool'],
+          supported_features: 3,
+          friendly_name: 'Upstairs',
+        },
+      },
+      'sensor.guest_room_sensor_temperature': {
+        entity_id: 'sensor.guest_room_sensor_temperature',
+        state: '73',
+        attributes: {
+          friendly_name: 'Guest Room Sensor Temperature',
+        },
+      },
+      'binary_sensor.upstairs_motion': {
+        entity_id: 'binary_sensor.upstairs_motion',
+        state: 'off',
+        attributes: {
+          friendly_name: 'Upstairs Motion',
+        },
+      },
+      'sensor.office': {
+        entity_id: 'sensor.office',
+        state: '74',
+        attributes: {
+          friendly_name: 'Office Temperature',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°F',
+      },
+    },
+    localize: (key: string) => key,
+    formatEntityState: (stateObj) =>
+      stateObj.entity_id === 'binary_sensor.upstairs_motion'
+        ? 'Clear'
+        : stateObj.state,
+  }
+
+  await card.updateComplete
+
+  const body = card.shadowRoot?.querySelector('.body')
+  expect(body?.classList.contains('has-entities')).toBe(true)
+  expect(body?.classList.contains('setpoint-count-2')).toBe(true)
+  expect(
+    Array.from(card.shadowRoot?.querySelectorAll('.current-wrapper') ?? []).every(
+      (wrapper) => wrapper.classList.contains('column')
+    )
+  ).toBe(true)
+  expect(card.shadowRoot?.textContent).toContain('Guest')
+  expect(card.shadowRoot?.textContent).toContain('Motion')
+  expect(card.shadowRoot?.textContent).toContain('Office')
+  expect(card.shadowRoot?.textContent).not.toContain(
+    'Guest Room Sensor Temperature'
+  )
+  expect(card.shadowRoot?.textContent).not.toContain('Office Temperature')
+  expect(card.shadowRoot?.textContent).not.toContain('State')
 })
 
 test('hass setter rebuilds even when state object references are unchanged', () => {

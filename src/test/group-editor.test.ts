@@ -133,10 +133,10 @@ test('group editor toggles recent activity auto-select', async () => {
 
   await editor.updateComplete
 
-  const autoSelectField = Array.from(
-    editor.shadowRoot?.querySelectorAll('ha-formfield') ?? []
-  ).find((field) => field.getAttribute('label') === 'Follow active device')
-  const autoSelectSwitch = autoSelectField?.querySelector(
+  const autoSelectRow = Array.from(
+    editor.shadowRoot?.querySelectorAll('.option-row') ?? []
+  ).find((row) => row.textContent?.includes('Follow active device'))
+  const autoSelectSwitch = autoSelectRow?.querySelector(
     'ha-switch'
   ) as HTMLInputElement
 
@@ -152,6 +152,73 @@ test('group editor toggles recent activity auto-select', async () => {
         config: expect.objectContaining({
           auto_select: { mode: 'recent_activity' },
         }),
+      }),
+    })
+  )
+})
+
+test('group editor does not write default selector options', async () => {
+  const editor = createEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+
+  editor.setConfig({
+    cards: [{ entity: 'climate.living_room' }],
+  })
+
+  await editor.updateComplete
+
+  const showIconsRow = Array.from(
+    editor.shadowRoot?.querySelectorAll('.option-row') ?? []
+  ).find((row) => row.textContent?.includes('Show icons'))
+  const showIconsSwitch = showIconsRow?.querySelector(
+    'ha-switch'
+  ) as HTMLInputElement
+
+  Object.defineProperty(showIconsSwitch, 'checked', {
+    configurable: true,
+    value: true,
+  })
+  showIconsSwitch.dispatchEvent(new Event('change', { bubbles: true }))
+
+  expect(configChanged).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: expect.objectContaining({
+        config: { cards: [{ entity: 'climate.living_room' }] },
+      }),
+    })
+  )
+})
+
+test('group editor only writes selector options that differ from defaults', async () => {
+  const editor = createEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+
+  editor.setConfig({
+    cards: [{ entity: 'climate.living_room' }],
+  })
+
+  await editor.updateComplete
+
+  const statesRow = Array.from(
+    editor.shadowRoot?.querySelectorAll('.option-row') ?? []
+  ).find((row) => row.textContent?.includes('Show states'))
+  const statesSwitch = statesRow?.querySelector('ha-switch') as HTMLInputElement
+
+  Object.defineProperty(statesSwitch, 'checked', {
+    configurable: true,
+    value: true,
+  })
+  statesSwitch.dispatchEvent(new Event('change', { bubbles: true }))
+
+  expect(configChanged).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: expect.objectContaining({
+        config: {
+          cards: [{ entity: 'climate.living_room' }],
+          selector: { states: true },
+        },
       }),
     })
   )

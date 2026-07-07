@@ -61,8 +61,9 @@ export default function renderEntities({
         entity: config.entity,
       },
     }),
-    ...(entities.map(({ name, state, ...rest }) => {
+    ...(entities.map(({ name, state, show, ...rest }) => {
       return renderInfoItem({
+        hide: show === false,
         state,
         hass,
         localize,

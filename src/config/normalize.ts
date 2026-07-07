@@ -13,12 +13,86 @@ type ImportableCardConfig = CardConfig & {
   layout?: ImportableLayout
 }
 
+function normalizeEntities(entities: CardConfig['entities']) {
+  if (!Array.isArray(entities)) return entities
+
+  return entities.map((entity) => {
+    const { label, ...normalizedEntity } = entity as typeof entity & {
+      label?: string
+    }
+
+    if (!normalizedEntity.name && label) {
+      normalizedEntity.name = label
+    }
+
+    return normalizedEntity
+  })
+}
+
+function importLegacySensors(config: ImportableCardConfig) {
+  if (!Array.isArray(config.sensors)) return
+
+  const entities: CardConfig['entities'] = []
+
+  config.sensors.forEach((sensor) => {
+    const legacySensor = sensor as typeof sensor & {
+      id?: string
+      label?: string
+      show?: boolean
+    }
+
+    if (legacySensor.id === 'temperature') {
+      if (legacySensor.label) {
+        config.label = {
+          ...(config.label ?? {}),
+          temperature: legacySensor.label,
+        }
+      }
+      if (legacySensor.show === false) {
+        config.hide = {
+          ...(config.hide ?? {}),
+          temperature: true,
+        }
+      }
+      return
+    }
+
+    if (legacySensor.id === 'state') {
+      if (legacySensor.label) {
+        config.label = {
+          ...(config.label ?? {}),
+          state: legacySensor.label,
+        }
+      }
+      if (legacySensor.show === false) {
+        config.hide = {
+          ...(config.hide ?? {}),
+          state: true,
+        }
+      }
+      return
+    }
+
+    entities.push(sensor)
+  })
+
+  config.entities = normalizeEntities(entities)
+}
+
 export default function normalizeConfig(
   config: ImportableCardConfig
 ): CardConfig {
   const normalized: ImportableCardConfig = {
     ...config,
     layout: config.layout ? { ...config.layout } : undefined,
+  }
+  const legacyVersion = normalized.version === 3
+
+  if (legacyVersion && !normalized.layout?.step) {
+    normalized.layout = {
+      ...(normalized.layout ?? {}),
+      step: 'column',
+    } as ImportableLayout
   }
 
   if (
@@ -32,8 +106,9 @@ export default function normalizeConfig(
     typeof normalized.entities === 'undefined' &&
     typeof normalized.sensors !== 'undefined'
   ) {
-    normalized.entities = normalized.sensors
+    importLegacySensors(normalized)
   }
+  normalized.entities = normalizeEntities(normalized.entities)
 
   if (
     normalized.layout &&

@@ -50,6 +50,9 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(bodyRule).toContain('grid-auto-columns: minmax(0, 1fr)')
   expect(bodyRule).toContain('overflow: hidden')
   expect(bodyChildrenRule).toContain('min-width: 0')
+  expect(styles).toContain('.body.has-entities.setpoint-count-2')
+  expect(styles).toContain('minmax(min-content, max-content)')
+  expect(styles).toContain('minmax(max-content, 1fr)')
 })
 
 test('inactive mode buttons use a consistent theme-derived overlay surface', () => {

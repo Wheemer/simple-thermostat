@@ -539,6 +539,7 @@ export default class SimpleThermostat extends LitElement {
         : (this.config?.layout?.step ?? 'row')
     const row = stepLayout === 'row'
     const entityDomain = config.entity.split('.')[0]
+    const setpointCount = Object.keys(_values).length
     const isUnavailable = ['unavailable', 'unknown'].includes(entity.state)
     const safeClass = (value: unknown) =>
       typeof value === 'string' ? value.replace(/[^a-z0-9_-]/gi, '') : ''
@@ -549,6 +550,11 @@ export default class SimpleThermostat extends LitElement {
       this.config.enhanced_visuals === false && 'standard-visuals',
       safeClass(action),
       isUnavailable && safeClass(entity.state),
+    ].filter((cx) => !!cx)
+    const bodyClasses = [
+      'body',
+      this.showEntities && 'has-entities',
+      `setpoint-count-${setpointCount}`,
     ].filter((cx) => !!cx)
     const cardStyle = getCardStyle(entityDomain, entity.attributes)
 
@@ -580,7 +586,7 @@ export default class SimpleThermostat extends LitElement {
           entity: this.entity,
           openEntityPopover: this.openEntityPopover,
         })}
-        <section class="body">
+        <section class="${bodyClasses.join(' ')}">
           ${entitiesHtml}
           ${this.renderSetpoints({
             values: _values,
