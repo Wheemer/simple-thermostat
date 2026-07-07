@@ -53,6 +53,29 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('.body.has-entities.setpoint-count-2')
   expect(styles).toContain('minmax(min-content, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
+  expect(styles).toContain('.body.has-entities.step-column.setpoint-count-1')
+  expect(styles).toContain('grid-template-columns: minmax(0, 1fr) max-content')
+  expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
+  expect(styles).toContain('minmax(0, 1fr) max-content')
+})
+
+test('entity table labels can wrap while values stay on one line', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const tableLabelsRule =
+    styles.match(/&\.with-labels\s*\{[^}]*\}/)?.[0] ?? ''
+  const headingRule = styles.match(/\.entity-heading\s*\{[^}]*\}/)?.[0] ?? ''
+  const valueRule = styles.match(/\.entity-value\s*\{[^}]*\}/)?.[0] ?? ''
+
+  expect(tableLabelsRule).toContain(
+    'grid: auto-flow / minmax(0, max-content) max-content'
+  )
+  expect(headingRule).toContain('min-width: 0')
+  expect(headingRule).toContain('white-space: normal')
+  expect(valueRule).toContain('min-width: max-content')
+  expect(valueRule).toContain('white-space: nowrap')
 })
 
 test('inactive mode buttons use a consistent theme-derived overlay surface', () => {

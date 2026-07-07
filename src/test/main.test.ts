@@ -1010,6 +1010,67 @@ test('legacy sensors render cleanly with heat_cool dual setpoints', async () => 
   expect(card.shadowRoot?.textContent).not.toContain('State')
 })
 
+test('column step layout exposes a body class for compact entity rows', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    layout: {
+      step: 'column',
+    },
+    entities: [
+      {
+        entity: 'sensor.long_temperature_label',
+        name: 'Fireplace Lightswitch Temperature',
+        decimals: 1,
+      },
+    ],
+    hide: {
+      setpoint_label: true,
+    },
+  } as any)
+
+  card.hass = {
+    locale: { language: 'en' },
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: {
+          hvac_modes: ['off', 'heat'],
+          temperature: 21,
+          current_temperature: 20,
+          min_temp: 5,
+          max_temp: 30,
+        },
+      },
+      'sensor.long_temperature_label': {
+        entity_id: 'sensor.long_temperature_label',
+        state: '20.5',
+        attributes: {
+          unit_of_measurement: '°C',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    formatEntityState: (entity: any) => entity.state,
+    localize: (key: string) => key,
+  } as any
+
+  await card.updateComplete
+
+  const body = card.shadowRoot?.querySelector('.body')
+  expect(body?.classList.contains('has-entities')).toBe(true)
+  expect(body?.classList.contains('step-column')).toBe(true)
+  expect(body?.classList.contains('setpoint-count-1')).toBe(true)
+})
+
 test('object control config respects false entries', async () => {
   document.body.innerHTML = ''
   const card = createCard()

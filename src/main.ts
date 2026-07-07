@@ -562,6 +562,7 @@ export default class SimpleThermostat extends LitElement {
     const bodyClasses = [
       'body',
       this.showEntities && 'has-entities',
+      `step-${stepLayout}`,
       `setpoint-count-${setpointCount}`,
     ].filter((cx) => !!cx)
     const cardStyle = getCardStyle(entityDomain, entity.attributes)
