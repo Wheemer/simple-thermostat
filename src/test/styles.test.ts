@@ -191,6 +191,25 @@ test('active header glow is applied to the icon wrapper for active domains', () 
   )
 })
 
+test('header icons keep their own compact size without shrinking controls', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const hostRule = styles.match(/:host\s*\{[^}]*\}/)?.[0] ?? ''
+  const headerIconRule = styles.match(/\.header__icon\s*\{[^}]*\}/)?.[0] ?? ''
+  const triggerIconRule =
+    styles.match(/\.thermostat-trigger ha-icon\s*\{[^}]*\}/)?.[0] ?? ''
+
+  expect(hostRule).toContain('--st-control-icon-size: var(--st-font-size-xl, 32px)')
+  expect(hostRule).toContain(
+    '--st-header-icon-size: var(--st-font-size-header-icon, 26px)'
+  )
+  expect(headerIconRule).toContain('var(--st-header-icon-size)')
+  expect(headerIconRule).not.toContain('var(--st-control-icon-size)')
+  expect(triggerIconRule).toContain('var(--st-control-icon-size)')
+})
+
 test('group card has no shared embedded stylesheet path in the normal card', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),

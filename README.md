@@ -93,7 +93,7 @@ Use the YAML reference for specialized extra row formatting such as attributes, 
 
 Use **Simple Thermostat Group** when you want several climate, fan, humidifier, or dehumidifier cards to share one dashboard footprint. The group card keeps each selected Simple Thermostat card intact and adds a compact header for moving between them.
 
-Add `custom:simple-thermostat-group` from the visual editor, choose the cards you want in the group, then use the arrows or menu to switch between them. The group editor keeps normal per-card options behind each card's **Configure** button so advanced layouts stay scoped to the selected card.
+Add `custom:simple-thermostat-group` from the visual editor, choose the cards you want in the group, then use the arrows or menu to switch between them. If activity-following is enabled, manual navigation pauses automatic switching for 30 seconds before returning to the most recently active card. The group editor keeps normal per-card options behind each card's **Configure** button so advanced layouts stay scoped to the selected card.
 
 ```yaml
 type: custom:simple-thermostat-group
@@ -143,12 +143,14 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
-      <td rowspan="4" nowrap><strong>v4.0.15</strong></td>
+      <td rowspan="6" nowrap><strong>v4.0.15</strong></td>
       <td>Restored the original Simple Thermostat active mode color assignments for Heat, Cool, Heat/Cool, Dry, Auto, Fan only, and Off.</td>
     </tr>
     <tr><td>Restored <code>template:</code> support for extra entity rows, including legacy <code>state.raw|formatNumber</code> templates and attribute-based calculations.</td></tr>
     <tr><td>Improved long extra-entity label wrapping so labels can wrap while values stay on one line.</td></tr>
     <tr><td>Reduced wasted horizontal space for vertical setpoint controls when extra entity rows are shown.</td></tr>
+    <tr><td>Reduced header icon prominence while keeping setpoint controls and mode buttons unchanged.</td></tr>
+    <tr><td>Paused group-card activity-following briefly after manual navigation so the selector does not fight user input.</td></tr>
     <tr>
       <td rowspan="1" nowrap><strong>v4.0.14</strong></td>
       <td>Fixed object-style <code>control</code> configs so entries set to <code>false</code> stay hidden.</td>

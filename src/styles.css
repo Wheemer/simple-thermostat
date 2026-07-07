@@ -13,6 +13,7 @@
   --st-default-mode-transition: 200ms ease;
   --st-motion-ease: cubic-bezier(0.2, 0, 0, 1);
   --st-control-icon-size: var(--st-font-size-xl, 32px);
+  --st-header-icon-size: var(--st-font-size-header-icon, 26px);
   --st-preset-icon-size: var(
     --st-font-size-preset-icon,
     var(--ha-font-size-xl, 20px)
@@ -353,8 +354,8 @@ header {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--st-control-icon-size);
-  height: var(--st-control-icon-size);
+  width: var(--st-header-icon-size);
+  height: var(--st-header-icon-size);
   margin-right: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
   color: var(--state-icon-color, var(--secondary-text-color));
   isolation: isolate;
@@ -375,8 +376,8 @@ header {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: calc(var(--st-control-icon-size) + (var(--st-active-icon-glow-max-size) * 2));
-  height: calc(var(--st-control-icon-size) + (var(--st-active-icon-glow-max-size) * 2));
+  width: calc(var(--st-header-icon-size) + (var(--st-active-icon-glow-max-size) * 2));
+  height: calc(var(--st-header-icon-size) + (var(--st-active-icon-glow-max-size) * 2));
   z-index: 0;
   border-radius: 999px;
   pointer-events: none;
@@ -409,31 +410,31 @@ header {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: calc(var(--st-control-icon-size) * 1.05);
+  width: calc(var(--st-header-icon-size) * 1.05);
   border-radius: 999px;
   pointer-events: none;
   transform-origin: center;
   z-index: 3;
 }
 .header__icon-wrap.slash-off::before {
-  height: max(4px, calc(var(--st-control-icon-size) * 0.115));
+  height: max(4px, calc(var(--st-header-icon-size) * 0.115));
   background: var(--ha-card-background, var(--card-background-color));
-  transform: translate(-50%, calc(-50% - (var(--st-control-icon-size) * 0.055)))
+  transform: translate(-50%, calc(-50% - (var(--st-header-icon-size) * 0.055)))
     rotate(45deg);
 }
 .header__icon-wrap.slash-off::after {
-  height: max(2px, calc(var(--st-control-icon-size) * 0.08));
+  height: max(2px, calc(var(--st-header-icon-size) * 0.08));
   background: currentColor;
   transform: translate(-50%, -50%) rotate(45deg);
 }
 .header__icon {
-  --iron-icon-width: var(--st-control-icon-size);
-  --iron-icon-height: var(--st-control-icon-size);
-  --mdc-icon-size: var(--st-control-icon-size);
+  --iron-icon-width: var(--st-header-icon-size);
+  --iron-icon-height: var(--st-header-icon-size);
+  --mdc-icon-size: var(--st-header-icon-size);
   position: relative;
   z-index: 1;
-  width: var(--st-control-icon-size);
-  height: var(--st-control-icon-size);
+  width: var(--st-header-icon-size);
+  height: var(--st-header-icon-size);
   color: inherit;
   transform-origin: center;
   transition:

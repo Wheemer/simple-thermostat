@@ -822,6 +822,76 @@ test('does not auto-select for current temperature updates', async () => {
   )
 })
 
+test('pauses recent activity auto-select after manual navigation', async () => {
+  jest.useFakeTimers()
+  const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(1000)
+
+  try {
+    const group = createGroup()
+
+    group.setConfig({
+      auto_select: { mode: 'recent_activity', manual_pause_ms: 30000 },
+      cards: [
+        { entity: 'climate.living_room', header: { name: 'Living AC' } },
+        { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+      ],
+    })
+    group.hass = hass as any
+    await group.updateComplete
+
+    const nextButton = group.shadowRoot?.querySelector(
+      'button[aria-label="Next device"]'
+    ) as HTMLButtonElement
+    nextButton.click()
+    await group.updateComplete
+
+    expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Bedroom AC'
+    )
+
+    nowSpy.mockReturnValue(2000)
+    group.hass = {
+      ...hass,
+      states: {
+        ...hass.states,
+        'climate.living_room': {
+          ...hass.states['climate.living_room'],
+          state: 'cool',
+          last_updated: '2026-07-05T12:00:00.000Z',
+          attributes: {
+            ...hass.states['climate.living_room'].attributes,
+            hvac_action: 'cooling',
+          },
+        },
+      },
+    } as any
+    await group.updateComplete
+
+    expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Bedroom AC'
+    )
+
+    jest.advanceTimersByTime(29999)
+    await Promise.resolve()
+    await group.updateComplete
+
+    expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Bedroom AC'
+    )
+
+    jest.advanceTimersByTime(1)
+    await Promise.resolve()
+    await group.updateComplete
+
+    expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Living AC'
+    )
+  } finally {
+    nowSpy.mockRestore()
+    jest.useRealTimers()
+  }
+})
+
 test('does not auto-select while the selector menu is open', async () => {
   const group = createGroup()
 

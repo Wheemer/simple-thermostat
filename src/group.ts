@@ -29,6 +29,7 @@ export interface GroupConfig {
     | {
         mode?: AutoSelectMode
         cooldown_ms?: number
+        manual_pause_ms?: number
       }
   selector?: {
     icons?: boolean
@@ -62,7 +63,7 @@ const DEFAULT_SELECTOR = {
 }
 
 const SUPPORTED_DOMAINS = ['climate', 'fan', 'humidifier']
-const DEFAULT_AUTO_SELECT_COOLDOWN_MS = 8000
+const DEFAULT_AUTO_SELECT_MANUAL_PAUSE_MS = 30000
 
 function getDomain(entityId: string) {
   return entityId.split('.')[0]
@@ -142,6 +143,7 @@ export default class SimpleThermostatGroup extends LitElement {
   private activitySignaturesInitialized = false
   private persistedActivityApplied = false
   private lastManualSelectionAt = 0
+  private autoSelectResumeTimer?: number
 
   static get styles() {
     return css`
@@ -593,6 +595,7 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   setConfig(config: GroupConfig) {
+    this.clearAutoSelectResumeTimer()
     const sourceTargets = config.cards ?? config.entities ?? []
     const targets = sourceTargets
       .map(normalizeTarget)
@@ -625,6 +628,7 @@ export default class SimpleThermostatGroup extends LitElement {
 
   disconnectedCallback() {
     this.clearOutsideClickListener()
+    this.clearAutoSelectResumeTimer()
     super.disconnectedCallback()
   }
 
@@ -710,6 +714,13 @@ export default class SimpleThermostatGroup extends LitElement {
     return `${this.getStorageKey(config)}:recent-activity`
   }
 
+  private clearAutoSelectResumeTimer() {
+    if (this.autoSelectResumeTimer === undefined) return
+
+    window.clearTimeout(this.autoSelectResumeTimer)
+    this.autoSelectResumeTimer = undefined
+  }
+
   private getSelectedTarget() {
     return (
       this.targets.find((target) => target.entity === this.selectedEntity) ??
@@ -766,14 +777,32 @@ export default class SimpleThermostatGroup extends LitElement {
     return false
   }
 
-  private getAutoSelectCooldownMs() {
+  private getAutoSelectManualPauseMs() {
     const autoSelect = this.config?.auto_select
     if (autoSelect && typeof autoSelect === 'object') {
-      const cooldown = Number(autoSelect.cooldown_ms)
-      if (Number.isFinite(cooldown) && cooldown >= 0) return cooldown
+      const manualPause = Number(
+        autoSelect.manual_pause_ms ?? autoSelect.cooldown_ms
+      )
+      if (Number.isFinite(manualPause) && manualPause >= 0) return manualPause
     }
 
-    return DEFAULT_AUTO_SELECT_COOLDOWN_MS
+    return DEFAULT_AUTO_SELECT_MANUAL_PAUSE_MS
+  }
+
+  private pauseAutoSelectAfterManualSelection() {
+    this.lastManualSelectionAt = Date.now()
+    this.clearAutoSelectResumeTimer()
+
+    if (!this.isRecentActivityAutoSelectEnabled()) return
+
+    this.autoSelectResumeTimer = window.setTimeout(() => {
+      this.autoSelectResumeTimer = undefined
+      this.lastManualSelectionAt = 0
+
+      if (!this.isRecentActivityAutoSelectEnabled() || this.menuOpen) return
+
+      this.selectMostRecentStateActivity()
+    }, this.getAutoSelectManualPauseMs())
   }
 
   private getActivitySignature(target: GroupTarget) {
@@ -994,7 +1023,7 @@ export default class SimpleThermostatGroup extends LitElement {
       !changedTargets.length ||
       !this.isRecentActivityAutoSelectEnabled() ||
       this.menuOpen ||
-      Date.now() - this.lastManualSelectionAt < this.getAutoSelectCooldownMs()
+      Date.now() - this.lastManualSelectionAt < this.getAutoSelectManualPauseMs()
     ) {
       return
     }
@@ -1155,7 +1184,7 @@ export default class SimpleThermostatGroup extends LitElement {
     if (entity === this.selectedEntity) return
 
     this.menuOpen = false
-    if (manual) this.lastManualSelectionAt = Date.now()
+    if (manual) this.pauseAutoSelectAfterManualSelection()
 
     const prefersReducedMotion = window.matchMedia?.(
       '(prefers-reduced-motion: reduce)'
