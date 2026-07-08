@@ -238,7 +238,11 @@ test('extra entity row layout controls are prominent in their own section', () =
 
   expect(sectionTitles(schema)).toContain('Extra entity rows')
   expect(schemaNames([findSection(schema, 'Extra entity rows')])).toEqual(
-    expect.arrayContaining(['layout.entities.type', 'layout.entities.labels'])
+    expect.arrayContaining([
+      'layout.entities.type',
+      'layout.entities.labels',
+      'layout.entities.separator',
+    ])
   )
 })
 

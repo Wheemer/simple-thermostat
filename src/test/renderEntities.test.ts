@@ -179,3 +179,47 @@ test('built-in currently and state rows open their entities', () => {
   expect(openEntityPopover).toHaveBeenNthCalledWith(3, 'climate.garage_heat')
   expect(openEntityPopover).toHaveBeenNthCalledWith(4, 'climate.garage_heat')
 })
+
+test('entity row labels can hide the separator', () => {
+  const result = renderEntities({
+    _hide: { temperature: false, state: true },
+    entity: {
+      entity_id: 'climate.garage_heat',
+      state: 'off',
+      attributes: {
+        current_temperature: 20.4,
+      },
+    },
+    unit: '°C',
+    hass: {
+      formatEntityState: () => 'Off',
+    },
+    entities: [
+      {
+        name: 'Humidity',
+        state: '48%',
+      },
+    ],
+    config: {
+      entity: 'climate.garage_heat',
+      layout: {
+        entities: {
+          separator: false,
+        },
+      },
+    },
+    localize: (value: string) => value,
+    openEntityPopover: () => undefined,
+    adapter: climateAdapter,
+  })
+
+  const container = freshContainer()
+  render(result, container)
+
+  const headings = [...container.querySelectorAll('.entity-heading')].map(
+    (heading) => heading.textContent?.trim()
+  )
+
+  expect(headings).toEqual(['ui.card.climate.currently', 'Humidity'])
+  expect(headings.join(' ')).not.toContain(':')
+})

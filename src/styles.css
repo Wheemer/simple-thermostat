@@ -291,6 +291,7 @@ ha-card.loading {
 .entities.as-list {
   grid-auto-flow: column;
   grid-template-columns: min-content;
+  column-gap: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
 }
 
 .entities.as-table {

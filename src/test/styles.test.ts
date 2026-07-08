@@ -79,6 +79,18 @@ test('entity table labels can wrap while values stay on one line', () => {
   expect(valueRule).toContain('white-space: nowrap')
 })
 
+test('entity list rows keep a gap between value-only items', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const listRule = styles.match(/\.entities\.as-list\s*\{[^}]*\}/)?.[0] ?? ''
+
+  expect(listRule).toContain(
+    'column-gap: calc(var(--st-spacing, var(--st-default-spacing)) * 2)'
+  )
+})
+
 test('standard visuals keep upstream-style intrinsic body sizing', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),

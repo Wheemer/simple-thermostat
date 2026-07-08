@@ -28,6 +28,7 @@ interface InfoItemDetails extends LooseObject {
   attribute?: string
   variables?: LooseObject
   config?: LooseObject
+  separator?: boolean
 }
 
 interface InfoItemOptions {
@@ -77,6 +78,7 @@ export default function renderInfoItem({
     attribute,
     variables,
     config,
+    separator = true,
   } = details
   const hasConfiguredUnit = typeof unit === 'string' && unit.length > 0
   const entityId = typeof state === 'object' ? state.entity_id : entity
@@ -260,7 +262,7 @@ export default function renderInfoItem({
           @click=${canOpenEntity ? () => openEntityPopover(entityId) : null}
         ></ha-icon>
       `
-    : ` ${heading}: `
+    : ` ${heading}${separator === false ? '' : ':'} `
 
   return html`<div
       class=${headingClasses}

@@ -77,6 +77,7 @@ interface CardConfig {
     entities: {
       type: 'table' | 'list'
       labels: boolean
+      separator?: boolean
     }
     step: 'row' | 'column'
   }

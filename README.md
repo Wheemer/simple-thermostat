@@ -144,6 +144,11 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.0.20</strong></td>
+      <td>Added <code>layout.entities.separator: false</code> to hide the colon after entity row labels.</td>
+    </tr>
+    <tr><td>Fixed value-only entity rows so current value and state text keep proper spacing.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.0.19</strong></td>
       <td>Restored explicit <code>control:</code> ordering for configured HVAC, preset, fan, and swing rows.</td>
     </tr>

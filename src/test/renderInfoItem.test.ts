@@ -40,6 +40,25 @@ test('render into dom', () => {
   expect(value.trim()).toBe(spec.value)
 })
 
+test('can render text headings without the label separator', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {},
+    state: '73',
+    details: {
+      heading: 'Currently',
+      separator: false,
+    },
+  })
+
+  const container = document.createElement('div')
+  render(result, container)
+
+  const heading = container.querySelector('.entity-heading')?.textContent
+  expect(heading?.trim()).toBe('Currently')
+  expect(heading).not.toContain(':')
+})
+
 test('render with icon', () => {
   const spec = {
     heading: 'Temperature',

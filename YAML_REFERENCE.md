@@ -207,6 +207,7 @@ Layout options:
 | `layout.mode.headings`   | boolean         | Show mode row headings. Defaults to hidden.                                                                                                                                                                                             |
 | `layout.entities.type`   | `table`, `list` | Extra entity row layout.                                                                                                                                                                                                                |
 | `layout.entities.labels` | boolean         | Show labels for extra entity rows.                                                                                                                                                                                                      |
+| `layout.entities.separator` | boolean      | Show the `:` separator after text labels in entity rows. Set to `false` if you prefer labels without punctuation.                                                                                                                       |
 
 ## Tweaks
 

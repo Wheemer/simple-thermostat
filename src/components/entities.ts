@@ -27,6 +27,7 @@ export default function renderEntities({
     : (adapter.getCurrentValueUnit?.(entity.attributes, hass.config) ?? unit)
 
   const showLabels = config?.layout?.entities?.labels ?? true
+  const showSeparator = config?.layout?.entities?.separator !== false
   const stateString = getEntityStateText(entity, hass, localize)
   const entityHtml = [
     renderInfoItem({
@@ -49,6 +50,7 @@ export default function renderEntities({
         tooltip:
           currentValueEntity?.attributes?.friendly_name ?? currentValueEntityId,
         entity: currentValueEntityId ?? config.entity,
+        separator: showSeparator,
       },
     }),
     renderInfoItem({
@@ -62,6 +64,7 @@ export default function renderEntities({
             localize('ui.panel.lovelace.editor.card.generic.state'))
           : false,
         entity: config.entity,
+        separator: showSeparator,
       },
     }),
     ...(entities.map(({ name, state, show, ...rest }) => {
@@ -77,6 +80,7 @@ export default function renderEntities({
           tooltip: name,
           config,
           variables: config.variables,
+          separator: showSeparator,
         },
       })
     }) || null),
