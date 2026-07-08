@@ -28,7 +28,7 @@ A compact Lovelace card for Home Assistant climate, fan, humidifier, and dehumid
   <strong style="color: #41bdf5;">New in v4:</strong> Fan, humidifier, and dehumidifier support, domain-aware controls, modern Home Assistant actions, richer mode buttons, and enhanced visuals.
 </div>
 
-<img src="examples.png" alt="Simple Thermostat v4 examples" width="900">
+![Simple Thermostat v4 examples](examples.png)
 
 <div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
   <strong style="color: #41bdf5;">Requires:</strong> Home Assistant 2024.8 or newer. v4 uses Home Assistant's current frontend action API.
@@ -143,6 +143,12 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.18</strong></td>
+      <td>Improved compatibility for compact v3-style layouts with entity rows and dual setpoints.</td>
+    </tr>
+    <tr><td>Restored more natural entity label/value sizing so long labels wrap cleanly while values stay readable.</td></tr>
+    <tr><td>Tuned the multi-card header/body spacing for a cleaner embedded-card fit.</td></tr>
     <tr>
       <td rowspan="3" nowrap><strong>v4.0.17</strong></td>
       <td>Restored off-mode climate target changes by default and added <code>disable_setpoint_change_when_off</code> for TRV-style setups that need the buttons locked while off.</td>
