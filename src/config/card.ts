@@ -47,19 +47,8 @@ export type ModeControlObject = Record<
  *
  */
 export type ModeControlValue = boolean | ModeControlObject
-type ModeControl = {
-  hvac: ModeControlValue
-  fan: ModeControlValue
-  state: ModeControlValue
-  preset: ModeControlValue
-  swing: ModeControlValue
-  swing_horizontal: ModeControlValue
-  swing_vertical: ModeControlValue
-  vane_horizontal: ModeControlValue
-  vane_vertical: ModeControlValue
-  direction: ModeControlValue
-  oscillating: ModeControlValue
-  mode: ModeControlValue
+export type ModeControl = Partial<Record<MODES, ModeControlValue>> & {
+  _order?: Array<string>
 }
 
 interface CardConfig {

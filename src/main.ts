@@ -268,7 +268,30 @@ function buildConfiguredControlModes(
   }
 
   if (config.control && typeof config.control === 'object') {
-    const entries = Object.entries(config.control)
+    const controlConfig = config.control
+    const configuredEntries = Object.entries(config.control).filter(
+      ([type]) => !type.startsWith('_')
+    )
+    const configuredOrder = Array.isArray(controlConfig._order)
+      ? controlConfig._order.map(String)
+      : undefined
+    const orderedTypes = configuredOrder
+      ? [
+          ...configuredOrder.filter((type) =>
+            configuredEntries.some(([entryType]) => entryType === type)
+          ),
+          ...configuredEntries
+            .map(([type]) => type)
+            .filter((type) => !configuredOrder.includes(type)),
+        ]
+      : configuredEntries.map(([type]) => type)
+    const entries = orderedTypes.map(
+      (type) =>
+        [type, controlConfig[type] as ModeControlObject | true | false] as [
+          string,
+          ModeControlObject | true | false,
+        ]
+    )
     if (entries.length > 0) {
       return entries
         .filter(([, definition]) => definition !== false)
@@ -283,11 +306,11 @@ function buildConfiguredControlModes(
             hide_when_off: _hide_when_off,
             icons: _icons,
             heading: _heading,
-        name: _name,
-        preserve_option_order: Object.keys(controlField).length > 0,
-        list: getModeList(type, attributes, adapter, controlField),
-      }
-    })
+            name: _name,
+            preserve_option_order: Object.keys(controlField).length > 0,
+            list: getModeList(type, attributes, adapter, controlField),
+          }
+        })
     }
   }
 
@@ -512,10 +535,9 @@ export default class SimpleThermostat extends LitElement {
       : sortControlModes(configuredControlModes, entityDomain)
 
     this.modes = controlModes.map((values) => {
-      const list =
-        values.preserve_option_order
-          ? values.list
-          : values.type === MODES.HVAC
+      const list = values.preserve_option_order
+        ? values.list
+        : values.type === MODES.HVAC
           ? sortHvacModes(values.list)
           : values.type === MODES.FAN
             ? sortFanModes(values.list)

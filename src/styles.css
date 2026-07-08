@@ -300,7 +300,9 @@ ha-card.loading {
     place-items: start;
   }
   &.with-labels {
-    grid-template-columns: auto auto;
+    grid-template-columns:
+      fit-content(var(--st-entity-label-max-width, 18ch))
+      max-content;
     grid-auto-flow: row;
     column-gap: 8px;
     place-items: start;
@@ -336,6 +338,12 @@ ha-card.loading {
   justify-content: flex-start;
   justify-self: start;
   text-align: left;
+}
+
+.entities.as-table.with-labels.align-left {
+  grid-template-columns:
+    fit-content(var(--st-entity-label-max-width, 18ch))
+    max-content;
 }
 
 .entities:empty {
@@ -384,8 +392,12 @@ header {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: calc(var(--st-header-icon-size) + (var(--st-active-icon-glow-max-size) * 2));
-  height: calc(var(--st-header-icon-size) + (var(--st-active-icon-glow-max-size) * 2));
+  width: calc(
+    var(--st-header-icon-size) + (var(--st-active-icon-glow-max-size) * 2)
+  );
+  height: calc(
+    var(--st-header-icon-size) + (var(--st-active-icon-glow-max-size) * 2)
+  );
   z-index: 0;
   border-radius: 999px;
   pointer-events: none;
@@ -1093,6 +1105,11 @@ ha-card.drying {
 .modes.state.sparse .mode-item {
   min-height: calc(var(--st-control-icon-size) + 8px);
   padding-block: var(--st-spacing, var(--st-default-spacing));
+}
+
+.controls:has(.modes.hvac.sparse),
+.controls:has(.modes.state.sparse) {
+  margin-top: var(--st-spacing, var(--st-default-spacing));
 }
 
 @media (max-width: 560px) {

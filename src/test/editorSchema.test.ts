@@ -189,11 +189,79 @@ test('editor preserves custom control order when changing enabled controls', () 
   } as any)
 
   expect(Object.keys(updated.control as Record<string, unknown>)).toEqual([
+    '_order',
     'swing',
     'fan',
     'hvac',
     'preset',
   ])
+  expect((updated.control as Record<string, unknown>)._order).toEqual([
+    'swing',
+    'fan',
+    'hvac',
+    'preset',
+  ])
+})
+
+test('editor materializes configured control and option order', () => {
+  const editor = new SimpleThermostatEditor()
+
+  editor.setConfig({
+    entity: 'climate.living_room',
+    control: {
+      fan: {
+        auto: {},
+        quiet: {},
+        '1': {},
+      },
+      preset: {
+        none: {},
+        boost: {},
+      },
+    },
+  } as any)
+
+  expect((editor.config.control as Record<string, unknown>)._order).toEqual([
+    'fan',
+    'preset',
+  ])
+  expect(
+    (
+      (editor.config.control as Record<string, any>).fan as Record<
+        string,
+        unknown
+      >
+    )._order
+  ).toEqual(['1', 'auto', 'quiet'])
+})
+
+test('editor emits materialized order as a saveable config change', async () => {
+  const editor = new SimpleThermostatEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+
+  editor.setConfig({
+    entity: 'climate.living_room',
+    control: {
+      fan: {
+        auto: {},
+        quiet: {},
+      },
+      preset: {
+        none: {},
+        boost: {},
+      },
+    },
+  } as any)
+
+  await new Promise<void>((resolve) => queueMicrotask(() => resolve()))
+
+  expect(configChanged).toHaveBeenCalledTimes(1)
+  expect(configChanged.mock.calls[0][0].detail.config.control).toMatchObject({
+    _order: ['fan', 'preset'],
+    fan: { _order: ['auto', 'quiet'] },
+    preset: { _order: ['none', 'boost'] },
+  })
 })
 
 test('setpoint controls are hidden when the selected fan has no percentage support', () => {

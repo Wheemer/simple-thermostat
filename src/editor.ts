@@ -5,7 +5,12 @@ import styles from './styles.css'
 import fireEvent from './fireEvent'
 import { version } from '../package.json'
 
-import { CardConfig, MODES } from './config/card'
+import {
+  CardConfig,
+  ModeControl,
+  ModeControlObject,
+  MODES,
+} from './config/card'
 import normalizeConfig from './config/normalize'
 import { HeaderConfig } from './config/header'
 import { ConfigEntity, HASS } from './types'
@@ -282,19 +287,22 @@ function getControlFromForm(
     typeof config.control === 'object'
   ) {
     const desiredSet = new Set(desired.map(String))
-    const configuredOrder = Object.keys(config.control).filter((type) =>
-      desiredSet.has(type)
+    const configuredOrder = getConfiguredControlOrder(config.control).filter(
+      (type) => desiredSet.has(type)
     )
     const appendedOrder = desired.filter(
       (type) => !configuredOrder.includes(type)
     )
+    const orderedTypes = [...configuredOrder, ...appendedOrder]
 
-    return [...configuredOrder, ...appendedOrder].reduce(
+    return orderedTypes.reduce(
       (result, type) => {
-        result[type] = config.control[type] || {}
+        result[type] = materializeModeOptionOrder(
+          config.control[type] || {}
+        ).value
         return result
       },
-      {} as Record<string, unknown>
+      { _order: orderedTypes } as ModeControl
     )
   }
   if (
@@ -304,6 +312,100 @@ function getControlFromForm(
     return undefined
   }
   return desired
+}
+
+function isControlObject(
+  control: CardConfig['control']
+): control is ModeControl {
+  return !!control && typeof control === 'object' && !Array.isArray(control)
+}
+
+function isModeControlObject(value: unknown): value is ModeControlObject {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function getConfiguredControlOrder(control: ModeControl) {
+  const explicitOrder = control._order
+  const configuredTypes = Object.keys(control).filter(
+    (key) => !key.startsWith('_')
+  )
+  if (!Array.isArray(explicitOrder)) return configuredTypes
+
+  const used = new Set<string>()
+  const ordered = explicitOrder
+    .map(String)
+    .filter((type) => configuredTypes.includes(type))
+    .filter((type) => {
+      if (used.has(type)) return false
+      used.add(type)
+      return true
+    })
+
+  configuredTypes.forEach((type) => {
+    if (!used.has(type)) ordered.push(type)
+  })
+
+  return ordered
+}
+
+function areStringArraysEqual(a: Array<unknown>, b: Array<string>) {
+  return (
+    a.length === b.length &&
+    a.every((value, index) => String(value) === b[index])
+  )
+}
+
+function materializeModeOptionOrder(value: unknown) {
+  if (!isModeControlObject(value)) return { value, changed: false }
+
+  const optionKeys = Object.keys(value).filter((key) => !key.startsWith('_'))
+  if (optionKeys.length === 0 && !Array.isArray(value._order)) {
+    return { value, changed: false }
+  }
+
+  const nextOrder = Array.isArray(value._order)
+    ? value._order.map(String)
+    : optionKeys
+  const changed =
+    !Array.isArray(value._order) ||
+    !areStringArraysEqual(value._order, nextOrder)
+
+  return {
+    value: {
+      ...value,
+      _order: nextOrder,
+    },
+    changed,
+  }
+}
+
+function materializeControlOrder(config: CardConfig) {
+  if (!isControlObject(config.control)) return { config, changed: false }
+
+  const control = config.control
+  const orderedTypes = getConfiguredControlOrder(control)
+  if (orderedTypes.length === 0 && !Array.isArray(control._order)) {
+    return { config, changed: false }
+  }
+
+  let changed =
+    !Array.isArray(control._order) ||
+    !areStringArraysEqual(control._order, orderedTypes)
+
+  const nextConfig = {
+    ...config,
+    control: orderedTypes.reduce(
+      (result, type) => {
+        const materialized = materializeModeOptionOrder(control[type])
+        result[type] = materialized.value
+        changed = changed || materialized.changed
+        return result
+      },
+      { _order: orderedTypes } as ModeControl
+    ),
+  }
+
+  return { config: nextConfig, changed }
 }
 
 export function buildSchema(config: CardConfig, hass?: HASS) {
@@ -572,7 +674,18 @@ export default class SimpleThermostatEditor extends LitElement {
   }
 
   setConfig(config: CardConfig) {
-    this.config = normalizeConfig(config || ({ ...stub } as CardConfig))
+    const materialized = materializeControlOrder(
+      normalizeConfig(config || ({ ...stub } as CardConfig))
+    )
+    this.config = materialized.config
+
+    if (materialized.changed) {
+      queueMicrotask(() => {
+        if (this.config === materialized.config) {
+          fireEvent(this, 'config-changed', { config: materialized.config })
+        }
+      })
+    }
   }
 
   _openLink() {

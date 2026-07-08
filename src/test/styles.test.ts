@@ -60,17 +60,19 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('minmax(max-content, 1fr)')
 })
 
-test('entity table labels can wrap while values stay on one line', () => {
+test('default entity table labels wrap only after a useful label width', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
-  const tableLabelsRule =
-    styles.match(/&\.with-labels\s*\{[^}]*\}/)?.[0] ?? ''
+  const tableLabelsRule = styles.match(/&\.with-labels\s*\{[^}]*\}/)?.[0] ?? ''
   const headingRule = styles.match(/\.entity-heading\s*\{[^}]*\}/)?.[0] ?? ''
   const valueRule = styles.match(/\.entity-value\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(tableLabelsRule).toContain('grid-template-columns: auto auto')
+  expect(tableLabelsRule).toContain(
+    'fit-content(var(--st-entity-label-max-width, 18ch))'
+  )
+  expect(tableLabelsRule).toContain('max-content')
   expect(tableLabelsRule).toContain('grid-auto-flow: row')
   expect(tableLabelsRule).toContain('column-gap: 8px')
   expect(headingRule).toContain('min-width: 0')
@@ -88,6 +90,10 @@ test('entity table labels can opt into left alignment', () => {
   const leftAlignRule =
     styles.match(/\.entities\.align-left \.entity-heading\s*\{[^}]*\}/)?.[0] ??
     ''
+  const leftAlignTableRule =
+    styles.match(
+      /\.entities\.as-table\.with-labels\.align-left\s*\{[^}]*\}/
+    )?.[0] ?? ''
 
   expect(headingRule).toContain('justify-content: flex-end')
   expect(headingRule).toContain('justify-self: end')
@@ -95,6 +101,10 @@ test('entity table labels can opt into left alignment', () => {
   expect(leftAlignRule).toContain('justify-content: flex-start')
   expect(leftAlignRule).toContain('justify-self: start')
   expect(leftAlignRule).toContain('text-align: left')
+  expect(leftAlignTableRule).toContain(
+    'fit-content(var(--st-entity-label-max-width, 18ch))'
+  )
+  expect(leftAlignTableRule).toContain('max-content')
 })
 
 test('entity list rows keep a gap between value-only items', () => {
@@ -128,8 +138,8 @@ test('standard visuals keep upstream-style header icon sizing', () => {
     'utf8'
   )
   const standardHeaderIconRule =
-    styles.match(/ha-card\.standard-visuals \.header__icon\s*\{[^}]*\}/)
-      ?.[0] ?? ''
+    styles.match(/ha-card\.standard-visuals \.header__icon\s*\{[^}]*\}/)?.[0] ??
+    ''
 
   expect(standardHeaderIconRule).toContain('--iron-icon-width: 24px')
   expect(standardHeaderIconRule).toContain('--iron-icon-height: 24px')
@@ -177,9 +187,7 @@ test('inactive mode buttons use a consistent theme-derived overlay surface', () 
   expect(baseCardRule).not.toContain(
     '--st-mode-surface-background: var(--secondary-background-color)'
   )
-  expect(baseCardRule).toContain(
-    '--st-mode-surface-background: color-mix'
-  )
+  expect(baseCardRule).toContain('--st-mode-surface-background: color-mix')
   expect(modeItemRule).toContain(
     'background: var(--st-mode-background, var(--st-mode-surface-background))'
   )
@@ -213,9 +221,7 @@ test('active mode backgrounds keep semantic mode colors', () => {
   const activeRule =
     styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(activeRule).toContain(
-    'var(--st-mode-color, var(--primary-color))'
-  )
+  expect(activeRule).toContain('var(--st-mode-color, var(--primary-color))')
 
   const modeColors: Record<string, string> = {
     heat: '--heat-color',
@@ -257,6 +263,28 @@ test('active mode accent uses each button color by default', () => {
   )
 })
 
+test('sparse main controls pull upward without shrinking buttons', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const sparseMainRule =
+    styles.match(
+      /\.modes\.hvac\.sparse \.mode-item,\s*\.modes\.state\.sparse \.mode-item\s*\{[^}]*\}/
+    )?.[0] ?? ''
+  const sparseControlsRule =
+    styles.match(
+      /\.controls:has\(\.modes\.hvac\.sparse\),\s*\.controls:has\(\.modes\.state\.sparse\)\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(sparseMainRule).toContain(
+    'min-height: calc(var(--st-control-icon-size) + 8px)'
+  )
+  expect(sparseControlsRule).toContain(
+    'margin-top: var(--st-spacing, var(--st-default-spacing))'
+  )
+})
+
 test('active header glow is applied to the icon wrapper for active domains', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
@@ -288,9 +316,7 @@ test('active header glow is applied to the icon wrapper for active domains', () 
   expect(glowKeyframes).toContain('translate(-50%, -50%) scale')
   expect(glowKeyframes).not.toContain('25%')
   expect(glowKeyframes).not.toContain('75%')
-  expect(styles).toContain(
-    'ha-card.standard-visuals .header__icon-wrap'
-  )
+  expect(styles).toContain('ha-card.standard-visuals .header__icon-wrap')
 })
 
 test('header icons keep their own compact size without shrinking controls', () => {
@@ -303,7 +329,9 @@ test('header icons keep their own compact size without shrinking controls', () =
   const triggerIconRule =
     styles.match(/\.thermostat-trigger ha-icon\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(hostRule).toContain('--st-control-icon-size: var(--st-font-size-xl, 32px)')
+  expect(hostRule).toContain(
+    '--st-control-icon-size: var(--st-font-size-xl, 32px)'
+  )
   expect(hostRule).toContain(
     '--st-header-icon-size: var(--st-font-size-header-icon, 26px)'
   )

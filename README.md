@@ -144,6 +144,13 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="4" nowrap><strong>v4.0.26</strong></td>
+      <td>Fixed order-only YAML edits so Home Assistant enables Save when control or option order changes.</td>
+    </tr>
+    <tr><td>Kept configured control order stable when editing cards in the visual editor.</td></tr>
+    <tr><td>Balanced entity label sizing so long labels can wrap cleanly without forcing normal mobile labels to split too early.</td></tr>
+    <tr><td>Reduced extra vertical space above sparse main control rows without changing button height.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.0.25</strong></td>
       <td>Restored the active button underline so enhanced visuals show the tuned bottom accent by default.</td>
     </tr>
