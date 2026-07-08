@@ -176,6 +176,7 @@ export default class SimpleThermostatGroup extends LitElement {
         inset: 0 0 auto 0;
         min-width: 0;
         box-sizing: border-box;
+        transform: translateY(var(--st-group-header-top-buffer, 6px));
       }
 
       .group-title {
@@ -394,6 +395,7 @@ export default class SimpleThermostatGroup extends LitElement {
         display: block;
         overflow: hidden;
         opacity: 1;
+        padding-top: var(--st-group-body-top-buffer, 14px);
         transition: opacity 120ms ease;
         will-change: opacity;
       }

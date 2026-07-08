@@ -582,6 +582,12 @@ test('fades the embedded card during selector changes', async () => {
   const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
   expect(styles).toContain('.embedded-card-host.fading')
   expect(styles).toContain('transition: opacity 120ms ease')
+  expect(styles).toContain(
+    'transform: translateY(var(--st-group-header-top-buffer, 6px))'
+  )
+  expect(styles).toContain(
+    'padding-top: var(--st-group-body-top-buffer, 14px)'
+  )
 
   const nextButton = group.shadowRoot?.querySelector(
     'button[aria-label="Next device"]'

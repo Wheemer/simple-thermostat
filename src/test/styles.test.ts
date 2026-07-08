@@ -56,7 +56,8 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-1')
   expect(styles).toContain('grid-template-columns: minmax(0, 1fr) max-content')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
-  expect(styles).toContain('minmax(0, 1fr) max-content')
+  expect(styles).toContain('minmax(160px, max-content)')
+  expect(styles).toContain('minmax(max-content, 1fr)')
 })
 
 test('entity table labels can wrap while values stay on one line', () => {
@@ -70,12 +71,66 @@ test('entity table labels can wrap while values stay on one line', () => {
   const valueRule = styles.match(/\.entity-value\s*\{[^}]*\}/)?.[0] ?? ''
 
   expect(tableLabelsRule).toContain(
-    'grid: auto-flow / minmax(0, max-content) max-content'
+    'grid: auto-flow / auto auto'
   )
   expect(headingRule).toContain('min-width: 0')
   expect(headingRule).toContain('white-space: normal')
   expect(valueRule).toContain('min-width: max-content')
   expect(valueRule).toContain('white-space: nowrap')
+})
+
+test('standard visuals keep upstream-style intrinsic body sizing', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const standardBodyRule =
+    styles.match(/ha-card\.standard-visuals \.body\s*\{[^}]*\}/)?.[0] ?? ''
+
+  expect(standardBodyRule).toContain(
+    'grid-auto-columns: minmax(min-content, auto)'
+  )
+})
+
+test('standard visuals keep upstream-style header icon sizing', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const standardHeaderIconRule =
+    styles.match(/ha-card\.standard-visuals \.header__icon\s*\{[^}]*\}/)
+      ?.[0] ?? ''
+
+  expect(standardHeaderIconRule).toContain('--iron-icon-width: 24px')
+  expect(standardHeaderIconRule).toContain('--iron-icon-height: 24px')
+  expect(standardHeaderIconRule).toContain('--mdc-icon-size: 24px')
+  expect(standardHeaderIconRule).toContain('width: 24px')
+  expect(standardHeaderIconRule).toContain('height: 24px')
+})
+
+test('layout compatibility fixes do not retune semantic colors or icons', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const headerConfig = fs.readFileSync(
+    path.join(__dirname, '..', 'config', 'header.ts'),
+    'utf8'
+  )
+
+  const baseCardRule = styles.match(/ha-card\s*\{[^}]*\}/)?.[0] ?? ''
+  expect(baseCardRule).toContain('--auto-color: green')
+  expect(baseCardRule).toContain('--heat_cool-color: springgreen')
+  expect(baseCardRule).toContain('--cool-color: #2b9af9')
+  expect(baseCardRule).toContain('--heat-color: #ff8100')
+  expect(baseCardRule).toContain('--dry-color: #efbd07')
+  expect(styles).not.toContain('--auto-color: #66bb6a')
+  expect(styles).not.toContain('--heat_cool-color: #4ade80')
+  expect(styles).not.toContain('--cool-color: #60a5fa')
+  expect(styles).not.toContain('--heat-color: #fb923c')
+  expect(styles).not.toContain('--dry-color: #facc15')
+  expect(headerConfig).toContain("idle: 'mdi:air-conditioner'")
+  expect(headerConfig).not.toContain("idle: 'mdi:thermostat'")
 })
 
 test('inactive mode buttons use a consistent theme-derived overlay surface', () => {
