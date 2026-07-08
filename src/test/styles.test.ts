@@ -240,23 +240,20 @@ test('active mode backgrounds keep semantic mode colors', () => {
   }
 })
 
-test('card-level active mode accent overrides are not shadowed by mode defaults', () => {
+test('active mode accent uses each button color by default', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
 
-  expect(styles).not.toContain(
+  expect(styles).toContain(
     '--st-mode-active-accent-color: var(--st-mode-accent-color)'
   )
   expect(styles).toContain(
-    '--st-mode-default-active-accent-color: var(--st-mode-accent-color)'
+    'var(\n        --st-mode-active-accent-color,\n        color-mix'
   )
   expect(styles).toContain(
-    'var(\n        --st-mode-active-accent-color,\n        var('
-  )
-  expect(styles).toContain(
-    'var(\n    --st-mode-active-accent-color,\n    var(--st-mode-default-active-accent-color)'
+    'opacity: var(--st-mode-active-accent-opacity, 0.64)'
   )
 })
 
