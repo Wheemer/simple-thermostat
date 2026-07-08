@@ -616,6 +616,97 @@ test('climate controls preserve explicit object order', () => {
   ])
 })
 
+test('climate control options preserve explicit YAML order', () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      fan: {
+        quiet: true,
+        low: true,
+        medium: true,
+        high: true,
+        auto: true,
+      },
+      preset: {
+        none: true,
+        sleep: true,
+        boost: true,
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          fan_modes: ['auto', 'low', 'medium', 'high', 'quiet'],
+          fan_mode: 'auto',
+          preset_modes: ['boost', 'none', 'sleep'],
+          preset_mode: 'none',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  expect(card.modes.find(({ type }) => type === 'fan')?.list.map(({ value }) => value)).toEqual([
+    'quiet',
+    'low',
+    'medium',
+    'high',
+    'auto',
+  ])
+  expect(
+    card.modes.find(({ type }) => type === 'preset')?.list.map(({ value }) => value)
+  ).toEqual(['none', 'sleep', 'boost'])
+})
+
+test('configured control options append unconfigured integration options', () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      fan: {
+        quiet: true,
+        auto: true,
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          fan_modes: ['auto', 'low', 'medium', 'high', 'quiet'],
+          fan_mode: 'auto',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  expect(card.modes[0].list.map(({ value }) => value)).toEqual([
+    'quiet',
+    'auto',
+    'low',
+    'medium',
+    'high',
+  ])
+})
+
 test('swing controls preserve explicit icon config without enabling default swing icons', async () => {
   document.body.innerHTML = ''
   const card = createCard()

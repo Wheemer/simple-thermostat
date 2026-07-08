@@ -299,6 +299,8 @@ Per-mode options:
 
 Explicit per-mode `icon:` overrides are honored wherever they are set. For swing and vane rows, default icons still require `_icons: true`, but icons you set directly on a mode render without that extra flag.
 
+When a mode row is configured as an object, its options follow the order of the YAML keys. Any supported options not listed in YAML are appended after the configured options.
+
 Quote `on` and `off` when using them as YAML keys:
 
 ```yaml

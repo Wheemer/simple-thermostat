@@ -52,5 +52,6 @@ export interface ControlMode {
   heading?: boolean
   icons?: boolean
   hide_when_off?: boolean
+  preserve_option_order?: boolean
   list: Array<ControlModeOption>
 }

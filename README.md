@@ -144,6 +144,10 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="1" nowrap><strong>v4.0.21</strong></td>
+      <td>Preserved configured option order inside mode rows so fan, preset, swing, and HVAC options can be arranged from YAML.</td>
+    </tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.0.20</strong></td>
       <td>Added <code>layout.entities.separator: false</code> to hide the colon after entity row labels.</td>
     </tr>

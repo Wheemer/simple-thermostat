@@ -113,6 +113,42 @@ function getConfiguredModeValue(
   return matchingEntry?.[1]
 }
 
+function getOrderedModeOptions(
+  modeOptions: Array<string | boolean>,
+  specification: Partial<ModeControlObject>
+) {
+  const configuredKeys = Object.keys(specification).filter(
+    (key) => !key.startsWith('_')
+  )
+  if (configuredKeys.length === 0) return modeOptions
+
+  const optionsByKey = new Map<string, string | boolean>()
+  modeOptions.forEach((modeOption) => {
+    optionsByKey.set(normalizeModeConfigKey(String(modeOption)), modeOption)
+  })
+
+  const usedKeys = new Set<string>()
+  const orderedOptions: Array<string | boolean> = []
+
+  configuredKeys.forEach((key) => {
+    const normalizedKey = normalizeModeConfigKey(key)
+    if (!optionsByKey.has(normalizedKey) || usedKeys.has(normalizedKey)) return
+
+    orderedOptions.push(optionsByKey.get(normalizedKey))
+    usedKeys.add(normalizedKey)
+  })
+
+  modeOptions.forEach((modeOption) => {
+    const normalizedKey = normalizeModeConfigKey(String(modeOption))
+    if (usedKeys.has(normalizedKey)) return
+
+    orderedOptions.push(modeOption)
+    usedKeys.add(normalizedKey)
+  })
+
+  return orderedOptions
+}
+
 function getModeList(
   type: string,
   attributes: LooseObject,
@@ -134,7 +170,7 @@ function getModeList(
     return []
   }
 
-  return modeOptions
+  return getOrderedModeOptions(modeOptions, specification)
     .filter((modeOption) =>
       shouldShowModeControl(type, modeOption, specification)
     )
@@ -243,10 +279,11 @@ function buildConfiguredControlModes(
             hide_when_off: _hide_when_off,
             icons: _icons,
             heading: _heading,
-            name: _name,
-            list: getModeList(type, attributes, adapter, controlField),
-          }
-        })
+        name: _name,
+        preserve_option_order: Object.keys(controlField).length > 0,
+        list: getModeList(type, attributes, adapter, controlField),
+      }
+    })
     }
   }
 
@@ -472,7 +509,9 @@ export default class SimpleThermostat extends LitElement {
 
     this.modes = controlModes.map((values) => {
       const list =
-        values.type === MODES.HVAC
+        values.preserve_option_order
+          ? values.list
+          : values.type === MODES.HVAC
           ? sortHvacModes(values.list)
           : values.type === MODES.FAN
             ? sortFanModes(values.list)
