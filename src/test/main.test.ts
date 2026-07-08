@@ -1259,6 +1259,117 @@ test('enhanced visuals off preserves explicitly configured row step layout', asy
   ])
 })
 
+test('dual setpoints with entity rows default to compact column steppers', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+    entities: [{ entity: 'sensor.living_room_humidity', name: 'Humidity' }],
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat_cool',
+        attributes: {
+          current_temperature: 70,
+          target_temp_low: 68,
+          target_temp_high: 70,
+          min_temp: 45,
+          max_temp: 95,
+          hvac_modes: ['off', 'heat', 'cool', 'heat_cool'],
+          supported_features: 3,
+        },
+      },
+      'sensor.living_room_humidity': {
+        entity_id: 'sensor.living_room_humidity',
+        state: '55',
+        attributes: { unit_of_measurement: '%' },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°F',
+      },
+    },
+    localize: (key: string) => key,
+    formatEntityState: (stateObj) => stateObj.state,
+  }
+
+  await card.updateComplete
+
+  const wrappers = Array.from(
+    card.shadowRoot?.querySelectorAll('.current-wrapper') ?? []
+  )
+  expect(wrappers).toHaveLength(2)
+  expect(
+    wrappers.every((wrapper) => wrapper.classList.contains('column'))
+  ).toBe(true)
+  expect(
+    (card.shadowRoot?.querySelector('button.increase ha-icon') as any)?.icon
+  ).toBe('hass:chevron-up')
+})
+
+test('dual setpoints with entity rows preserve explicit row steppers', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+    layout: { step: 'row' },
+    entities: [{ entity: 'sensor.living_room_humidity', name: 'Humidity' }],
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat_cool',
+        attributes: {
+          current_temperature: 70,
+          target_temp_low: 68,
+          target_temp_high: 70,
+          min_temp: 45,
+          max_temp: 95,
+          hvac_modes: ['off', 'heat', 'cool', 'heat_cool'],
+          supported_features: 3,
+        },
+      },
+      'sensor.living_room_humidity': {
+        entity_id: 'sensor.living_room_humidity',
+        state: '55',
+        attributes: { unit_of_measurement: '%' },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°F',
+      },
+    },
+    localize: (key: string) => key,
+    formatEntityState: (stateObj) => stateObj.state,
+  }
+
+  await card.updateComplete
+
+  const wrappers = Array.from(
+    card.shadowRoot?.querySelectorAll('.current-wrapper') ?? []
+  )
+  expect(wrappers).toHaveLength(2)
+  expect(wrappers.every((wrapper) => wrapper.classList.contains('row'))).toBe(
+    true
+  )
+  expect(
+    (card.shadowRoot?.querySelector('button.increase ha-icon') as any)?.icon
+  ).toBe('mdi:plus')
+})
+
 test('legacy config names are normalized to v4 names', () => {
   document.body.innerHTML = ''
   const card = createCard()

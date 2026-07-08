@@ -637,13 +637,17 @@ export default class SimpleThermostat extends LitElement {
     const action = getEntityAction(entity)
     const { min: minValue, max: maxValue } = adapter.getRange(entity.attributes)
     const unit = this.getUnit()
-    const stepLayout =
-      this.config.enhanced_visuals === false
-        ? (this.config?.layout?.step ?? 'column')
-        : (this.config?.layout?.step ?? 'row')
-    const row = stepLayout === 'row'
     const entityDomain = config.entity.split('.')[0]
     const setpointCount = Object.keys(_values).length
+    const configuredStepLayout = this.config?.layout?.step
+    const needsCompactDualSetpoints =
+      !configuredStepLayout && this.showEntities && setpointCount > 1
+    const stepLayout =
+      configuredStepLayout ??
+      (this.config.enhanced_visuals === false || needsCompactDualSetpoints
+        ? 'column'
+        : 'row')
+    const row = stepLayout === 'row'
     const isUnavailable = ['unavailable', 'unknown'].includes(entity.state)
     const safeClass = (value: unknown) =>
       typeof value === 'string' ? value.replace(/[^a-z0-9_-]/gi, '') : ''

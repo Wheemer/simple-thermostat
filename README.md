@@ -144,6 +144,10 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="1" nowrap><strong>v4.0.29</strong></td>
+      <td>Kept dual heat/cool setpoints compact when extra entity rows are shown and no step layout is explicitly configured.</td>
+    </tr>
+    <tr>
       <td rowspan="1" nowrap><strong>v4.0.28</strong></td>
       <td>Made the active button underline use one accent path so <code>--st-mode-active-accent-opacity: 0</code> can hide it cleanly.</td>
     </tr>
