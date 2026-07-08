@@ -242,6 +242,7 @@ test('extra entity row layout controls are prominent in their own section', () =
       'layout.entities.type',
       'layout.entities.labels',
       'layout.entities.separator',
+      'layout.entities.alignment',
     ])
   )
 })

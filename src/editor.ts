@@ -86,6 +86,7 @@ const LABELS: Record<string, string> = {
   'layout.entities.type': 'Entity row layout',
   'layout.entities.labels': 'Show entity row labels',
   'layout.entities.separator': 'Show entity label separator',
+  'layout.entities.alignment': 'Entity label alignment',
   enhanced_visuals: 'Enhanced visuals',
   'tap_action.action': 'Tap action',
   'hold_action.action': 'Hold action',
@@ -130,6 +131,11 @@ const ENTITY_LAYOUT_OPTIONS = [
   { value: 'list', label: 'List' },
 ]
 
+const ENTITY_ALIGNMENT_OPTIONS = [
+  { value: 'right', label: 'Right' },
+  { value: 'left', label: 'Left' },
+]
+
 const DIRECT_FORM_PATHS = [
   'entity',
   'current_value_entity',
@@ -143,6 +149,7 @@ const DIRECT_FORM_PATHS = [
   'layout.entities.type',
   'layout.entities.labels',
   'layout.entities.separator',
+  'layout.entities.alignment',
   'hide.temperature',
   'hide.state',
   'hide.setpoint_label',
@@ -443,6 +450,15 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
             },
             { name: 'layout.entities.labels', selector: { boolean: {} } },
             { name: 'layout.entities.separator', selector: { boolean: {} } },
+            {
+              name: 'layout.entities.alignment',
+              selector: {
+                select: {
+                  mode: 'dropdown',
+                  options: ENTITY_ALIGNMENT_OPTIONS,
+                },
+              },
+            },
           ],
         },
       ],
@@ -589,6 +605,8 @@ export default class SimpleThermostatEditor extends LitElement {
       'layout.entities.labels': this.config.layout?.entities?.labels !== false,
       'layout.entities.separator':
         this.config.layout?.entities?.separator !== false,
+      'layout.entities.alignment':
+        this.config.layout?.entities?.alignment ?? 'right',
       enhanced_visuals: this.config.enhanced_visuals !== false,
       name: header.name ?? '',
       icon: typeof header.icon === 'string' ? header.icon : '',

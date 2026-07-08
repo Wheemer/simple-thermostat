@@ -223,3 +223,39 @@ test('entity row labels can hide the separator', () => {
   expect(headings).toEqual(['ui.card.climate.currently', 'Humidity'])
   expect(headings.join(' ')).not.toContain(':')
 })
+
+test('entity rows can opt into left aligned labels', () => {
+  const result = renderEntities({
+    _hide: { temperature: false, state: true },
+    entity: {
+      entity_id: 'climate.garage_heat',
+      state: 'off',
+      attributes: {
+        current_temperature: 20.4,
+      },
+    },
+    unit: '°C',
+    hass: {
+      formatEntityState: () => 'Off',
+    },
+    entities: [],
+    config: {
+      entity: 'climate.garage_heat',
+      layout: {
+        entities: {
+          alignment: 'left',
+        },
+      },
+    },
+    localize: (value: string) => value,
+    openEntityPopover: () => undefined,
+    adapter: climateAdapter,
+  })
+
+  const container = freshContainer()
+  render(result, container)
+
+  expect(container.querySelector('.entities')?.className).toContain(
+    'align-left'
+  )
+})

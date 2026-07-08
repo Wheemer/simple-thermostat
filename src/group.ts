@@ -163,9 +163,10 @@ export default class SimpleThermostatGroup extends LitElement {
 
       .group-selector {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 78px;
+        grid-template-columns: minmax(0, 1fr) 96px;
+        grid-template-rows: var(--st-group-header-control-height, 34px);
         grid-template-areas: 'content nav';
-        align-items: center;
+        align-items: start;
         gap: 4px;
         padding: calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 4)
           calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 2) 0
@@ -174,6 +175,10 @@ export default class SimpleThermostatGroup extends LitElement {
         position: absolute;
         z-index: 2;
         inset: 0 0 auto 0;
+        height: calc(
+          var(--st-group-header-control-height, 34px) +
+            calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 4)
+        );
         min-width: 0;
         box-sizing: border-box;
         transform: translateY(var(--st-group-header-top-buffer, 6px));
@@ -212,22 +217,22 @@ export default class SimpleThermostatGroup extends LitElement {
         grid-area: content;
         display: flex;
         align-items: center;
+        align-self: start;
+        height: var(--st-group-header-control-height, 34px);
         min-width: 0;
       }
 
       .group-nav-cluster {
         grid-area: nav;
         justify-self: end;
-        width: 78px;
+        align-self: start;
+        width: 96px;
         display: grid;
         grid-template-columns: auto auto auto;
-        grid-template-areas:
-          'prev next menu'
-          'count count menu';
+        grid-template-areas: 'prev next menu';
         align-items: center;
         justify-items: center;
-        column-gap: 2px;
-        row-gap: 0;
+        column-gap: 4px;
         margin-left: 4px;
       }
 
@@ -242,17 +247,17 @@ export default class SimpleThermostatGroup extends LitElement {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 24px;
-        height: 24px;
+        width: 34px;
+        height: 34px;
         padding: 0;
         cursor: pointer;
       }
 
       .group-nav ha-icon,
       .group-menu ha-icon {
-        --mdc-icon-size: 19px;
-        --iron-icon-width: 19px;
-        --iron-icon-height: 19px;
+        --mdc-icon-size: 24px;
+        --iron-icon-width: 24px;
+        --iron-icon-height: 24px;
       }
 
       .group-nav:disabled {
@@ -260,25 +265,18 @@ export default class SimpleThermostatGroup extends LitElement {
         cursor: default;
       }
 
-      .group-count {
-        grid-area: count;
-        min-width: 0;
-        margin-top: 2px;
-        text-align: center;
-        font-size: var(--ha-font-size-2xs, 10px);
-        line-height: 1;
-        color: var(--secondary-text-color);
-        white-space: nowrap;
-      }
-
       .group-menu {
         grid-area: menu;
         width: 20px;
+        height: 34px;
         background: transparent;
         color: var(--secondary-text-color);
       }
 
       .group-menu ha-icon {
+        --mdc-icon-size: 22px;
+        --iron-icon-width: 22px;
+        --iron-icon-height: 22px;
         transform: translateY(-1px);
       }
 
@@ -361,7 +359,7 @@ export default class SimpleThermostatGroup extends LitElement {
         background: transparent;
         color: var(--primary-text-color);
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: auto minmax(0, 1fr) auto;
         gap: 10px;
         align-items: center;
         width: 100%;
@@ -377,11 +375,20 @@ export default class SimpleThermostatGroup extends LitElement {
         background: var(--secondary-background-color);
       }
 
+      .group-picker button.selected {
+        color: var(--primary-color);
+      }
+
       .group-picker ha-icon {
         --mdc-icon-size: 22px;
         --iron-icon-width: 22px;
         --iron-icon-height: 22px;
         color: var(--primary-color);
+      }
+
+      .group-picker .icon-placeholder {
+        width: 22px;
+        height: 22px;
       }
 
       .group-picker span {
@@ -1188,9 +1195,9 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private selectEntity(entity: string, manual = true) {
+    this.menuOpen = false
     if (entity === this.selectedEntity) return
 
-    this.menuOpen = false
     if (manual) this.pauseAutoSelectAfterManualSelection()
 
     const prefersReducedMotion = window.matchMedia?.(
@@ -1351,7 +1358,9 @@ export default class SimpleThermostatGroup extends LitElement {
               class=${selected ? 'selected' : ''}
               @click=${() => this.selectEntity(target.entity)}
             >
-              ${icon ? html`<ha-icon icon=${icon}></ha-icon>` : nothing}
+              ${icon
+                ? html`<ha-icon icon=${icon}></ha-icon>`
+                : html`<span class="icon-placeholder"></span>`}
               <span>${label}</span>
             </button>
           `
@@ -1392,7 +1401,6 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private renderSelector() {
     const target = this.getSelectedTarget()
-    const index = this.getSelectedIndex()
     const label = this.getTargetLabel(target)
 
     return html`
@@ -1423,7 +1431,6 @@ export default class SimpleThermostatGroup extends LitElement {
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
           </button>
-          <span class="group-count">${index + 1} / ${this.targets.length}</span>
           <button
             class="group-menu"
             type="button"

@@ -82,6 +82,7 @@ interface CardConfig {
       type: 'table' | 'list'
       labels: boolean
       separator?: boolean
+      alignment?: 'left' | 'right'
     }
     step: 'row' | 'column'
   }

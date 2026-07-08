@@ -208,6 +208,7 @@ Layout options:
 | `layout.entities.type`   | `table`, `list` | Extra entity row layout.                                                                                                                                                                                                                |
 | `layout.entities.labels` | boolean         | Show labels for extra entity rows.                                                                                                                                                                                                      |
 | `layout.entities.separator` | boolean      | Show the `:` separator after text labels in entity rows. Set to `false` if you prefer labels without punctuation.                                                                                                                       |
+| `layout.entities.alignment` | `right`, `left` | Align entity row text labels. Defaults to `right`; set to `left` for a v3-style label/value table.                                                                                                                                      |
 
 ## Tweaks
 

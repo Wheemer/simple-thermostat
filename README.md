@@ -144,6 +144,12 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="3" nowrap><strong>v4.0.23</strong></td>
+      <td>Added <code>layout.entities.alignment</code> so entity labels can use right-aligned or left-aligned table styling.</td>
+    </tr>
+    <tr><td>Improved separator-free entity rows so labels and values keep clear table spacing.</td></tr>
+    <tr><td>Refined multi-card selector navigation and menu behavior so the current card is clearer and controls stay steady while switching.</td></tr>
+    <tr>
       <td rowspan="3" nowrap><strong>v4.0.22</strong></td>
       <td>Added <code>_order</code> for numeric mode options that cannot preserve YAML key order after Home Assistant parses the config.</td>
     </tr>

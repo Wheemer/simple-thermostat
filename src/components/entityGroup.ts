@@ -1,7 +1,7 @@
 import { html } from 'lit'
 
 export function wrapEntities(config, content) {
-  const { type, labels: showLabels } = config?.layout?.entities ?? {
+  const { type, labels: showLabels, alignment } = config?.layout?.entities ?? {
     type: 'table',
     labels: true,
   }
@@ -12,6 +12,7 @@ export function wrapEntities(config, content) {
   const classes = [
     showLabels ? 'with-labels' : 'without-labels',
     type === 'list' ? 'as-list' : 'as-table',
+    alignment === 'left' ? 'align-left' : '',
     visibleRows.length === 1 ? 'single-row' : '',
   ]
 

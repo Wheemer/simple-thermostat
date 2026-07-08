@@ -114,9 +114,7 @@ test('renders only a selector and an embedded simple thermostat card', async () 
   expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
     'Living AC'
   )
-  expect(group.shadowRoot?.querySelector('.group-count')?.textContent).toBe(
-    '1 / 2'
-  )
+  expect(group.shadowRoot?.querySelector('.group-count')).toBe(null)
   expect(embeddedSetConfig).toHaveBeenLastCalledWith(
     expect.objectContaining({
       entity: 'climate.living_room',
@@ -162,9 +160,7 @@ test('switches the embedded card without rewriting the selected card config', as
   expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
     'Bedroom AC'
   )
-  expect(group.shadowRoot?.querySelector('.group-count')?.textContent).toBe(
-    '2 / 2'
-  )
+  expect(group.shadowRoot?.querySelector('.group-count')).toBe(null)
   expect(embeddedSetConfig).toHaveBeenLastCalledWith(
     expect.objectContaining({
       entity: 'climate.bedroom',
@@ -336,6 +332,12 @@ test('opens the picker from the dots and selects a target directly', async () =>
   await group.updateComplete
 
   expect(group.shadowRoot?.querySelector('.group-picker')).not.toBe(null)
+  expect(
+    group.shadowRoot?.querySelector('.group-picker button.selected')?.textContent
+  ).toContain('Living AC')
+  expect(
+    group.shadowRoot?.querySelector('.group-picker .selected-indicator')
+  ).toBe(null)
 
   const bedroomButton = Array.from(
     group.shadowRoot?.querySelectorAll('.group-picker button') ?? []
@@ -352,6 +354,51 @@ test('opens the picker from the dots and selects a target directly', async () =>
   )
 })
 
+test('picker follows arrow order and closes when the current target is clicked', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const nextButton = group.shadowRoot?.querySelector(
+    'button[aria-label="Next device"]'
+  ) as HTMLButtonElement
+  nextButton.click()
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Bedroom AC'
+  )
+
+  const menuButton = group.shadowRoot?.querySelector(
+    'button[aria-label="Select device"]'
+  ) as HTMLButtonElement
+  menuButton.click()
+  await group.updateComplete
+
+  const items = Array.from(
+    group.shadowRoot?.querySelectorAll('.group-picker button') ?? []
+  )
+
+  expect(items.map((item) => item.textContent?.trim())).toEqual(
+    expect.arrayContaining(['Living AC', 'Bedroom AC'])
+  )
+  expect(items[0].textContent).toContain('Living AC')
+  expect(items[1].textContent).toContain('Bedroom AC')
+  expect(items[1].classList.contains('selected')).toBe(true)
+
+  ;(items[1] as HTMLButtonElement).click()
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-picker')).toBe(null)
+})
+
 test('keeps the picker scrollable instead of clipping long target lists', async () => {
   const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
 
@@ -365,16 +412,16 @@ test('keeps header controls in fixed columns so embedded content cannot nudge th
   const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
 
   expect(styles).toContain(
-    'grid-template-columns: minmax(0, 1fr) 78px'
+    'grid-template-columns: minmax(0, 1fr) 96px'
   )
   expect(styles).toContain("grid-template-areas: 'content nav'")
   expect(styles).toContain('grid-area: content')
   expect(styles).toContain('grid-area: nav')
   expect(styles).toContain('justify-self: end')
-  expect(styles).toContain('width: 78px')
-  expect(styles).toContain('width: 24px')
+  expect(styles).toContain('width: 96px')
+  expect(styles).toContain('width: 34px')
   expect(styles).toContain('width: 20px')
-  expect(styles).toContain('height: 24px')
+  expect(styles).toContain('height: 34px')
   expect(styles).toContain('transform: translateY(-1px)')
 })
 
@@ -469,8 +516,8 @@ test('remembers the selected embedded card when enabled', async () => {
   secondGroup.hass = hass as any
   await secondGroup.updateComplete
 
-  expect(secondGroup.shadowRoot?.querySelector('.group-count')?.textContent).toBe(
-    '2 / 2'
+  expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Bedroom'
   )
   expect(embeddedSetConfig).toHaveBeenLastCalledWith(
     expect.objectContaining({ entity: 'climate.bedroom' })

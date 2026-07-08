@@ -300,7 +300,9 @@ ha-card.loading {
     place-items: start;
   }
   &.with-labels {
-    grid: auto-flow / auto auto;
+    grid-template-columns: auto auto;
+    grid-auto-flow: row;
+    column-gap: 8px;
     place-items: start;
   }
 }
@@ -329,6 +331,11 @@ ha-card.loading {
   transition:
     color 180ms var(--st-motion-ease),
     filter 180ms var(--st-motion-ease);
+}
+.entities.align-left .entity-heading {
+  justify-content: flex-start;
+  justify-self: start;
+  text-align: left;
 }
 
 .entities:empty {

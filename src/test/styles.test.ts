@@ -70,13 +70,31 @@ test('entity table labels can wrap while values stay on one line', () => {
   const headingRule = styles.match(/\.entity-heading\s*\{[^}]*\}/)?.[0] ?? ''
   const valueRule = styles.match(/\.entity-value\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(tableLabelsRule).toContain(
-    'grid: auto-flow / auto auto'
-  )
+  expect(tableLabelsRule).toContain('grid-template-columns: auto auto')
+  expect(tableLabelsRule).toContain('grid-auto-flow: row')
+  expect(tableLabelsRule).toContain('column-gap: 8px')
   expect(headingRule).toContain('min-width: 0')
   expect(headingRule).toContain('white-space: normal')
   expect(valueRule).toContain('min-width: max-content')
   expect(valueRule).toContain('white-space: nowrap')
+})
+
+test('entity table labels can opt into left alignment', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const headingRule = styles.match(/\.entity-heading\s*\{[^}]*\}/)?.[0] ?? ''
+  const leftAlignRule =
+    styles.match(/\.entities\.align-left \.entity-heading\s*\{[^}]*\}/)?.[0] ??
+    ''
+
+  expect(headingRule).toContain('justify-content: flex-end')
+  expect(headingRule).toContain('justify-self: end')
+  expect(headingRule).toContain('text-align: right')
+  expect(leftAlignRule).toContain('justify-content: flex-start')
+  expect(leftAlignRule).toContain('justify-self: start')
+  expect(leftAlignRule).toContain('text-align: left')
 })
 
 test('entity list rows keep a gap between value-only items', () => {
