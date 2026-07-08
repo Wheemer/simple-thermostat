@@ -76,9 +76,8 @@ function shouldShowModeControl(
   const modeKey = String(modeOption)
   const configuredMode = getConfiguredModeValue(modeKey, config)
 
-  if (typeof configuredMode === 'object') {
-    const obj = configuredMode as ModeValue
-    return obj.include !== false
+  if (isModeValue(configuredMode)) {
+    return configuredMode.include !== false
   }
 
   const hasExplicitConfig = Object.keys(config).some(
@@ -113,13 +112,17 @@ function getConfiguredModeValue(
   return matchingEntry?.[1]
 }
 
+function isModeValue(value: unknown): value is ModeValue {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 function getOrderedModeOptions(
   modeOptions: Array<string | boolean>,
   specification: Partial<ModeControlObject>
 ) {
-  const configuredKeys = Object.keys(specification).filter(
-    (key) => !key.startsWith('_')
-  )
+  const configuredKeys = Array.isArray(specification._order)
+    ? specification._order.map(String)
+    : Object.keys(specification).filter((key) => !key.startsWith('_'))
   if (configuredKeys.length === 0) return modeOptions
 
   const optionsByKey = new Map<string, string | boolean>()
@@ -177,8 +180,9 @@ function getModeList(
     .map((modeOption) => {
       const modeKey = String(modeOption)
       const configuredMode = getConfiguredModeValue(modeKey, specification)
-      const values: ModeValue =
-        typeof configuredMode === 'object' ? configuredMode : {}
+      const values: ModeValue = isModeValue(configuredMode)
+        ? configuredMode
+        : {}
       const { name: configuredName, ...modeValues } = values
       const name: string | false =
         configuredName === false

@@ -102,6 +102,8 @@ export function renderTemplate({
         raw: rawState,
         text: textState,
       },
+      state_attr: (entityId: string, attr: string) =>
+        hass.states?.[entityId]?.attributes?.[attr],
       ui: translations,
       v: variables,
     },

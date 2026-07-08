@@ -707,6 +707,79 @@ test('configured control options append unconfigured integration options', () =>
   ])
 })
 
+test('configured mode order can be supplied explicitly for numeric options', () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      fan: {
+        _order: ['auto', 'quiet', '1', '2', '3', '4', '5'],
+        '1': {
+          name: false,
+        },
+        '2': {
+          name: false,
+        },
+        '3': {
+          name: false,
+        },
+        '4': {
+          name: false,
+        },
+        '5': {
+          name: false,
+        },
+        auto: {
+          name: false,
+          icon: 'mdi:fan-auto',
+        },
+        quiet: {
+          name: false,
+          icon: 'mdi:volume-off',
+        },
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          fan_modes: ['1', '2', '3', '4', '5', 'auto', 'quiet'],
+          fan_mode: 'auto',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  const fan = card.modes.find(({ type }) => type === 'fan')
+  expect(fan?.list.map(({ value }) => value)).toEqual([
+    'auto',
+    'quiet',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+  ])
+  expect(fan?.list.map(({ icon }) => icon)).toEqual([
+    'mdi:fan-auto',
+    'mdi:volume-off',
+    'mdi:fan-speed-1',
+    'mdi:fan-speed-2',
+    'mdi:fan-speed-3',
+    'st:fan-speed-4',
+    'st:fan-speed-5',
+  ])
+})
+
 test('swing controls preserve explicit icon config without enabling default swing icons', async () => {
   document.body.innerHTML = ''
   const card = createCard()

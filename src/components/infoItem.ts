@@ -56,6 +56,80 @@ function safeClass(value: unknown) {
   return String(value ?? '').replace(/[^a-z0-9_-]/gi, '')
 }
 
+function renderIconTemplate({
+  icon,
+  state,
+  attribute,
+  hass,
+  config,
+  variables,
+  localize,
+}: {
+  icon?: string
+  state: unknown
+  attribute?: string
+  hass: any
+  config?: LooseObject
+  variables?: LooseObject
+  localize?: (label: string, prefix?: string) => string
+}) {
+  if (
+    typeof icon !== 'string' ||
+    !icon.includes('{{') ||
+    typeof state !== 'object' ||
+    state === null
+  ) {
+    return icon
+  }
+
+  return renderTemplate({
+    template: icon,
+    stateObj: state as LooseObject,
+    attribute,
+    hass,
+    config,
+    variables,
+    localize,
+  }).trim()
+}
+
+function renderHeadingTemplate({
+  heading,
+  state,
+  attribute,
+  hass,
+  config,
+  variables,
+  localize,
+}: {
+  heading?: string | false
+  state: unknown
+  attribute?: string
+  hass: any
+  config?: LooseObject
+  variables?: LooseObject
+  localize?: (label: string, prefix?: string) => string
+}) {
+  if (
+    typeof heading !== 'string' ||
+    !heading.includes('{{') ||
+    typeof state !== 'object' ||
+    state === null
+  ) {
+    return undefined
+  }
+
+  return renderTemplate({
+    template: heading,
+    stateObj: state as LooseObject,
+    attribute,
+    hass,
+    config,
+    variables,
+    localize,
+  }).trim()
+}
+
 export default function renderInfoItem({
   hide = false,
   hass,
@@ -80,6 +154,24 @@ export default function renderInfoItem({
     config,
     separator = true,
   } = details
+  const renderedIcon = renderIconTemplate({
+    icon,
+    state,
+    attribute,
+    hass,
+    config,
+    variables,
+    localize,
+  })
+  const renderedHeading = renderHeadingTemplate({
+    heading,
+    state,
+    attribute,
+    hass,
+    config,
+    variables,
+    localize,
+  })
   const hasConfiguredUnit = typeof unit === 'string' && unit.length > 0
   const entityId = typeof state === 'object' ? state.entity_id : entity
   const canOpenEntity = entityId && typeof openEntityPopover === 'function'
@@ -130,7 +222,7 @@ export default function renderInfoItem({
       isToggleEntity &&
         getToggleKindClass(
           getToggleKind({
-            icon: icon || state.attributes?.icon,
+            icon: renderedIcon || state.attributes?.icon,
             label: heading || state.attributes?.friendly_name,
             entity: state,
             hass,
@@ -241,7 +333,7 @@ export default function renderInfoItem({
     isToggleEntity &&
       getToggleKindClass(
         getToggleKind({
-          icon: icon || state?.attributes?.icon,
+          icon: renderedIcon || state?.attributes?.icon,
           label:
             typeof heading === 'string'
               ? heading
@@ -254,19 +346,21 @@ export default function renderInfoItem({
     .filter(Boolean)
     .join(' ')
 
-  const headingResult = icon
+  const headingResult = renderedIcon
     ? html`
         <ha-icon
-          icon="${icon}"
+          icon="${renderedIcon}"
           title=${tooltip}
           @click=${canOpenEntity ? () => openEntityPopover(entityId) : null}
         ></ha-icon>
       `
-    : ` ${heading}${separator === false ? '' : ':'} `
+    : typeof renderedHeading === 'string'
+      ? html`${unsafeHTML(renderedHeading)}`
+      : ` ${heading}${separator === false ? '' : ':'} `
 
   return html`<div
       class=${headingClasses}
-      title=${icon ? tooltip : nothing}
+      title=${renderedIcon ? tooltip : nothing}
       @click=${canOpenEntity ? () => openEntityPopover(entityId) : null}
     >
       ${headingResult}

@@ -144,6 +144,12 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="3" nowrap><strong>v4.0.22</strong></td>
+      <td>Added <code>_order</code> for numeric mode options that cannot preserve YAML key order after Home Assistant parses the config.</td>
+    </tr>
+    <tr><td>Improved fan speed icon handling for numeric speeds and <code>medium_high</code> style fan ladders.</td></tr>
+    <tr><td>Restored dynamic extra-entity icon templates, including legacy <code>{{icon|icon}}</code> rows and <code>state_attr()</code> icon lookups.</td></tr>
+    <tr>
       <td rowspan="1" nowrap><strong>v4.0.21</strong></td>
       <td>Preserved configured option order inside mode rows so fan, preset, swing, and HVAC options can be arranged from YAML.</td>
     </tr>

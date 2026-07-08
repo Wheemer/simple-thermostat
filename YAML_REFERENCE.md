@@ -288,6 +288,7 @@ Per-row options:
 | `_heading`       | Set to `true` to show the row heading.     |
 | `_hide_when_off` | Hide the row when the main entity is off.  |
 | `_icons`         | Set to `false` to hide icons for this row. |
+| `_order`         | Explicit option order. Useful for numeric modes such as `"1"` through `"5"`, where JavaScript object key ordering cannot preserve YAML order. |
 
 Per-mode options:
 
@@ -300,6 +301,39 @@ Per-mode options:
 Explicit per-mode `icon:` overrides are honored wherever they are set. For swing and vane rows, default icons still require `_icons: true`, but icons you set directly on a mode render without that extra flag.
 
 When a mode row is configured as an object, its options follow the order of the YAML keys. Any supported options not listed in YAML are appended after the configured options.
+
+For numeric mode names, use `_order` because Home Assistant delivers numeric-looking object keys before text keys:
+
+```yaml
+control:
+  fan:
+    _order:
+      - auto
+      - quiet
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '5'
+    auto:
+      name: false
+      icon: mdi:fan-auto
+    quiet:
+      name: false
+      icon: mdi:volume-off
+    '1':
+      name: false
+    '2':
+      name: false
+    '3':
+      name: false
+    '4':
+      name: false
+      icon: st:fan-speed-4
+    '5':
+      name: false
+      icon: st:fan-speed-5
+```
 
 Quote `on` and `off` when using them as YAML keys:
 
@@ -355,6 +389,16 @@ Entity options:
 | `unit`      | string | Unit suffix.                                 |
 | `decimals`  | number | Decimal places for numeric values.           |
 | `type`      | string | Use `relativetime` for relative time output. |
+
+Extra entity values, labels, and icons support the card's frontend template engine. This is the same style used by v3 legacy sensor rows, not Home Assistant backend Jinja.
+
+```yaml
+entities:
+  - entity: sensor.status_fenster_sz
+    icon: "{{ state_attr('sensor.status_fenster_sz', 'icon') }}"
+  - entity: sensor.status_fenster_sz
+    name: "{{icon|icon}}"
+```
 
 Hide extra entities:
 

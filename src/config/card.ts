@@ -28,11 +28,15 @@ export type ModeValue = {
  * Represents the available mode values for a mode
  *
  */
-export type ModeControlObject = Record<string, boolean | ModeValue> & {
+export type ModeControlObject = Record<
+  string,
+  boolean | ModeValue | Array<string | number | boolean>
+> & {
   _name?: string | boolean
   _heading?: boolean
   _hide_when_off?: boolean
   _icons?: boolean
+  _order?: Array<string | number | boolean>
 }
 
 /**
