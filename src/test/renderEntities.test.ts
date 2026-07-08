@@ -259,3 +259,50 @@ test('entity rows can opt into left aligned labels', () => {
     'align-left'
   )
 })
+
+test('separator-free left-aligned entity rows keep labels and values paired', () => {
+  const result = renderEntities({
+    _hide: { temperature: true, state: true },
+    entity: {
+      entity_id: 'climate.upstairs',
+      state: 'heat_cool',
+      attributes: {},
+    },
+    unit: '°F',
+    hass: {
+      formatEntityState: () => 'Heat/Cool',
+    },
+    entities: [
+      { name: 'Guest', state: '72' },
+      { name: 'Motion', state: 'Clear' },
+      { name: 'Office', state: '74' },
+    ],
+    config: {
+      entity: 'climate.upstairs',
+      layout: {
+        entities: {
+          separator: false,
+          alignment: 'left',
+        },
+      },
+    },
+    localize: (value: string) => value,
+    openEntityPopover: () => undefined,
+    adapter: climateAdapter,
+  })
+
+  const container = freshContainer()
+  render(result, container)
+
+  const entities = container.querySelector('.entities')
+  const layoutChildren = [...(entities?.childNodes ?? [])].filter(
+    (node) =>
+      node.nodeType !== Node.COMMENT_NODE &&
+      (node.nodeType !== Node.TEXT_NODE || node.textContent?.trim())
+  )
+
+  expect(layoutChildren).toHaveLength(6)
+  expect(
+    [...entities!.children].map((child) => child.textContent?.trim())
+  ).toEqual(['Guest', '72', 'Motion', 'Clear', 'Office', '74'])
+})

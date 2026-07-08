@@ -281,7 +281,15 @@ function getControlFromForm(
     !Array.isArray(config.control) &&
     typeof config.control === 'object'
   ) {
-    return desired.reduce(
+    const desiredSet = new Set(desired.map(String))
+    const configuredOrder = Object.keys(config.control).filter((type) =>
+      desiredSet.has(type)
+    )
+    const appendedOrder = desired.filter(
+      (type) => !configuredOrder.includes(type)
+    )
+
+    return [...configuredOrder, ...appendedOrder].reduce(
       (result, type) => {
         result[type] = config.control[type] || {}
         return result

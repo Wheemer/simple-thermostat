@@ -152,6 +152,50 @@ test('fan editor only shows controls supported by the selected fan', () => {
   )
 })
 
+test('editor preserves custom control order when changing enabled controls', () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  const editor = new SimpleThermostatEditor()
+  editor.setConfig({
+    entity: 'climate.living_room',
+    control: {
+      swing: {},
+      fan: {},
+      hvac: {},
+    },
+  } as any)
+  editor.hass = {
+    performAction,
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          hvac_modes: ['off', 'cool'],
+          preset_modes: ['eco'],
+          fan_modes: ['auto'],
+          swing_modes: ['off', 'both'],
+        },
+      },
+    },
+  } as any
+
+  const updated = editor._applyFormChange({
+    'control.preset': true,
+  } as any)
+
+  expect(Object.keys(updated.control as Record<string, unknown>)).toEqual([
+    'swing',
+    'fan',
+    'hvac',
+    'preset',
+  ])
+})
+
 test('setpoint controls are hidden when the selected fan has no percentage support', () => {
   const names = schemaNames(
     buildSchema({ entity: 'fan.basic' } as any, {

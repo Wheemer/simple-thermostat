@@ -240,6 +240,26 @@ test('active mode backgrounds keep semantic mode colors', () => {
   }
 })
 
+test('card-level active mode accent overrides are not shadowed by mode defaults', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+
+  expect(styles).not.toContain(
+    '--st-mode-active-accent-color: var(--st-mode-accent-color)'
+  )
+  expect(styles).toContain(
+    '--st-mode-default-active-accent-color: var(--st-mode-accent-color)'
+  )
+  expect(styles).toContain(
+    'var(\n        --st-mode-active-accent-color,\n        var('
+  )
+  expect(styles).toContain(
+    'var(\n    --st-mode-active-accent-color,\n    var(--st-mode-default-active-accent-color)'
+  )
+})
+
 test('active header glow is applied to the icon wrapper for active domains', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),

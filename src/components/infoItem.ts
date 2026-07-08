@@ -358,12 +358,13 @@ export default function renderInfoItem({
       ? html`${unsafeHTML(renderedHeading)}`
       : ` ${heading}${separator === false ? '' : ':'} `
 
-  return html`<div
+  const headingCell = html`<div
       class=${headingClasses}
       title=${renderedIcon ? tooltip : nothing}
       @click=${canOpenEntity ? () => openEntityPopover(entityId) : null}
     >
       ${headingResult}
-    </div>
-    ${valueCell} `
+    </div>`
+
+  return [headingCell, valueCell]
 }

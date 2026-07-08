@@ -144,6 +144,12 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="3" nowrap><strong>v4.0.24</strong></td>
+      <td>Kept entity labels and values paired when using separator-free or left-aligned entity rows.</td>
+    </tr>
+    <tr><td>Preserved configured <code>control</code> order when changing enabled controls in the visual editor.</td></tr>
+    <tr><td>Allowed <code>--st-mode-active-accent-color</code> to override the active mode underline from card-level CSS.</td></tr>
+    <tr>
       <td rowspan="3" nowrap><strong>v4.0.23</strong></td>
       <td>Added <code>layout.entities.alignment</code> so entity labels can use right-aligned or left-aligned table styling.</td>
     </tr>
