@@ -1124,7 +1124,7 @@ ha-card.drying {
   ha-card:not(.standard-visuals) .modes.state.sparse .mode-item {
     flex-direction: row;
     gap: 6px;
-    min-width: min(100%, var(--st-hvac-mode-min-width, 120px));
+    min-width: min(100%, var(--st-mode-min-width, 72px));
   }
 }
 .modes.dense {

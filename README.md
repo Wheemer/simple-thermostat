@@ -144,6 +144,10 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="1" nowrap><strong>v4.0.27</strong></td>
+      <td>Kept sparse HVAC mode rows on one line on narrow mobile screens when one mode is hidden.</td>
+    </tr>
+    <tr>
       <td rowspan="4" nowrap><strong>v4.0.26</strong></td>
       <td>Fixed order-only YAML edits so Home Assistant enables Save when control or option order changes.</td>
     </tr>

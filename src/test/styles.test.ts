@@ -285,6 +285,23 @@ test('sparse main controls pull upward without shrinking buttons', () => {
   )
 })
 
+test('mobile sparse main controls can fit three buttons on one row', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const mobileSparseRule =
+    styles.match(
+      /ha-card:not\(\.standard-visuals\) \.modes\.hvac\.sparse \.mode-item,\s*ha-card:not\(\.standard-visuals\) \.modes\.state\.sparse \.mode-item\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(mobileSparseRule).toContain('flex-direction: row')
+  expect(mobileSparseRule).toContain(
+    'min-width: min(100%, var(--st-mode-min-width, 72px))'
+  )
+  expect(mobileSparseRule).not.toContain('--st-hvac-mode-min-width')
+})
+
 test('active header glow is applied to the icon wrapper for active domains', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
