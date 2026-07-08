@@ -222,6 +222,7 @@ test('active mode backgrounds keep semantic mode colors', () => {
     styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
 
   expect(activeRule).toContain('var(--st-mode-color, var(--primary-color))')
+  expect(activeRule).not.toContain('box-shadow')
 
   const modeColors: Record<string, string> = {
     heat: '--heat-color',
@@ -256,7 +257,7 @@ test('active mode accent uses each button color by default', () => {
     '--st-mode-active-accent-color: var(--st-mode-accent-color)'
   )
   expect(styles).toContain(
-    'var(\n        --st-mode-active-accent-color,\n        color-mix'
+    '.mode-item.active::after {\n  background: var(--st-mode-active-accent-color)'
   )
   expect(styles).toContain(
     'opacity: var(--st-mode-active-accent-opacity, 0.64)'
