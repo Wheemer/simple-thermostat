@@ -254,6 +254,8 @@ control:
       name: Not set
 ```
 
+When controls are configured as an array or object, the card keeps the order from your YAML.
+
 Disable controls:
 
 ```yaml
@@ -293,6 +295,8 @@ Per-mode options:
 | `name`    | Override a mode label.         |
 | `icon`    | Override a mode icon.          |
 | `include` | Set to `false` to hide a mode. |
+
+Explicit per-mode `icon:` overrides are honored wherever they are set. For swing and vane rows, default icons still require `_icons: true`, but icons you set directly on a mode render without that extra flag.
 
 Quote `on` and `off` when using them as YAML keys:
 

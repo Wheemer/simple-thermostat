@@ -74,9 +74,10 @@ function shouldShowModeControl(
   config: Partial<ModeControlObject>
 ) {
   const modeKey = String(modeOption)
+  const configuredMode = getConfiguredModeValue(modeKey, config)
 
-  if (typeof config[modeKey] === 'object') {
-    const obj = config[modeKey] as ModeValue
+  if (typeof configuredMode === 'object') {
+    const obj = configuredMode as ModeValue
     return obj.include !== false
   }
 
@@ -85,7 +86,31 @@ function shouldShowModeControl(
   )
   const hideUnlistedModes = type === MODES.PRESET
 
-  return config?.[modeKey] ?? !(hideUnlistedModes && hasExplicitConfig)
+  return configuredMode ?? !(hideUnlistedModes && hasExplicitConfig)
+}
+
+function normalizeModeConfigKey(value: string) {
+  return value.toLowerCase().replace(/\s+/g, '_')
+}
+
+function getConfiguredModeValue(
+  modeKey: string,
+  specification: Partial<ModeControlObject>
+) {
+  const normalizedModeKey = normalizeModeConfigKey(modeKey)
+  const exactValue = specification[modeKey]
+
+  if (typeof exactValue !== 'undefined') return exactValue
+  if (typeof specification[normalizedModeKey] !== 'undefined') {
+    return specification[normalizedModeKey]
+  }
+
+  const matchingEntry = Object.entries(specification).find(
+    ([key]) =>
+      !key.startsWith('_') && normalizeModeConfigKey(key) === normalizedModeKey
+  )
+
+  return matchingEntry?.[1]
 }
 
 function getModeList(
@@ -115,13 +140,9 @@ function getModeList(
     )
     .map((modeOption) => {
       const modeKey = String(modeOption)
-      const normalizedModeKey = modeKey.toLowerCase().replace(/\s+/g, '_')
+      const configuredMode = getConfiguredModeValue(modeKey, specification)
       const values: ModeValue =
-        typeof specification[modeKey] === 'object'
-          ? specification[modeKey]
-          : typeof specification[normalizedModeKey] === 'object'
-            ? specification[normalizedModeKey]
-            : {}
+        typeof configuredMode === 'object' ? configuredMode : {}
       const { name: configuredName, ...modeValues } = values
       const name: string | false =
         configuredName === false
@@ -138,6 +159,7 @@ function getModeList(
             ? getFanModeIcon(modeKey, modeOptions)
             : undefined) ??
           getModeIcon(modeKey),
+        iconConfigured: typeof values.icon !== 'undefined',
         value: modeKey,
         name,
       }
@@ -214,13 +236,8 @@ function buildConfiguredControlModes(
           supportsModeType(type, entityDomain, attributes, adapter)
         )
         .map(([type, definition]: [string, ModeControlObject | true]) => {
-          const {
-            _name,
-            _hide_when_off,
-            _icons,
-            _heading,
-            ...controlField
-          } = definition === true ? {} : definition
+          const { _name, _hide_when_off, _icons, _heading, ...controlField } =
+            definition === true ? {} : definition
           return {
             type,
             hide_when_off: _hide_when_off,
@@ -272,6 +289,13 @@ function sortControlModes(
   return [...controlModes].sort(
     (a, b) => getControlOrder(a.type) - getControlOrder(b.type)
   )
+}
+
+function shouldPreserveConfiguredControlOrder(control: CardConfig['control']) {
+  if (Array.isArray(control)) return true
+  if (!control || typeof control !== 'object') return false
+
+  return Object.keys(control).length > 0
 }
 
 interface Values {
@@ -432,17 +456,19 @@ export default class SimpleThermostat extends LitElement {
     }
 
     const entityDomain = this.config.entity.split('.')[0]
-    const controlModes = sortControlModes(
-      removeOffFromSecondaryModes(
-        buildConfiguredControlModes(
-          this.config,
-          entityDomain,
-          attributes,
-          adapter
-        )
-      ),
-      entityDomain
+    const configuredControlModes = removeOffFromSecondaryModes(
+      buildConfiguredControlModes(
+        this.config,
+        entityDomain,
+        attributes,
+        adapter
+      )
     )
+    const controlModes = shouldPreserveConfiguredControlOrder(
+      this.config.control
+    )
+      ? configuredControlModes
+      : sortControlModes(configuredControlModes, entityDomain)
 
     this.modes = controlModes.map((values) => {
       const list =

@@ -42,7 +42,8 @@ export enum HVAC_MODES {
 export interface ControlModeOption {
   value: string
   name: string | false
-  icon: string
+  icon?: string | false
+  iconConfigured?: boolean
 }
 export interface ControlMode {
   type: string

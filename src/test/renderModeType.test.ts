@@ -146,3 +146,67 @@ test('vane tooltips describe the control purpose', () => {
     null
   )
 })
+
+test('default swing icons stay hidden unless swing icons are enabled', () => {
+  render(
+    renderModeType({
+      ...baseOptions,
+      mode: {
+        type: 'swing',
+        mode: 'vertical',
+        list: [{ value: 'vertical', icon: 'mdi:arrow-up-down', name: false }],
+      },
+    }),
+    document.body
+  )
+
+  expect(document.body.querySelector('ha-icon.mode-icon')).toBe(null)
+})
+
+test('explicit swing icons render without enabling all default swing icons', () => {
+  render(
+    renderModeType({
+      ...baseOptions,
+      mode: {
+        type: 'swing',
+        mode: 'Vertical_1',
+        list: [
+          {
+            value: 'Vertical_1',
+            icon: 'mdi:arrow-top-right',
+            iconConfigured: true,
+            name: false,
+          },
+        ],
+      },
+    }),
+    document.body
+  )
+
+  expect((document.body.querySelector('ha-icon.mode-icon') as any)?.icon).toBe(
+    'mdi:arrow-top-right'
+  )
+})
+
+test('explicit disabled swing icons remain hidden', () => {
+  render(
+    renderModeType({
+      ...baseOptions,
+      mode: {
+        type: 'swing',
+        mode: 'vertical',
+        list: [
+          {
+            value: 'vertical',
+            icon: false,
+            iconConfigured: true,
+            name: false,
+          },
+        ],
+      },
+    }),
+    document.body
+  )
+
+  expect(document.body.querySelector('ha-icon.mode-icon')).toBe(null)
+})

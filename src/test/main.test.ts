@@ -542,7 +542,7 @@ test('fan controls use fan_mode attribute as active mode', () => {
   expect(card.modes[0].mode).toBe('high')
 })
 
-test('climate controls keep fan above hvac without moving swing first', () => {
+test('climate controls preserve explicit array order', () => {
   const card = createCard()
   card.setConfig({
     entity: 'climate.living_room',
@@ -570,7 +570,119 @@ test('climate controls keep fan above hvac without moving swing first', () => {
     },
   }
 
-  expect(card.modes.map(({ type }) => type)).toEqual(['fan', 'hvac', 'swing'])
+  expect(card.modes.map(({ type }) => type)).toEqual(['swing', 'fan', 'hvac'])
+})
+
+test('climate controls preserve explicit object order', () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      hvac: true,
+      fan: true,
+      swing: true,
+      preset: true,
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          hvac_modes: ['off', 'cool'],
+          fan_modes: ['low', 'high'],
+          fan_mode: 'high',
+          swing_modes: ['off', 'vertical'],
+          swing_mode: 'off',
+          preset_modes: ['eco', 'boost'],
+          preset_mode: 'eco',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  expect(card.modes.map(({ type }) => type)).toEqual([
+    'hvac',
+    'fan',
+    'swing',
+    'preset',
+  ])
+})
+
+test('swing controls preserve explicit icon config without enabling default swing icons', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      swing: {
+        vertical: {
+          name: false,
+          icon: 'mdi:air-purifier',
+        },
+        Vertical_1: {
+          name: false,
+          icon: 'mdi:arrow-top-right',
+        },
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          hvac_modes: ['off', 'cool'],
+          swing_modes: ['vertical', 'vertical_1'],
+          swing_mode: 'vertical',
+          temperature: 20,
+          current_temperature: 19,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  expect(card.modes).toHaveLength(1)
+  expect(card.modes[0].list).toEqual([
+    {
+      value: 'vertical',
+      name: false,
+      icon: 'mdi:air-purifier',
+      iconConfigured: true,
+    },
+    {
+      value: 'vertical_1',
+      name: false,
+      icon: 'mdi:arrow-top-right',
+      iconConfigured: true,
+    },
+  ])
+  expect(
+    Array.from(
+      card.shadowRoot?.querySelectorAll('ha-icon.mode-icon') ?? []
+    ).map((icon) => (icon as any).icon)
+  ).toEqual(['mdi:air-purifier', 'mdi:arrow-top-right'])
 })
 
 test('mode controls preserve explicit hidden names', async () => {
@@ -1149,9 +1261,9 @@ test('legacy sensors render cleanly with heat_cool dual setpoints', async () => 
   expect(body?.classList.contains('has-entities')).toBe(true)
   expect(body?.classList.contains('setpoint-count-2')).toBe(true)
   expect(
-    Array.from(card.shadowRoot?.querySelectorAll('.current-wrapper') ?? []).every(
-      (wrapper) => wrapper.classList.contains('column')
-    )
+    Array.from(
+      card.shadowRoot?.querySelectorAll('.current-wrapper') ?? []
+    ).every((wrapper) => wrapper.classList.contains('column'))
   ).toBe(true)
   expect(card.shadowRoot?.textContent).toContain('Guest')
   expect(card.shadowRoot?.textContent).toContain('Motion')

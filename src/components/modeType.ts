@@ -74,7 +74,10 @@ export default function renderModeType({
     }
     return localizePrefix ? localize(name, localizePrefix) : name
   }
-  const maybeRenderIcon = (icon: string) => {
+  const maybeRenderIcon = (
+    icon: string | false | undefined,
+    iconConfigured = false
+  ) => {
     if (!icon) return null
     if (modeOptions?.icons === false || icons === false) return null
     if (
@@ -85,7 +88,8 @@ export default function renderModeType({
         'vane_horizontal',
         'vane_vertical',
       ].includes(type) &&
-      icons !== true
+      icons !== true &&
+      !iconConfigured
     ) {
       return null
     }
@@ -194,7 +198,7 @@ export default function renderModeType({
       aria-label=${title || type}
     >
       ${showHeading ? html` <div class="mode-title">${title}</div> ` : ''}
-      ${list.map(({ value, icon, name }) => {
+      ${list.map(({ value, icon, iconConfigured, name }) => {
         const modeClass = safeClass(value)
         const displayName = maybeRenderName(name, value)
         const tooltip = displayName ? nothing : controlTooltip || nothing
@@ -214,7 +218,7 @@ export default function renderModeType({
               }
             }}
           >
-            ${maybeRenderIcon(icon)}
+            ${maybeRenderIcon(icon, iconConfigured)}
             ${displayName
               ? html`<span class="mode-label">${displayName}</span>`
               : null}

@@ -144,6 +144,11 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.0.19</strong></td>
+      <td>Restored explicit <code>control:</code> ordering for configured HVAC, preset, fan, and swing rows.</td>
+    </tr>
+    <tr><td>Restored explicit per-mode <code>icon:</code> overrides, including icon-only swing and vane controls.</td></tr>
+    <tr>
       <td rowspan="3" nowrap><strong>v4.0.18</strong></td>
       <td>Improved compatibility for compact v3-style layouts with entity rows and dual setpoints.</td>
     </tr>
