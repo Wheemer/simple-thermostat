@@ -47,8 +47,9 @@ A compact Lovelace card for Home Assistant climate, fan, humidifier, and dehumid
 1. Open **HACS** in Home Assistant.
 2. Go to **Frontend** or search for **Simple Thermostat**.
 3. Install **Simple Thermostat**.
-4. Enable prereleases only if you want to test upcoming builds before they are promoted.
-5. Refresh Home Assistant and clear the browser cache if the old card is still loaded.
+4. Refresh Home Assistant and clear the browser cache if the old card is still loaded.
+
+If you are helping test an unreleased fix, see [Trying prereleases with HACS](PRERELEASES.md). Most users should stay on the normal release channel.
 
 ### Migrating from another fork
 
