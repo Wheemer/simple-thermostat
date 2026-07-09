@@ -20,6 +20,32 @@ Sqrl.filters.define('debug', (data) => {
   }
 })
 
+function escapeHtmlValue(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(escapeHtmlValue)
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [
+        key,
+        escapeHtmlValue(nestedValue),
+      ])
+    )
+  }
+
+  return value
+}
+
 interface RenderTemplateOptions {
   template: string
   stateObj: LooseObject
@@ -97,13 +123,13 @@ export function renderTemplate({
   return Sqrl.render(
     template,
     {
-      ...attributes,
+      ...(escapeHtmlValue(attributes) as LooseObject),
       state: {
-        raw: rawState,
-        text: textState,
+        raw: escapeHtmlValue(rawState),
+        text: escapeHtmlValue(textState),
       },
       state_attr: (entityId: string, attr: string) =>
-        hass.states?.[entityId]?.attributes?.[attr],
+        escapeHtmlValue(hass.states?.[entityId]?.attributes?.[attr]),
       ui: translations,
       v: variables,
     },

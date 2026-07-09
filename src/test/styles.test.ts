@@ -105,8 +105,9 @@ test('entity table labels can opt into left alignment', () => {
   expect(leftAlignRule).toContain('justify-content: flex-start')
   expect(leftAlignRule).toContain('justify-self: start')
   expect(leftAlignRule).toContain('text-align: left')
+  expect(leftAlignRule).toContain('white-space: nowrap')
   expect(leftAlignTableRule).toContain(
-    'fit-content(var(--st-entity-label-max-width, 18ch))'
+    'grid-template-columns: max-content max-content'
   )
   expect(leftAlignTableRule).toContain('max-content')
 })

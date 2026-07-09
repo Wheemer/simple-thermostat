@@ -341,12 +341,11 @@ ha-card.loading {
   justify-content: flex-start;
   justify-self: start;
   text-align: left;
+  white-space: nowrap;
 }
 
 .entities.as-table.with-labels.align-left {
-  grid-template-columns:
-    fit-content(var(--st-entity-label-max-width, 18ch))
-    max-content;
+  grid-template-columns: max-content max-content;
 }
 
 .entities:empty {

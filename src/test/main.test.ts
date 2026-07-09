@@ -1550,6 +1550,163 @@ test('legacy sensors render cleanly with heat_cool dual setpoints', async () => 
   expect(card.shadowRoot?.textContent).not.toContain('State')
 })
 
+test('legacy left-aligned sensor tables keep compact label/value columns', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'water_heater.aquarea_main_dhw_target_temp',
+    control: true,
+    hide: {
+      temperature: true,
+      state: false,
+    },
+    header: {
+      toggle: {
+        entity: 'switch.panasonic_aquarea_main_force_dhw_state',
+        name: 'Force DHW',
+      },
+    },
+    sensors: [
+      {
+        entity: 'select.panasonic_aquarea_main_operating_mode_state',
+        name: 'Aquarea Mode',
+      },
+      {
+        entity: 'sensor.panasonic_aquarea_main_threeway_valve_state',
+        name: '3-way valve',
+      },
+      {
+        entity: 'binary_sensor.panasonic_aquarea_main_defrosting_state',
+        name: 'Defrost status',
+      },
+      {
+        entity: 'sensor.panasonic_aquarea_main_dhw_temp',
+        name: 'DHW tank temp',
+      },
+      {
+        entity: 'sensor.panasonic_aquarea_main_fan1_motor_speed',
+        name: 'Fan 1 speed',
+      },
+      {
+        entity: 'sensor.panasonic_aquarea_main_fan2_motor_speed',
+        name: 'Fan 2 speed',
+      },
+    ],
+    show_header: true,
+    name: 'Aquarea',
+    decimals: 1,
+    layout: {
+      mode: {
+        headings: true,
+        names: true,
+        icons: true,
+      },
+      step: 'column',
+      entities: {
+        alignment: 'left',
+      },
+    },
+  } as any)
+
+  card.hass = {
+    locale: { language: 'en' },
+    states: {
+      'water_heater.aquarea_main_dhw_target_temp': {
+        entity_id: 'water_heater.aquarea_main_dhw_target_temp',
+        state: 'eco',
+        attributes: {
+          current_temperature: 40,
+          target_temp_low: 40,
+          target_temp_high: 47,
+          min_temp: 35,
+          max_temp: 65,
+          friendly_name: 'Aquarea Domestic Water Heater',
+        },
+      },
+      'switch.panasonic_aquarea_main_force_dhw_state': {
+        entity_id: 'switch.panasonic_aquarea_main_force_dhw_state',
+        state: 'off',
+        attributes: { friendly_name: 'Force DHW' },
+      },
+      'select.panasonic_aquarea_main_operating_mode_state': {
+        entity_id: 'select.panasonic_aquarea_main_operating_mode_state',
+        state: 'heat_dhw',
+        attributes: { friendly_name: 'Operating mode' },
+      },
+      'sensor.panasonic_aquarea_main_threeway_valve_state': {
+        entity_id: 'sensor.panasonic_aquarea_main_threeway_valve_state',
+        state: 'room',
+        attributes: { friendly_name: 'Three-way valve' },
+      },
+      'binary_sensor.panasonic_aquarea_main_defrosting_state': {
+        entity_id: 'binary_sensor.panasonic_aquarea_main_defrosting_state',
+        state: 'off',
+        attributes: { friendly_name: 'Defrosting' },
+      },
+      'sensor.panasonic_aquarea_main_dhw_temp': {
+        entity_id: 'sensor.panasonic_aquarea_main_dhw_temp',
+        state: '40.0',
+        attributes: {
+          friendly_name: 'DHW temperature',
+          unit_of_measurement: '°C',
+        },
+      },
+      'sensor.panasonic_aquarea_main_fan1_motor_speed': {
+        entity_id: 'sensor.panasonic_aquarea_main_fan1_motor_speed',
+        state: '0',
+        attributes: {
+          friendly_name: 'Fan 1 motor speed',
+          unit_of_measurement: 'R/min',
+        },
+      },
+      'sensor.panasonic_aquarea_main_fan2_motor_speed': {
+        entity_id: 'sensor.panasonic_aquarea_main_fan2_motor_speed',
+        state: '0',
+        attributes: {
+          friendly_name: 'Fan 2 motor speed',
+          unit_of_measurement: 'R/min',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    formatEntityState: (stateObj: any) => {
+      const values = {
+        'water_heater.aquarea_main_dhw_target_temp': 'Super Eco',
+        'select.panasonic_aquarea_main_operating_mode_state': 'Heat+DHW',
+        'sensor.panasonic_aquarea_main_threeway_valve_state': 'Room',
+        'binary_sensor.panasonic_aquarea_main_defrosting_state': 'Normal',
+      }
+      return values[stateObj.entity_id] ?? stateObj.state
+    },
+    localize: (key: string) => key,
+  } as any
+
+  await card.updateComplete
+
+  const body = card.shadowRoot?.querySelector('.body')
+  const entityTable = card.shadowRoot?.querySelector('.entities')
+  const headings = Array.from(
+    card.shadowRoot?.querySelectorAll('.entity-heading') ?? []
+  )
+
+  expect(body?.classList.contains('has-entities')).toBe(true)
+  expect(body?.classList.contains('step-column')).toBe(true)
+  expect(body?.classList.contains('setpoint-count-2')).toBe(true)
+  expect(entityTable?.classList.contains('align-left')).toBe(true)
+  expect(entityTable?.classList.contains('as-table')).toBe(true)
+  expect(headings.map((heading) => heading.textContent?.trim())).toContain(
+    'Fan 1 speed:'
+  )
+  expect(card.shadowRoot?.textContent).toContain('Heat+DHW')
+  expect(card.shadowRoot?.textContent).toContain('0 R/min')
+})
+
 test('column step layout exposes a body class for compact entity rows', async () => {
   document.body.innerHTML = ''
   const card = createCard()

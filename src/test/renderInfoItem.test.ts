@@ -273,6 +273,85 @@ test('entity row icon can be rendered from a state_attr template', () => {
   )
 })
 
+test('entity row templates escape entity-derived HTML', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      locale: { language: 'en' },
+    },
+    state: {
+      entity_id: 'sensor.cloud_value',
+      state: '<img src=x onerror=alert(1)>',
+      attributes: {
+        friendly_name: '<b>Cloud value</b>',
+        unsafe_attr: '<svg onload=alert(1)>',
+      },
+    },
+    details: {
+      heading: 'Cloud',
+      template: '{{state.raw}} {{unsafe_attr}} {{friendly_name}}',
+    },
+    openEntityPopover: () => undefined,
+    localize: (value: string) => value,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  expect(container.querySelector('img')).toBeNull()
+  expect(container.querySelector('svg')).toBeNull()
+  expect(container.querySelector('b')).toBeNull()
+  expect(container.querySelector('.entity-value')?.textContent).toContain(
+    '<img src=x onerror=alert(1)>'
+  )
+  expect(container.querySelector('.entity-value')?.textContent).toContain(
+    '<svg onload=alert(1)>'
+  )
+  expect(container.querySelector('.entity-value')?.textContent).toContain(
+    '<b>Cloud value</b>'
+  )
+})
+
+test('state_attr template values are escaped before unsafeHTML rendering', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      states: {
+        'sensor.external_status': {
+          entity_id: 'sensor.external_status',
+          state: 'ok',
+          attributes: {
+            message: '<iframe srcdoc="<script>alert(1)</script>"></iframe>',
+          },
+        },
+      },
+    },
+    state: {
+      entity_id: 'sensor.external_status',
+      state: 'ok',
+      attributes: {
+        friendly_name: 'External status',
+      },
+    },
+    details: {
+      heading: 'Status',
+      template: "{{ state_attr('sensor.external_status', 'message') }}",
+    },
+    openEntityPopover: () => undefined,
+    localize: (value: string) => value,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  expect(container.querySelector('iframe')).toBeNull()
+  expect(container.querySelector('.entity-value')?.textContent).toContain(
+    '<iframe srcdoc="<script>alert(1)</script>"></iframe>'
+  )
+})
+
 test('legacy label icon template renders as an entity row heading icon', () => {
   const result = renderInfoItem({
     hide: false,
