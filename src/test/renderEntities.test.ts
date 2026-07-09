@@ -258,6 +258,12 @@ test('entity rows can opt into left aligned labels', () => {
   expect(container.querySelector('.entities')?.className).toContain(
     'align-left'
   )
+  expect(container.querySelector('.entities')?.className).toContain(
+    'with-labels'
+  )
+  expect(container.querySelector('.entities')?.className).not.toContain(
+    'without-labels'
+  )
 })
 
 test('separator-free left-aligned entity rows keep labels and values paired', () => {

@@ -1,10 +1,11 @@
 import { html } from 'lit'
 
 export function wrapEntities(config, content) {
-  const { type, labels: showLabels, alignment } = config?.layout?.entities ?? {
-    type: 'table',
-    labels: true,
-  }
+  const {
+    type = 'table',
+    labels: showLabels = true,
+    alignment,
+  } = config?.layout?.entities ?? {}
 
   const visibleRows = content.filter(
     (it) => it !== null && typeof it !== 'undefined'
