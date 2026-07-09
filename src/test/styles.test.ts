@@ -58,6 +58,10 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
   expect(styles).toContain('minmax(160px, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
+  expect(styles).toContain(
+    '.body.has-entities.step-column.setpoint-count-2 .entities.as-table.with-labels'
+  )
+  expect(styles).toContain('grid-template-columns: max-content max-content')
 })
 
 test('default entity table labels wrap only after a useful label width', () => {

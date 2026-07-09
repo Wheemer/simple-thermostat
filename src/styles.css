@@ -185,6 +185,9 @@ ha-card.loading {
     minmax(160px, max-content) minmax(max-content, 1fr)
     minmax(max-content, 1fr);
 }
+.body.has-entities.step-column.setpoint-count-2 .entities.as-table.with-labels {
+  grid-template-columns: max-content max-content;
+}
 
 .toggle-label {
   color: var(--st-toggle-label-color, var(--primary-text-color));

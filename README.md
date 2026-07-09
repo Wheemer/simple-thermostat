@@ -144,6 +144,10 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="1" nowrap><strong>v4.0.30</strong></td>
+      <td>Kept entity label/value rows intact in compact dual-setpoint layouts so mobile cards do not collapse normal labels into stacked words.</td>
+    </tr>
+    <tr>
       <td rowspan="1" nowrap><strong>v4.0.29</strong></td>
       <td>Kept dual heat/cool setpoints compact when extra entity rows are shown and no step layout is explicitly configured.</td>
     </tr>
