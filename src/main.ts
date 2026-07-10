@@ -63,6 +63,7 @@ const CONTROL_ORDER = [
   MODES.OSCILLATING,
   MODES.STATE,
 ]
+const CONTROL_METADATA_KEYS = ['entity']
 
 function getConfiguredEntities(config: CardConfig) {
   return config.entities ?? []
@@ -106,7 +107,9 @@ function getConfiguredModeValue(
 
   const matchingEntry = Object.entries(specification).find(
     ([key]) =>
-      !key.startsWith('_') && normalizeModeConfigKey(key) === normalizedModeKey
+      !key.startsWith('_') &&
+      !CONTROL_METADATA_KEYS.includes(key) &&
+      normalizeModeConfigKey(key) === normalizedModeKey
   )
 
   return matchingEntry?.[1]
@@ -122,7 +125,9 @@ function getOrderedModeOptions(
 ) {
   const configuredKeys = Array.isArray(specification._order)
     ? specification._order.map(String)
-    : Object.keys(specification).filter((key) => !key.startsWith('_'))
+    : Object.keys(specification).filter(
+        (key) => !key.startsWith('_') && !CONTROL_METADATA_KEYS.includes(key)
+      )
   if (configuredKeys.length === 0) return modeOptions
 
   const optionsByKey = new Map<string, string | boolean>()
@@ -206,6 +211,48 @@ function getModeList(
     })
 }
 
+function isSelectModeEntity(stateObj: LooseObject | undefined): boolean {
+  return (
+    typeof stateObj?.entity_id === 'string' &&
+    stateObj.entity_id.startsWith('select.') &&
+    Array.isArray(stateObj.attributes?.options)
+  )
+}
+
+function getModeListFromSelect(
+  stateObj: LooseObject,
+  specification: Partial<ModeControlObject> = {}
+) {
+  const modeOptions = stateObj.attributes.options as Array<string | boolean>
+
+  return getOrderedModeOptions(modeOptions, specification)
+    .filter((modeOption) =>
+      shouldShowModeControl('select', modeOption, specification)
+    )
+    .map((modeOption) => {
+      const modeKey = String(modeOption)
+      const configuredMode = getConfiguredModeValue(modeKey, specification)
+      const values: ModeValue = isModeValue(configuredMode)
+        ? configuredMode
+        : {}
+      const { name: configuredName, ...modeValues } = values
+      const name: string | false =
+        configuredName === false
+          ? false
+          : typeof configuredName === 'string'
+            ? configuredName
+            : getModeName(modeKey)
+
+      return {
+        ...modeValues,
+        icon: values.icon ?? getModeIcon(modeKey),
+        iconConfigured: typeof values.icon !== 'undefined',
+        value: modeKey,
+        name,
+      }
+    })
+}
+
 function getCardStyle(entityDomain: string, attributes: LooseObject) {
   if (entityDomain !== 'fan') return ''
 
@@ -254,7 +301,8 @@ function buildConfiguredControlModes(
   config: CardConfig,
   entityDomain: string,
   attributes: LooseObject,
-  adapter: EntityAdapter
+  adapter: EntityAdapter,
+  hass?: HASS
 ): Array<Partial<ControlMode>> {
   if (config.control === false) return []
 
@@ -295,20 +343,45 @@ function buildConfiguredControlModes(
     if (entries.length > 0) {
       return entries
         .filter(([, definition]) => definition !== false)
-        .filter(([type]) =>
-          supportsModeType(type, entityDomain, attributes, adapter)
-        )
+        .filter(([type, definition]) => {
+          const controlEntity =
+            definition === true || definition === false
+              ? undefined
+              : definition.entity
+          const selectState = controlEntity
+            ? hass?.states?.[controlEntity]
+            : undefined
+
+          return (
+            isSelectModeEntity(selectState) ||
+            supportsModeType(type, entityDomain, attributes, adapter)
+          )
+        })
         .map(([type, definition]: [string, ModeControlObject | true]) => {
-          const { _name, _hide_when_off, _icons, _heading, ...controlField } =
-            definition === true ? {} : definition
+          const {
+            _name,
+            _hide_when_off,
+            _icons,
+            _heading,
+            entity: controlEntity,
+            ...controlField
+          } = definition === true ? {} : definition
+          const selectState = controlEntity
+            ? hass?.states?.[controlEntity]
+            : undefined
+          const useSelectEntity = isSelectModeEntity(selectState)
+
           return {
             type,
+            entity: useSelectEntity ? controlEntity : undefined,
             hide_when_off: _hide_when_off,
             icons: _icons,
             heading: _heading,
             name: _name,
             preserve_option_order: Object.keys(controlField).length > 0,
-            list: getModeList(type, attributes, adapter, controlField),
+            list: useSelectEntity
+              ? getModeListFromSelect(selectState, controlField)
+              : getModeList(type, attributes, adapter, controlField),
           }
         })
     }
@@ -525,7 +598,8 @@ export default class SimpleThermostat extends LitElement {
         this.config,
         entityDomain,
         attributes,
-        adapter
+        adapter,
+        hass
       )
     )
     const controlModes = shouldPreserveConfiguredControlOrder(
@@ -543,9 +617,11 @@ export default class SimpleThermostat extends LitElement {
             ? sortFanModes(values.list)
             : values.list
       const mode =
-        values.type === MODES.HVAC || values.type === MODES.STATE
-          ? entity.state
-          : attributes[adapter.getModePayloadKey(values.type)]
+        values.entity && hass.states?.[values.entity]
+          ? hass.states[values.entity].state
+          : values.type === MODES.HVAC || values.type === MODES.STATE
+            ? entity.state
+            : attributes[adapter.getModePayloadKey(values.type)]
 
       return { ...values, list, mode } as ControlMode
     })
@@ -924,6 +1000,15 @@ export default class SimpleThermostat extends LitElement {
       if (type === MODES.STATE) {
         this._callAction(`${adapter.getLocalizationDomain()}.turn_${mode}`, {
           entity_id: this.config.entity,
+        })
+        fireEvent(this, 'haptic', 'light')
+        return
+      }
+      const configuredMode = this.modes.find((mode) => mode.type === type)
+      if (configuredMode?.entity) {
+        this._callAction('select.select_option', {
+          entity_id: configuredMode.entity,
+          option: mode,
         })
         fireEvent(this, 'haptic', 'light')
         return

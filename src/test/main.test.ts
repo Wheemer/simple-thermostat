@@ -849,6 +849,91 @@ test('swing controls preserve explicit icon config without enabling default swin
   ).toEqual(['mdi:air-purifier', 'mdi:arrow-top-right'])
 })
 
+test('swing controls can use an explicitly configured select entity', async () => {
+  const callService = jest.fn()
+  const card = createCard()
+
+  card.setConfig({
+    entity: 'climate.hus_varmepumpe',
+    header: false,
+    control: {
+      swing_vertical: {
+        entity: 'select.hus_varmepumpe_vertical_swing_mode',
+        auto: true,
+        up: true,
+        center: true,
+        down: true,
+      },
+      swing_horizontal: {
+        entity: 'select.hus_varmepumpe_horizontal_swing_mode',
+      },
+    },
+  } as any)
+  card.hass = {
+    callService,
+    states: {
+      'climate.hus_varmepumpe': {
+        entity_id: 'climate.hus_varmepumpe',
+        state: 'heat',
+        attributes: {
+          hvac_modes: ['off', 'heat'],
+          temperature: 22,
+          current_temperature: 21,
+        },
+      },
+      'select.hus_varmepumpe_vertical_swing_mode': {
+        entity_id: 'select.hus_varmepumpe_vertical_swing_mode',
+        state: 'center',
+        attributes: {
+          options: ['swing', 'auto', 'up', 'center', 'down'],
+        },
+      },
+      'select.hus_varmepumpe_horizontal_swing_mode': {
+        entity_id: 'select.hus_varmepumpe_horizontal_swing_mode',
+        state: 'left',
+        attributes: {
+          options: ['auto', 'left', 'center', 'right'],
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  const vertical = card.modes.find(({ type }) => type === 'swing_vertical')
+  const horizontal = card.modes.find(({ type }) => type === 'swing_horizontal')
+
+  expect(vertical?.entity).toBe('select.hus_varmepumpe_vertical_swing_mode')
+  expect(vertical?.mode).toBe('center')
+  expect(vertical?.list.map(({ value }) => value)).toEqual([
+    'auto',
+    'up',
+    'center',
+    'down',
+    'swing',
+  ])
+  expect(horizontal?.entity).toBe(
+    'select.hus_varmepumpe_horizontal_swing_mode'
+  )
+  expect(horizontal?.mode).toBe('left')
+  expect(horizontal?.list.map(({ value }) => value)).toEqual([
+    'auto',
+    'left',
+    'center',
+    'right',
+  ])
+
+  card.setMode('swing_vertical', 'down')
+
+  expect(callService).toHaveBeenCalledWith('select', 'select_option', {
+    entity_id: 'select.hus_varmepumpe_vertical_swing_mode',
+    option: 'down',
+  })
+})
+
 test('mode controls preserve explicit hidden names', async () => {
   document.body.innerHTML = ''
   const card = createCard()

@@ -58,10 +58,9 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
   expect(styles).toContain('minmax(160px, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
-  expect(styles).toContain(
+  expect(styles).not.toContain(
     '.body.has-entities.step-column.setpoint-count-2 .entities.as-table.with-labels'
   )
-  expect(styles).toContain('grid-template-columns: max-content max-content')
 })
 
 test('default entity table labels wrap only after a useful label width', () => {
@@ -106,10 +105,7 @@ test('entity table labels can opt into left alignment', () => {
   expect(leftAlignRule).toContain('justify-self: start')
   expect(leftAlignRule).toContain('text-align: left')
   expect(leftAlignRule).toContain('white-space: nowrap')
-  expect(leftAlignTableRule).toContain(
-    'grid-template-columns: max-content max-content'
-  )
-  expect(leftAlignTableRule).toContain('max-content')
+  expect(leftAlignTableRule).toContain('grid: auto-flow / auto auto')
 })
 
 test('entity list rows keep a gap between value-only items', () => {

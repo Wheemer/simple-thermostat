@@ -30,13 +30,14 @@ export type ModeValue = {
  */
 export type ModeControlObject = Record<
   string,
-  boolean | ModeValue | Array<string | number | boolean>
+  boolean | string | ModeValue | Array<string | number | boolean>
 > & {
   _name?: string | boolean
   _heading?: boolean
   _hide_when_off?: boolean
   _icons?: boolean
   _order?: Array<string | number | boolean>
+  entity?: string
 }
 
 /**
