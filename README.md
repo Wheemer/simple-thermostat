@@ -30,6 +30,17 @@ A compact Lovelace card for Home Assistant climate, fan, humidifier, and dehumid
 
 ![Simple Thermostat v4 examples](examples.png)
 
+The example image uses the horizontal setpoint layout explicitly:
+
+```yaml
+layout:
+  step: row
+  mode:
+    headings: false
+    icons: true
+    names: true
+```
+
 <div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
   <strong style="color: #41bdf5;">Requires:</strong> Home Assistant 2024.8 or newer. v4 uses Home Assistant's current frontend action API.
 </div>
@@ -144,6 +155,22 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.34</strong></td>
+      <td>Restored the safer column setpoint default for cards that do not explicitly set <code>layout.step</code>, while preserving explicit horizontal row layouts.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.33</strong></td>
+      <td>Improved support for separate horizontal and vertical swing select entities.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.32</strong></td>
+      <td>Refined compact mobile entity-row spacing for recent layout compatibility fixes.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.31</strong></td>
+      <td>Improved mobile layout handling for compact cards with long entity labels and values.</td>
+    </tr>
     <tr>
       <td rowspan="1" nowrap><strong>v4.0.30</strong></td>
       <td>Kept entity label/value rows intact in compact dual-setpoint layouts so mobile cards do not collapse normal labels into stacked words.</td>

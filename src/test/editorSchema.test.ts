@@ -512,7 +512,7 @@ test('editor updates its local form data when enhanced visuals changes', () => {
   )
 })
 
-test('enhanced visuals on returns to v4 row default when step layout was never explicit', () => {
+test('enhanced visuals on returns to column default when step layout was never explicit', () => {
   if (!customElements.get('simple-thermostat-editor-test')) {
     customElements.define(
       'simple-thermostat-editor-test',
@@ -542,7 +542,7 @@ test('enhanced visuals on returns to v4 row default when step layout was never e
   editor.config = editor._applyFormChange({ enhanced_visuals: true } as any)
   expect(editor.config.enhanced_visuals).toBeUndefined()
   expect(editor.config.layout?.step).toBeUndefined()
-  expect(editor._buildFormData()['layout.step']).toBe('row')
+  expect(editor._buildFormData()['layout.step']).toBe('column')
 })
 
 test('enhanced visuals toggle does not save unrelated displayed defaults', () => {
@@ -612,7 +612,7 @@ test('enhanced visuals toggle ignores full-form step default changes', () => {
   const onForm = {
     ...editor._buildFormData(),
     enhanced_visuals: true,
-    'layout.step': 'row',
+    'layout.step': 'column',
   }
   const onConfig = editor._applyFormChange(onForm as any)
   expect(onConfig).toEqual({

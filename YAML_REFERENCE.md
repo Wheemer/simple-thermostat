@@ -201,7 +201,7 @@ Layout options:
 
 | Option                   | Type            | Description                                                                                                                                                                                                                             |
 | ------------------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layout.step`            | `row`, `column` | Setpoint control layout. Enhanced v4 visuals default to the horizontal minus/value/plus layout. With `enhanced_visuals: false`, unset cards use the v3-style column chevron layout. Explicit `layout.step` values are always respected. |
+| `layout.step`            | `row`, `column` | Setpoint control layout. Unset cards use the safer column chevron layout. Set `layout.step: row` when you want the horizontal minus/value/plus layout. Explicit `layout.step` values are always respected. |
 | `layout.mode.names`      | boolean         | Show text on mode buttons.                                                                                                                                                                                                              |
 | `layout.mode.icons`      | boolean         | Show icons on mode buttons.                                                                                                                                                                                                             |
 | `layout.mode.headings`   | boolean         | Show mode row headings. Defaults to hidden.                                                                                                                                                                                             |
@@ -230,7 +230,7 @@ Set `enhanced_visuals: false` when you want a quieter, v3-style presentation whi
 - Loading shimmer.
 - Compact icon treatment for mode buttons.
 
-When this is disabled, the card uses v3-style visual defaults such as column setpoint chevrons and tighter mode rows unless you explicitly configure an option such as `layout.step: row`. The visual editor should only write the `enhanced_visuals` toggle when that is the only changed setting; displayed defaults are not saved back into YAML.
+When this is disabled, the card uses v3-style visual defaults such as tighter mode rows and no v4 hover/glow effects unless you explicitly configure individual layout options. The visual editor should only write the `enhanced_visuals` toggle when that is the only changed setting; displayed defaults are not saved back into YAML.
 
 ## Controls
 
@@ -517,20 +517,20 @@ Supported action handling follows the same shape used by Home Assistant dashboar
 | `--st-mode-active-accent-opacity`    | `0.64`                                                                                        | Active button underline opacity. Set to `0` to hide the line.                   |
 | `--st-mode-border-radius`            | `var(--ha-card-border-radius, 4px)`                                                           | Mode button corner radius.                                                      |
 | `--st-mode-transition`               | `200ms ease`                                                                                  | Mode button color transition.                                                   |
-| `--st-active-icon-glow-duration`     | `5s`                                                                                          | Active heating, cooling, humidifying, and dehumidifying header icon glow cycle. |
-| `--st-active-icon-glow-min-size`     | `4px`                                                                                         | Faintest active header icon glow radius.                                        |
-| `--st-active-icon-glow-mid-size`     | `9px`                                                                                         | Midpoint active header icon glow radius.                                        |
-| `--st-active-icon-glow-max-size`     | `14px`                                                                                        | Strongest active header icon glow radius.                                       |
-| `--st-active-icon-glow-min-strength` | `36%`                                                                                         | Faintest active header icon glow opacity mix.                                   |
-| `--st-active-icon-glow-mid-strength` | `52%`                                                                                         | Midpoint active header icon glow opacity mix.                                   |
-| `--st-active-icon-glow-max-strength` | `70%`                                                                                         | Strongest active header icon glow opacity mix.                                  |
-| `--auto-color`                       | `var(--state-climate-auto-color, var(--primary-color))`                                       | Active auto mode.                                                               |
-| `--heat_cool-color`                  | `var(--state-climate-heat-cool-color, var(--primary-color))`                                  | Active heat/cool mode.                                                          |
-| `--cool-color`                       | `var(--state-climate-cool-color, var(--primary-color))`                                       | Active cool mode.                                                               |
-| `--heat-color`                       | `var(--state-climate-heat-color, var(--primary-color))`                                       | Active heat mode.                                                               |
-| `--off-color`                        | `var(--state-icon-color, var(--secondary-text-color))`                                        | Active off mode.                                                                |
-| `--fan_only-color`                   | `var(--state-climate-fan-only-color, var(--state-fan-active-color, var(--state-icon-color)))` | Active fan-only mode.                                                           |
-| `--dry-color`                        | `var(--state-climate-dry-color, var(--primary-color))`                                        | Active dry mode.                                                                |
+| `--st-active-icon-glow-duration`     | `4s`                                                                                          | Active heating, cooling, humidifying, dehumidifying, and fan header icon glow cycle. |
+| `--st-active-icon-glow-min-size`     | `1px`                                                                                         | Faintest active header icon glow radius.                                        |
+| `--st-active-icon-glow-mid-size`     | `4px`                                                                                         | Midpoint active header icon glow radius.                                        |
+| `--st-active-icon-glow-max-size`     | `6px`                                                                                         | Strongest active header icon glow radius.                                       |
+| `--st-active-icon-glow-min-strength` | `28%`                                                                                         | Faintest active header icon glow opacity mix.                                   |
+| `--st-active-icon-glow-mid-strength` | `44%`                                                                                         | Midpoint active header icon glow opacity mix.                                   |
+| `--st-active-icon-glow-max-strength` | `60%`                                                                                         | Strongest active header icon glow opacity mix.                                  |
+| `--auto-color`                       | `green`                                                                                       | Active auto mode.                                                               |
+| `--heat_cool-color`                  | `springgreen`                                                                                 | Active heat/cool mode.                                                          |
+| `--cool-color`                       | `#2b9af9`                                                                                     | Active cool mode.                                                               |
+| `--heat-color`                       | `#ff8100`                                                                                     | Active heat mode.                                                               |
+| `--off-color`                        | `#8a8a8a`                                                                                     | Active off mode.                                                                |
+| `--fan_only-color`                   | `#8a8a8a`                                                                                     | Active fan-only mode.                                                           |
+| `--dry-color`                        | `#efbd07`                                                                                     | Active dry mode.                                                                |
 | `--st-toggle-label-color`            | `var(--primary-text-color)`                                                                   | Header toggle label color.                                                      |
 | `--st-fault-inactive-color`          | `var(--secondary-background-color)`                                                           | Inactive fault icon.                                                            |
 | `--st-fault-active-color`            | `var(--accent-color)`                                                                         | Active fault icon.                                                              |
