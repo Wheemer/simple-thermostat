@@ -224,6 +224,74 @@ test('entity row labels can hide the separator', () => {
   expect(headings.join(' ')).not.toContain(':')
 })
 
+test('extra entity rows can hide when the main entity is off', () => {
+  const result = renderEntities({
+    _hide: { temperature: true, state: true },
+    entity: {
+      entity_id: 'climate.garage_heat',
+      state: 'off',
+      attributes: {},
+    },
+    unit: '°C',
+    hass: {
+      formatEntityState: () => 'Off',
+    },
+    entities: [
+      {
+        name: 'Hidden while off',
+        state: 'On',
+        _hide_when_off: true,
+      },
+      {
+        name: 'Always visible',
+        state: '42 W',
+      },
+    ],
+    config: { entity: 'climate.garage_heat' },
+    localize: (value: string) => value,
+    openEntityPopover: () => undefined,
+    adapter: climateAdapter,
+  })
+
+  const container = freshContainer()
+  render(result, container)
+
+  const text = container.textContent
+  expect(text).not.toContain('Hidden while off')
+  expect(text).toContain('Always visible')
+})
+
+test('extra entity rows with hide-when-off stay visible when the main entity is on', () => {
+  const result = renderEntities({
+    _hide: { temperature: true, state: true },
+    entity: {
+      entity_id: 'climate.garage_heat',
+      state: 'heat',
+      attributes: {},
+    },
+    unit: '°C',
+    hass: {
+      formatEntityState: () => 'Heat',
+    },
+    entities: [
+      {
+        name: 'Visible while on',
+        state: 'On',
+        _hide_when_off: true,
+      },
+    ],
+    config: { entity: 'climate.garage_heat' },
+    localize: (value: string) => value,
+    openEntityPopover: () => undefined,
+    adapter: climateAdapter,
+  })
+
+  const container = freshContainer()
+  render(result, container)
+
+  expect(container.textContent).toContain('Visible while on')
+})
+
 test('entity rows can opt into left aligned labels', () => {
   const result = renderEntities({
     _hide: { temperature: false, state: true },

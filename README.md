@@ -156,6 +156,10 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="1" nowrap><strong>v4.0.35</strong></td>
+      <td>Fixed <code>_hide_when_off</code> for extra entity rows so documented row hiding works when the main entity is off.</td>
+    </tr>
+    <tr>
       <td rowspan="1" nowrap><strong>v4.0.34</strong></td>
       <td>Restored the safer column setpoint default for cards that do not explicitly set <code>layout.step</code>, while preserving explicit horizontal row layouts.</td>
     </tr>

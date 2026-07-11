@@ -9,6 +9,8 @@ export interface ConfigEntity {
   unit?: string
   decimals?: number
   show?: boolean
+  _hide_when_off?: boolean
+  hide_when_off?: boolean
   type?: 'relativetime'
   template?: string
 }

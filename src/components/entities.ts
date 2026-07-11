@@ -3,6 +3,7 @@ import renderInfoItem from './infoItem'
 import { wrapEntities } from './entityGroup'
 import { appendUnit } from '../unitFormat'
 import { getEntityStateText } from '../entityAction'
+import { HVAC_MODES } from '../types'
 
 export default function renderEntities({
   _hide,
@@ -67,23 +68,28 @@ export default function renderEntities({
         separator: showSeparator,
       },
     }),
-    ...(entities.map(({ name, state, show, ...rest }) => {
-      return renderInfoItem({
-        hide: show === false,
-        state,
-        hass,
-        localize,
-        openEntityPopover,
-        details: {
-          ...rest,
-          heading: showLabels && name,
-          tooltip: name,
-          config,
-          variables: config.variables,
-          separator: showSeparator,
-        },
-      })
-    }) || null),
+    ...((entities ?? []).map(
+      ({ name, state, show, _hide_when_off, hide_when_off, ...rest }) => {
+        const hideWhenOff = _hide_when_off === true || hide_when_off === true
+
+        return renderInfoItem({
+          hide:
+            show === false || (hideWhenOff && entity.state === HVAC_MODES.OFF),
+          state,
+          hass,
+          localize,
+          openEntityPopover,
+          details: {
+            ...rest,
+            heading: showLabels && name,
+            tooltip: name,
+            config,
+            variables: config.variables,
+            separator: showSeparator,
+          },
+        })
+      }
+    ) || null),
   ].filter((it) => it !== null)
 
   return wrapEntities(config, entityHtml)
