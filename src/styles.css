@@ -36,6 +36,10 @@ ha-card {
   box-sizing: border-box;
   max-width: 100%;
   overflow: hidden;
+  background: var(
+    --ha-card-background,
+    var(--card-background-color, var(--primary-background-color))
+  );
   font-size: var(--ha-font-size-m, 14px);
   font-weight: var(--ha-font-weight-normal, 400);
   line-height: var(--ha-line-height-normal, 1.5);
@@ -181,7 +185,7 @@ ha-card.loading {
 }
 .body.has-entities.step-column.setpoint-count-2 {
   grid-template-columns:
-    minmax(160px, max-content) minmax(max-content, 1fr)
+    minmax(min-content, max-content) minmax(max-content, 1fr)
     minmax(max-content, 1fr);
 }
 
@@ -356,6 +360,32 @@ header {
     calc(var(--st-spacing, var(--st-default-spacing)) * 2) 0
     calc(var(--st-spacing, var(--st-default-spacing)) * 4);
 }
+
+.embedded-header-reserve {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 0;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+ha-card.embedded {
+  position: relative;
+}
+
+ha-card.embedded .body {
+  padding-top: var(
+    --st-group-embedded-header-min-height,
+    calc(
+      var(--st-group-header-control-height, 34px) +
+        var(--st-group-header-top-buffer, 6px) +
+        calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 6)
+    )
+  );
+}
+
 .header__main {
   display: flex;
   align-items: center;

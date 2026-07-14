@@ -61,6 +61,7 @@ interface CardConfig {
   setpoints?: Setpoints
   decimals?: number
   step_size?: number
+  setpoint_debounce_ms?: number
   variables?: LooseObject
   layout?: {
     mode: {
@@ -79,6 +80,7 @@ interface CardConfig {
   unit?: boolean | string
   fallback?: string
   enhanced_visuals?: boolean
+  embedded?: boolean
   styles?: string
   service?: Service
   hide_setpoint?: boolean

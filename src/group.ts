@@ -56,6 +56,27 @@ interface ActivityCandidate {
   activeRank: number
 }
 
+interface StoredSelection {
+  entity: string
+  timestamp: number
+}
+
+type LovelaceCardElement = HTMLElement & {
+  hass?: HASS
+  setConfig?: (config: LooseObject) => void
+  updateComplete?: Promise<unknown>
+}
+
+interface LovelaceCardHelpers {
+  createCardElement(config: LooseObject): LovelaceCardElement
+}
+
+declare global {
+  interface Window {
+    loadCardHelpers?: () => Promise<LovelaceCardHelpers>
+  }
+}
+
 const DEFAULT_SELECTOR = {
   icons: true,
   names: true,
@@ -133,10 +154,11 @@ export default class SimpleThermostatGroup extends LitElement {
   @state() private selectedEntity = ''
   @state() private menuOpen = false
   @state() private cardFading = false
-  private embeddedCard?: HTMLElement & {
-    hass?: HASS
-    setConfig?: (config: LooseObject) => void
-  }
+  private embeddedCard?: LovelaceCardElement
+  private embeddedCardEntity = ''
+  private embeddedCardConfigSignature = ''
+  private embeddedCardPendingSignature = ''
+  private cardHelpersPromise?: Promise<LovelaceCardHelpers>
   private removeOutsideClickListener?: () => void
   private fadeInAfterSync = false
   private activitySignatures = new Map<string, string>()
@@ -402,7 +424,6 @@ export default class SimpleThermostatGroup extends LitElement {
         display: block;
         overflow: hidden;
         opacity: 1;
-        padding-top: var(--st-group-body-top-buffer, 14px);
         transition: opacity 120ms ease;
         will-change: opacity;
       }
@@ -662,18 +683,48 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private readStoredSelection(config: GroupConfig) {
+    return this.readStoredSelectionRecord(config)?.entity ?? ''
+  }
+
+  private readStoredSelectionRecord(config: GroupConfig): StoredSelection | undefined {
     try {
-      return window.localStorage?.getItem(this.getStorageKey(config)) ?? ''
+      const value = window.localStorage?.getItem(this.getStorageKey(config))
+      if (!value) return undefined
+
+      if (!value.trim().startsWith('{')) {
+        return {
+          entity: value,
+          timestamp: 0,
+        }
+      }
+
+      const parsed = JSON.parse(value) as Partial<StoredSelection>
+      if (typeof parsed.entity === 'string') {
+        return {
+          entity: parsed.entity,
+          timestamp: Number.isFinite(parsed.timestamp)
+            ? Number(parsed.timestamp)
+            : 0,
+        }
+      }
     } catch (_err) {
-      return ''
+      return undefined
     }
+
+    return undefined
   }
 
   private writeStoredSelection(entity: string) {
     if (!this.config || this.config.remember_selection === false) return
 
     try {
-      window.localStorage?.setItem(this.getStorageKey(this.config), entity)
+      window.localStorage?.setItem(
+        this.getStorageKey(this.config),
+        JSON.stringify({
+          entity,
+          timestamp: Date.now(),
+        })
+      )
     } catch (_err) {
       // Browsers can block localStorage in private contexts; selection still works.
     }
@@ -909,6 +960,19 @@ export default class SimpleThermostatGroup extends LitElement {
 
     this.persistedActivityApplied = true
 
+    const storedSelection = this.readStoredSelectionRecord(this.config)
+    const validStoredSelection =
+      storedSelection &&
+      this.targets.some((target) => target.entity === storedSelection.entity)
+    const latest = this.getMostRecentStateActivityCandidate()
+    if (
+      validStoredSelection &&
+      (!latest || latest.timestamp <= storedSelection.timestamp)
+    ) {
+      this.selectEntity(storedSelection.entity, false)
+      return
+    }
+
     const stored = this.readStoredActivity(this.config)
     if (!stored) {
       this.selectMostRecentStateActivity(nextSignatures)
@@ -930,7 +994,6 @@ export default class SimpleThermostatGroup extends LitElement {
         storedTarget,
         stored.timestamp
       )
-      const latest = this.getMostRecentStateActivityCandidate()
       if (latest && this.isBetterActivityCandidate(latest, storedCandidate)) {
         this.selectMostRecentStateActivity(nextSignatures)
         return
@@ -1124,13 +1187,115 @@ export default class SimpleThermostatGroup extends LitElement {
     return this.getTargetCardConfig(target)
   }
 
-  private getTargetCardConfig(target: GroupTarget) {
+  private getEmbeddedConfigSignature(config: LooseObject) {
+    return JSON.stringify(config, (_key, value) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return value
+      }
+
+      return Object.keys(value)
+        .sort()
+        .reduce<LooseObject>((result, key) => {
+          result[key] = value[key]
+          return result
+        }, {})
+    })
+  }
+
+  private getTargetCardConfig(target: GroupTarget): LooseObject {
+    const commonConfig = (this.config?.card ?? {}) as LooseObject
+    const sourceConfig = this.getSourceTargetConfig(target)
+    const targetConfig = target.config
+    const mergedConfig = {
+      ...commonConfig,
+      ...sourceConfig,
+      ...targetConfig,
+    }
+
+    if (!mergedConfig.card_mod) {
+      const fallbackCardMod = this.getFallbackCardMod()
+      if (fallbackCardMod) mergedConfig.card_mod = fallbackCardMod
+    }
+
     return {
-      ...(this.config?.card ?? {}),
-      ...target.config,
+      ...mergedConfig,
+      embedded: true,
       entity: target.entity,
       type: target.config.type ?? `custom:${CARD_NAME}`,
     }
+  }
+
+  private getSourceTargetConfig(target: GroupTarget): LooseObject {
+    const sourceTargets = this.config?.cards ?? this.config?.entities ?? []
+    const source = sourceTargets.find(
+      (item) =>
+        !!item &&
+        typeof item === 'object' &&
+        (item as LooseObject).entity === target.entity
+    )
+
+    return source && typeof source === 'object' ? (source as LooseObject) : {}
+  }
+
+  private getFallbackCardMod() {
+    const commonCardMod = ((this.config?.card ?? {}) as LooseObject).card_mod
+    if (commonCardMod) return commonCardMod
+
+    const sourceTargets = this.config?.cards ?? this.config?.entities ?? []
+    const styledTarget = sourceTargets.find(
+      (item) => !!item && typeof item === 'object' && !!(item as LooseObject).card_mod
+    ) as LooseObject | undefined
+
+    return styledTarget?.card_mod
+  }
+
+  private getCardHelpers() {
+    if (!this.cardHelpersPromise) {
+      this.cardHelpersPromise =
+        typeof window.loadCardHelpers === 'function'
+          ? window.loadCardHelpers()
+          : Promise.reject(new Error('Home Assistant card helpers unavailable'))
+    }
+
+    return this.cardHelpersPromise
+  }
+
+  private createFallbackEmbeddedCardElement(config: LooseObject) {
+    const element = window.document.createElement(CARD_NAME) as LovelaceCardElement
+    if (typeof element.setConfig === 'function') {
+      element.setConfig(config)
+      return element
+    }
+
+    return undefined
+  }
+
+  private installEmbeddedCard(
+    host: Element,
+    embedded: LovelaceCardElement | undefined,
+    embeddedConfig: LooseObject,
+    configSignature: string
+  ) {
+    if (!this.config || !this.hass) return
+    if (!embedded || typeof embedded.setConfig !== 'function') {
+      this.embeddedCardPendingSignature = ''
+      return
+    }
+    if (this.getEmbeddedConfigSignature(this.getEmbeddedConfig()) !== configSignature) {
+      return
+    }
+
+    this.embeddedCard = embedded
+    this.embeddedCardEntity = String(embeddedConfig.entity ?? '')
+    this.embeddedCardConfigSignature = configSignature
+    this.embeddedCardPendingSignature = ''
+    host.replaceChildren(embedded)
+
+    if (typeof embedded.setConfig === 'function') {
+      embedded.setConfig(embeddedConfig)
+    }
+    embedded.hass = this.hass
+    this.syncEmbeddedPresentation()
   }
 
   private syncEmbeddedCard() {
@@ -1140,18 +1305,54 @@ export default class SimpleThermostatGroup extends LitElement {
     if (!host) return
 
     const embeddedConfig = this.getEmbeddedConfig()
+    const configSignature = this.getEmbeddedConfigSignature(embeddedConfig)
 
-    if (!this.embeddedCard) {
-      this.embeddedCard = window.document.createElement(CARD_NAME) as HTMLElement & {
-        hass?: HASS
-        setConfig?: (config: LooseObject) => void
+    if (
+      !this.embeddedCard ||
+      this.embeddedCardEntity !== embeddedConfig.entity ||
+      this.embeddedCardConfigSignature !== configSignature
+    ) {
+      if (typeof window.loadCardHelpers !== 'function') {
+        const fallback = window.customElements.get(CARD_NAME)
+          ? this.createFallbackEmbeddedCardElement(embeddedConfig)
+          : undefined
+
+        if (!fallback) {
+          this.embeddedCardPendingSignature = ''
+          return
+        }
+
+        this.installEmbeddedCard(
+          host,
+          fallback,
+          embeddedConfig,
+          configSignature
+        )
+        return
       }
-      host.replaceChildren(this.embeddedCard)
+
+      if (this.embeddedCardPendingSignature === configSignature) return
+      this.embeddedCardPendingSignature = configSignature
+
+      this.getCardHelpers()
+        .then((helpers) => helpers.createCardElement(embeddedConfig))
+        .catch(() => {
+          const fallback = window.customElements.get(CARD_NAME)
+            ? this.createFallbackEmbeddedCardElement(embeddedConfig)
+            : undefined
+          return fallback
+        })
+        .then((embedded) =>
+          this.installEmbeddedCard(
+            host,
+            embedded,
+            embeddedConfig,
+            configSignature
+          )
+        )
+      return
     }
 
-    if (typeof this.embeddedCard.setConfig === 'function') {
-      this.embeddedCard.setConfig(embeddedConfig)
-    }
     this.embeddedCard.hass = this.hass
     this.syncEmbeddedPresentation()
   }
@@ -1173,18 +1374,18 @@ export default class SimpleThermostatGroup extends LitElement {
     const host = this.renderRoot.querySelector(
       '.embedded-card-host'
     ) as HTMLElement | null
-    const root = this.embeddedCard?.shadowRoot
-    const card = root?.querySelector('ha-card') as HTMLElement | null
-    const header = root?.querySelector('header') as HTMLElement | null
+    const selector = this.renderRoot.querySelector(
+      '.group-selector'
+    ) as HTMLElement | null
+    const embedded = this.embeddedCard as HTMLElement | undefined
 
-    if (!host || !card) return
+    if (!host || !embedded) return
 
     host.style.removeProperty('--st-group-cropped-header-height')
-
-    if (header) {
-      header.style.visibility = 'hidden'
-      header.style.pointerEvents = 'none'
-    }
+    embedded.style.setProperty(
+      '--st-group-embedded-header-min-height',
+      this.getEmbeddedHeaderReserve(embedded, selector)
+    )
 
     if (this.fadeInAfterSync) {
       this.fadeInAfterSync = false
@@ -1192,6 +1393,39 @@ export default class SimpleThermostatGroup extends LitElement {
         this.cardFading = false
       })
     }
+  }
+
+  private getEmbeddedHeaderReserve(
+    embedded: HTMLElement,
+    selector: HTMLElement | null
+  ) {
+    const fallback =
+      'calc(var(--st-group-header-control-height, 34px) + var(--st-group-header-top-buffer, 6px) + calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 6))'
+    const minimum = this.getEmbeddedHeaderReserveMinimum()
+
+    if (!selector) return fallback
+
+    const embeddedRect = embedded.getBoundingClientRect()
+    const selectorRect = selector.getBoundingClientRect()
+    const measured = Math.ceil(selectorRect.bottom - embeddedRect.top + 8)
+    const reserve = Math.max(measured, minimum)
+
+    return Number.isFinite(reserve) && reserve > 24 ? `${reserve}px` : fallback
+  }
+
+  private getEmbeddedHeaderReserveMinimum() {
+    const styles = getComputedStyle(this)
+    const controlHeight =
+      parseFloat(styles.getPropertyValue('--st-group-header-control-height')) ||
+      34
+    const topBuffer =
+      parseFloat(styles.getPropertyValue('--st-group-header-top-buffer')) || 6
+    const spacing =
+      parseFloat(styles.getPropertyValue('--st-spacing')) ||
+      parseFloat(styles.getPropertyValue('--st-default-spacing')) ||
+      4
+
+    return Math.ceil(controlHeight + topBuffer + spacing * 4)
   }
 
   private selectEntity(entity: string, manual = true) {
@@ -1452,7 +1686,10 @@ export default class SimpleThermostatGroup extends LitElement {
     if (!this.config) return html`<ha-card></ha-card>`
 
     return html`
-      <div class=${this.getGroupCardClasses()} style=${this.getGroupCardStyle()}>
+      <div
+        class=${this.getGroupCardClasses()}
+        style=${this.getGroupCardStyle()}
+      >
         ${this.renderSelector()}
         <div
           class=${`embedded-card-host${this.cardFading ? ' fading' : ''}`}

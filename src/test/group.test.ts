@@ -54,6 +54,20 @@ function createGroup() {
   return group
 }
 
+function domRect(top: number, bottom: number): DOMRect {
+  return {
+    x: 0,
+    y: top,
+    top,
+    bottom,
+    left: 0,
+    right: 0,
+    width: 0,
+    height: bottom - top,
+    toJSON: () => ({}),
+  } as DOMRect
+}
+
 const hass = {
   callService,
   states: {
@@ -118,13 +132,13 @@ test('renders only a selector and an embedded simple thermostat card', async () 
   expect(embeddedSetConfig).toHaveBeenLastCalledWith(
     expect.objectContaining({
       entity: 'climate.living_room',
+      embedded: true,
       header: { name: 'Living AC', icon: 'mdi:air-conditioner' },
       layout: { step: 'row' },
     })
   )
   expect(embeddedSetConfig).toHaveBeenLastCalledWith(
     expect.not.objectContaining({
-      embedded: true,
       header: false,
     })
   )
@@ -147,10 +161,6 @@ test('switches the embedded card without rewriting the selected card config', as
   })
   group.hass = hass as any
   await group.updateComplete
-  const initialChild = group.shadowRoot?.querySelector(
-    '.embedded-card-host simple-thermostat'
-  )
-
   const nextButton = group.shadowRoot?.querySelector(
     'button[aria-label="Next device"]'
   ) as HTMLButtonElement
@@ -170,8 +180,10 @@ test('switches the embedded card without rewriting the selected card config', as
     })
   )
   expect(
-    group.shadowRoot?.querySelector('.embedded-card-host simple-thermostat')
-  ).toBe(initialChild)
+    group.shadowRoot
+      ?.querySelector('.embedded-card-host simple-thermostat')
+      ?.getAttribute('data-entity')
+  ).toBe('climate.bedroom')
 })
 
 test('keeps nested fan controls on grouped climate cards', async () => {
@@ -210,7 +222,52 @@ test('keeps nested fan controls on grouped climate cards', async () => {
   )
 })
 
-test('moves header toggles into the group selector and hides the embedded header', async () => {
+test('passes full object target config to the embedded card', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      {
+        type: 'custom:simple-thermostat',
+        entity: 'climate.living_room',
+        hide: { temperature: false, state: true },
+        layout: {
+          mode: { headings: false, icons: true, names: true },
+          step: 'row',
+        },
+        header: {},
+        step_size: 0.1,
+        control: { hvac: true },
+        card_mod: {
+          style: 'ha-card { background: red; }',
+        },
+      },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  expect(embeddedSetConfig).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      type: 'custom:simple-thermostat',
+      entity: 'climate.living_room',
+      embedded: true,
+      hide: { temperature: false, state: true },
+      layout: {
+        mode: { headings: false, icons: true, names: true },
+        step: 'row',
+      },
+      header: {},
+      step_size: 0.1,
+      control: { hvac: true },
+      card_mod: {
+        style: 'ha-card { background: red; }',
+      },
+    })
+  )
+})
+
+test('moves header toggles into the group selector and marks the embedded card', async () => {
   const group = createGroup()
 
   group.setConfig({
@@ -524,7 +581,7 @@ test('remembers the selected embedded card when enabled', async () => {
   )
 })
 
-test('keeps the embedded stock card surface intact and overlays only the header', async () => {
+test('keeps the embedded stock card surface intact without mutating its shadow header', async () => {
   const group = createGroup()
 
   group.setConfig({
@@ -542,12 +599,77 @@ test('keeps the embedded stock card surface intact and overlays only the header'
   ) as HTMLElement
   const childCard = child?.shadowRoot?.querySelector('ha-card') as HTMLElement
   const childHeader = child?.shadowRoot?.querySelector('header') as HTMLElement
+  const groupCard = group.shadowRoot?.querySelector(
+    '.group-card'
+  ) as HTMLElement
+  const embeddedConfig = embeddedSetConfig.mock.calls.at(-1)?.[0]
+
+  expect(groupCard).not.toBe(null)
+  expect(groupCard.tagName.toLowerCase()).toBe('div')
+  expect(embeddedConfig).toEqual(expect.objectContaining({ embedded: true }))
   expect(childCard.style.background).toContain('linear-gradient')
-  expect(childHeader.style.visibility).toBe('hidden')
-  expect(childHeader.style.pointerEvents).toBe('none')
+  expect(childHeader.style.visibility).toBe('')
+  expect(childHeader.style.pointerEvents).toBe('')
+  expect(childHeader.style.minHeight).toBe('')
   expect(childHeader.style.display).toBe('')
-  expect(childCard.style.border).toBe('')
-  expect(childCard.style.boxShadow).toBe('')
+  expect(
+    child.style.getPropertyValue('--st-group-embedded-header-min-height')
+  ).toBe('56px')
+})
+
+test('measures the selector reserve without mutating the embedded shadow DOM', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [{ entity: 'climate.living_room', header: { name: 'Living AC' } }],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const selector = group.shadowRoot?.querySelector(
+    '.group-selector'
+  ) as HTMLElement
+  const child = group.shadowRoot?.querySelector(
+    '.embedded-card-host simple-thermostat'
+  ) as HTMLElement
+  const childHeader = child?.shadowRoot?.querySelector('header') as HTMLElement
+
+  jest.spyOn(selector, 'getBoundingClientRect').mockReturnValue(domRect(0, 96))
+  jest.spyOn(child, 'getBoundingClientRect').mockReturnValue(domRect(20, 120))
+
+  ;(group as any).applyEmbeddedPresentation()
+
+  expect(
+    child.style.getPropertyValue('--st-group-embedded-header-min-height')
+  ).toBe('84px')
+  expect(childHeader.style.visibility).toBe('')
+  expect(childHeader.style.minHeight).toBe('')
+})
+
+test('keeps a compact minimum selector reserve when the measured header is short', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [{ entity: 'climate.living_room', header: { name: 'Living AC' } }],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const selector = group.shadowRoot?.querySelector(
+    '.group-selector'
+  ) as HTMLElement
+  const child = group.shadowRoot?.querySelector(
+    '.embedded-card-host simple-thermostat'
+  ) as HTMLElement
+
+  jest.spyOn(selector, 'getBoundingClientRect').mockReturnValue(domRect(0, 48))
+  jest.spyOn(child, 'getBoundingClientRect').mockReturnValue(domRect(0, 120))
+
+  ;(group as any).applyEmbeddedPresentation()
+
+  expect(
+    child.style.getPropertyValue('--st-group-embedded-header-min-height')
+  ).toBe('56px')
 })
 
 test('does not create a separate theme-derived card surface around the child card', async () => {
@@ -569,7 +691,144 @@ test('does not create a separate theme-derived card surface around the child car
   expect(styles).not.toContain('card.style.background')
 })
 
-test('keeps the embedded card responsible for its own surface while switching', async () => {
+test('passes target card_mod through to the embedded card', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      {
+        entity: 'climate.living_room',
+        header: { name: 'Living AC' },
+        card_mod: {
+          style: 'ha-card { background: linear-gradient(red, blue); }',
+        },
+      },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const embeddedConfig = embeddedSetConfig.mock.calls.at(-1)?.[0]
+  expect(embeddedConfig).toEqual(
+    expect.objectContaining({
+      card_mod: {
+        style: 'ha-card { background: linear-gradient(red, blue); }',
+      },
+    })
+  )
+  expect(group.shadowRoot?.querySelector('ha-card.group-card')).toBe(null)
+})
+
+test('passes object-form target card_mod through to the embedded card', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      {
+        entity: 'climate.living_room',
+        header: { name: 'Living AC' },
+        card_mod: {
+          style: {
+            '.': 'ha-card { background: linear-gradient(red, blue); }',
+          },
+        },
+      },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const embeddedConfig = embeddedSetConfig.mock.calls.at(-1)?.[0]
+  expect(embeddedConfig).toEqual(
+    expect.objectContaining({
+      card_mod: {
+        style: {
+          '.': 'ha-card { background: linear-gradient(red, blue); }',
+        },
+      },
+    })
+  )
+  expect(group.shadowRoot?.querySelector('ha-card.group-card')).toBe(null)
+})
+
+test('passes the source card_mod when the selected target config is lightweight', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      {
+        entity: 'climate.living_room',
+        header: { name: 'Living AC' },
+        card_mod: {
+          style: 'ha-card { background: linear-gradient(red, blue); }',
+        },
+      },
+    ],
+  })
+  ;(group as any).targets = [
+    {
+      entity: 'climate.living_room',
+      config: {
+        entity: 'climate.living_room',
+        type: `custom:${CARD_NAME}`,
+      },
+    },
+  ]
+  group.hass = hass as any
+  await group.updateComplete
+
+  const embeddedConfig = embeddedSetConfig.mock.calls.at(-1)?.[0]
+  expect(embeddedConfig).toEqual(
+    expect.objectContaining({
+      card_mod: {
+        style: 'ha-card { background: linear-gradient(red, blue); }',
+      },
+    })
+  )
+  expect(group.shadowRoot?.querySelector('ha-card.group-card')).toBe(null)
+})
+
+test('uses a sibling card_mod for lightweight targets without their own card_mod', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      {
+        entity: 'climate.living_room',
+        header: { name: 'Living AC' },
+        card_mod: {
+          style: 'ha-card { background: linear-gradient(red, blue); }',
+        },
+      },
+      'climate.bedroom',
+    ],
+  })
+  ;(group as any).targets = [
+    {
+      entity: 'climate.bedroom',
+      config: {
+        entity: 'climate.bedroom',
+        type: `custom:${CARD_NAME}`,
+      },
+    },
+  ]
+  group.hass = hass as any
+  await group.updateComplete
+
+  const embeddedConfig = embeddedSetConfig.mock.calls.at(-1)?.[0]
+
+  expect(embeddedConfig).toEqual(
+    expect.objectContaining({
+      entity: 'climate.bedroom',
+      card_mod: {
+        style: 'ha-card { background: linear-gradient(red, blue); }',
+      },
+    })
+  )
+  expect(group.shadowRoot?.querySelector('ha-card.group-card')).toBe(null)
+})
+
+test('keeps the embedded surface contract while switching', async () => {
   const group = createGroup()
 
   group.setConfig({
@@ -598,8 +857,15 @@ test('keeps the embedded card responsible for its own surface while switching', 
   const child = group.shadowRoot?.querySelector(
     '.embedded-card-host simple-thermostat'
   ) as HTMLElement
-  const childCard = child?.shadowRoot?.querySelector('ha-card') as HTMLElement
-  expect(childCard.style.background).toContain('linear-gradient')
+  expect(child).not.toBe(null)
+  expect(
+    embeddedSetConfig.mock.calls
+      .map(([config]) => config)
+      .some(
+        (config) =>
+          config.entity === 'climate.living_room' && config.embedded === true
+      )
+  ).toBe(true)
 
   const nextButton = group.shadowRoot?.querySelector(
     'button[aria-label="Next device"]'
@@ -611,7 +877,14 @@ test('keeps the embedded card responsible for its own surface while switching', 
     window.requestAnimationFrame(() => resolve())
   )
 
-  expect(childCard.style.background).toBe('transparent')
+  expect(
+    embeddedSetConfig.mock.calls
+      .map(([config]) => config)
+      .some(
+        (config) =>
+          config.entity === 'climate.transparent' && config.embedded === true
+      )
+  ).toBe(true)
 })
 
 test('fades the embedded card during selector changes', async () => {
@@ -632,7 +905,7 @@ test('fades the embedded card during selector changes', async () => {
   expect(styles).toContain(
     'transform: translateY(var(--st-group-header-top-buffer, 6px))'
   )
-  expect(styles).toContain(
+  expect(styles).not.toContain(
     'padding-top: var(--st-group-body-top-buffer, 14px)'
   )
 
@@ -1002,6 +1275,117 @@ test('pauses recent activity auto-select after manual navigation', async () => {
   } finally {
     nowSpy.mockRestore()
     jest.useRealTimers()
+  }
+})
+
+test('keeps stored manual selection on refresh when no target changed later', async () => {
+  const selectedAt = Date.parse('2026-07-05T12:00:00.000Z')
+  const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(selectedAt)
+
+  try {
+    const first = createGroup()
+    first.setConfig({
+      auto_select: { mode: 'recent_activity', manual_pause_ms: 30000 },
+      cards: [
+        { entity: 'climate.living_room', header: { name: 'Living AC' } },
+        { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+      ],
+    })
+    first.hass = hass as any
+    await first.updateComplete
+
+    const nextButton = first.shadowRoot?.querySelector(
+      'button[aria-label="Next device"]'
+    ) as HTMLButtonElement
+    nextButton.click()
+    await first.updateComplete
+
+    first.remove()
+
+    const second = createGroup()
+    second.hass = {
+      ...hass,
+      states: {
+        ...hass.states,
+        'climate.living_room': {
+          ...hass.states['climate.living_room'],
+          last_changed: '2026-07-05T11:59:59.000Z',
+          last_updated: '2026-07-05T11:59:59.000Z',
+        },
+      },
+    } as any
+    second.setConfig({
+      auto_select: { mode: 'recent_activity', manual_pause_ms: 30000 },
+      cards: [
+        { entity: 'climate.living_room', header: { name: 'Living AC' } },
+        { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+      ],
+    })
+    await second.updateComplete
+
+    expect(second.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Bedroom AC'
+    )
+  } finally {
+    nowSpy.mockRestore()
+  }
+})
+
+test('lets newer recent activity override stored manual selection on refresh', async () => {
+  const selectedAt = Date.parse('2026-07-05T12:00:00.000Z')
+  const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(selectedAt)
+
+  try {
+    const first = createGroup()
+    first.setConfig({
+      auto_select: { mode: 'recent_activity', manual_pause_ms: 30000 },
+      cards: [
+        { entity: 'climate.living_room', header: { name: 'Living AC' } },
+        { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+      ],
+    })
+    first.hass = hass as any
+    await first.updateComplete
+
+    const nextButton = first.shadowRoot?.querySelector(
+      'button[aria-label="Next device"]'
+    ) as HTMLButtonElement
+    nextButton.click()
+    await first.updateComplete
+
+    first.remove()
+
+    const second = createGroup()
+    second.hass = {
+      ...hass,
+      states: {
+        ...hass.states,
+        'climate.living_room': {
+          ...hass.states['climate.living_room'],
+          last_changed: '2026-07-05T12:00:01.000Z',
+          last_updated: '2026-07-05T12:00:01.000Z',
+          attributes: {
+            ...hass.states['climate.living_room'].attributes,
+            hvac_action: 'cooling',
+          },
+        },
+      },
+    } as any
+    second.setConfig({
+      auto_select: { mode: 'recent_activity', manual_pause_ms: 30000 },
+      cards: [
+        { entity: 'climate.living_room', header: { name: 'Living AC' } },
+        { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+      ],
+    })
+    await second.updateComplete
+    await second.updateComplete
+
+    expect(second.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Living AC'
+    )
+  } finally {
+    nowSpy.mockRestore()
   }
 })
 

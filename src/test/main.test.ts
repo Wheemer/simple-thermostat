@@ -1,8 +1,3 @@
-jest.mock('debounce-fn', () => ({
-  __esModule: true,
-  default: (fn: unknown) => Object.assign(fn as object, { cancel: jest.fn() }),
-}))
-
 import SimpleThermostat from '../main'
 
 const tagName = 'simple-thermostat-main-test'
@@ -87,6 +82,210 @@ test('renders a loading shell after config before Home Assistant is assigned', a
 
   expect(card.shadowRoot?.querySelector('ha-card.loading')).not.toBe(null)
   expect(card.shadowRoot?.textContent).not.toContain('Entity not available')
+})
+
+test('marks embedded cards at the host and card surface', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    embedded: true,
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          temperature: 20,
+          current_temperature: 21,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  expect(card.hasAttribute('embedded')).toBe(true)
+  expect(card.shadowRoot?.querySelector('ha-card.embedded')).not.toBe(null)
+  expect(card.shadowRoot?.querySelector('header')).toBe(null)
+  expect(card.shadowRoot?.querySelector('.embedded-header-reserve')).not.toBe(
+    null
+  )
+})
+
+test('resets derived entity state when config changes on a reused card', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  const hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          temperature: 20,
+          current_temperature: 21,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+      'sensor.extra': {
+        entity_id: 'sensor.extra',
+        state: '12',
+        attributes: { friendly_name: 'Extra' },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  card.hass = hass
+  card.setConfig({
+    entity: 'climate.living_room',
+    entities: [{ entity: 'sensor.extra' }],
+  } as any)
+  await card.updateComplete
+
+  expect(card.entities).toHaveLength(1)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    hide: { state: true },
+    layout: { step: 'row' },
+    control: { hvac: true },
+  } as any)
+  await card.updateComplete
+
+  expect(card.entities).toHaveLength(0)
+  expect(card.showEntities).toBe(true)
+  expect(card.config.hide?.state).toBe(true)
+  expect(card.config.layout?.step).toBe('row')
+})
+
+test('cleans pending timers and setpoint updates on disconnect', () => {
+  jest.useFakeTimers()
+  const card = createCard()
+
+  card._updatingValuesTimeout = setTimeout(() => undefined, 1000)
+  card._holdTimer = setTimeout(() => undefined, 1000)
+  card._clickTimer = setTimeout(() => undefined, 1000)
+  ;(card as any)._setpointUpdateTimer = setTimeout(() => undefined, 1000)
+  ;(card as any)._pendingSetpointValues = { temperature: 22 }
+
+  card.disconnectedCallback()
+
+  expect(card._updatingValuesTimeout).toBe(null)
+  expect(card._holdTimer).toBe(null)
+  expect(card._clickTimer).toBe(null)
+  expect((card as any)._setpointUpdateTimer).toBe(null)
+  expect((card as any)._pendingSetpointValues).toBe(null)
+
+  jest.useRealTimers()
+})
+
+test('uses configured setpoint debounce delay', () => {
+  const card = createCard()
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    setpoint_debounce_ms: 750,
+  } as any)
+
+  expect((card as any)._setpointDebounce).toBe(750)
+})
+
+test('allows immediate setpoint updates when debounce is zero', () => {
+  const card = createCard()
+  const sendSetpointValues = jest
+    .spyOn(card as any, '_sendSetpointValues')
+    .mockImplementation(() => undefined)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    setpoint_debounce_ms: 0,
+  } as any)
+  ;(card as any)._scheduleSetpointValues({ temperature: 22 })
+
+  expect((card as any)._setpointDebounce).toBe(0)
+  expect(sendSetpointValues).toHaveBeenCalledWith({ temperature: 22 })
+})
+
+test('estimates card size from visible sections', async () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+    entities: false,
+    hide_setpoint: true,
+  } as any)
+
+  expect(card.getCardSize()).toBe(1)
+
+  card.header = { name: 'Living Room', icon: false } as any
+  card.showEntities = true
+  card.entities = [{ entity: 'sensor.one' }, { entity: 'sensor.two' }] as any
+  card.modes = [{ type: 'hvac' }, { type: 'preset' }] as any
+  card.config.hide_setpoint = false
+
+  expect(card.getCardSize()).toBe(5)
+})
+
+test('applies card_mod ha-card surface declarations on the first card render', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    card_mod: {
+      style:
+        'ha-card { background: linear-gradient(145deg, red, blue); border-radius: 8px; }',
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          temperature: 20,
+          current_temperature: 21,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  const surface = card.shadowRoot?.querySelector('ha-card') as HTMLElement
+  expect(surface.getAttribute('style')).toContain(
+    'background: linear-gradient(145deg, red, blue)'
+  )
+  expect(surface.getAttribute('style')).toContain('border-radius: 8px')
 })
 
 test('keeps last rendered entity during transient missing hass updates', async () => {
@@ -1090,6 +1289,7 @@ test('off climate setpoint allows setpoint changes by default', async () => {
     entity: 'climate.comet_dect',
     header: false,
     control: false,
+    setpoint_debounce_ms: 0,
   } as any)
   card.hass = {
     states: {
@@ -1193,6 +1393,7 @@ test('non-off null climate setpoint seeds min temp on increase', async () => {
     entity: 'climate.comet_dect',
     header: false,
     control: false,
+    setpoint_debounce_ms: 0,
   } as any)
   card.hass = {
     states: {

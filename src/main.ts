@@ -1,6 +1,5 @@
 import { LitElement, html, nothing } from 'lit'
 import { property } from 'lit/decorators.js'
-import debounce from 'debounce-fn'
 import { name as CARD_NAME } from '../package.json'
 
 import { getAdapter, EntityAdapter } from './adapters'
@@ -31,7 +30,7 @@ import { CardConfig, ModeValue, ModeControlObject, MODES } from './config/card'
 
 import { ControlMode, LooseObject, Entity, HASS, HVAC_MODES } from './types'
 
-const DEBOUNCE_TIMEOUT = 500
+const SETPOINT_DEBOUNCE_TIMEOUT = 500
 const STEP_SIZE = 0.5
 const DECIMALS = 1
 const UPDATING_TIMEOUT = 10000
@@ -268,6 +267,38 @@ function getCardStyle(entityDomain: string, attributes: LooseObject) {
   return `--st-fan-spin-duration: ${fanSpinDuration.toFixed(2)}s;`
 }
 
+function getCardModSurfaceDeclarations(cardMod: unknown) {
+  const style = (cardMod as LooseObject | undefined)?.style
+  if (typeof style === 'object' && style) {
+    const cardStyle = (style as LooseObject)['ha-card']
+    if (typeof cardStyle === 'string') return cardStyle.trim()
+
+    const rootStyle = (style as LooseObject)['.']
+    if (typeof rootStyle === 'string') {
+      const rootMatch = rootStyle.match(/ha-card\s*\{([\s\S]*?)\}/)
+      return (rootMatch?.[1] ?? '').trim()
+    }
+  }
+
+  if (typeof style !== 'string') return ''
+
+  const match = style.match(/ha-card\s*\{([\s\S]*?)\}/)
+  return (match?.[1] ?? '').trim()
+}
+
+function getInlineCardStyle(
+  config: CardConfig,
+  entityDomain: string,
+  attributes: LooseObject
+) {
+  return [
+    getCardModSurfaceDeclarations((config as LooseObject).card_mod),
+    getCardStyle(entityDomain, attributes),
+  ]
+    .filter((style) => !!style)
+    .join('; ')
+}
+
 function supportsModeType(
   type: string,
   entityDomain: string,
@@ -487,22 +518,52 @@ export default class SimpleThermostat extends LitElement {
   _holdFired = false
   _clickCount = 0
   _clickTimer: ReturnType<typeof setTimeout> | null = null
+  _setpointUpdateTimer: ReturnType<typeof setTimeout> | null = null
+  _pendingSetpointValues: object | null = null
   static HOLD_MS = 500
   static DOUBLE_TAP_MS = 250
 
-  _debouncedSetTemperature = debounce(
-    (values: object) => {
-      const { domain, service, data = {} } = this.service
-      this._callAction(`${domain}.${service}`, {
-        entity_id: this.config.entity,
-        ...data,
-        ...values,
-      })
-    },
-    {
-      wait: DEBOUNCE_TIMEOUT,
+  _setpointDebounce = SETPOINT_DEBOUNCE_TIMEOUT
+
+  _sendSetpointValues(values: object) {
+    const { domain, service, data = {} } = this.service
+    this._callAction(`${domain}.${service}`, {
+      entity_id: this.config.entity,
+      ...data,
+      ...values,
+    })
+  }
+
+  _scheduleSetpointValues(values: object) {
+    const wait = this._setpointDebounce
+
+    if (wait <= 0) {
+      this._sendSetpointValues(values)
+      return
     }
-  )
+
+    this._pendingSetpointValues = { ...values }
+    if (this._setpointUpdateTimer) {
+      clearTimeout(this._setpointUpdateTimer)
+    }
+    this._setpointUpdateTimer = setTimeout(() => {
+      const pendingValues = this._pendingSetpointValues
+      this._setpointUpdateTimer = null
+      this._pendingSetpointValues = null
+      if (pendingValues) {
+        this._sendSetpointValues(pendingValues)
+      }
+    }, wait)
+  }
+
+  _getSetpointDebounce(config: CardConfig) {
+    const value = Number(
+      config?.setpoint_debounce_ms ?? SETPOINT_DEBOUNCE_TIMEOUT
+    )
+    return Number.isFinite(value) && value >= 0
+      ? value
+      : SETPOINT_DEBOUNCE_TIMEOUT
+  }
 
   _callAction(action: string, data: object) {
     if (typeof this._hass.callService === 'function') {
@@ -532,6 +593,13 @@ export default class SimpleThermostat extends LitElement {
       decimals: DECIMALS,
       ...config,
     })
+    const setpointDebounce = this._getSetpointDebounce(this.config)
+    if (setpointDebounce !== this._setpointDebounce) {
+      this._setpointDebounce = setpointDebounce
+    }
+    this.entities = []
+    this.showEntities = true
+    this.toggleAttribute('embedded', this.config.embedded === true)
     if (this._hass?.states) {
       this.updateFromHass(this._hass)
     }
@@ -556,6 +624,30 @@ export default class SimpleThermostat extends LitElement {
     }
 
     this.updateFromHass(hass)
+  }
+
+  disconnectedCallback() {
+    if (this._updatingValuesTimeout) {
+      clearTimeout(this._updatingValuesTimeout)
+      this._updatingValuesTimeout = null
+    }
+
+    if (this._holdTimer) {
+      clearTimeout(this._holdTimer)
+      this._holdTimer = null
+    }
+
+    if (this._clickTimer) {
+      clearTimeout(this._clickTimer)
+      this._clickTimer = null
+    }
+
+    if (this._setpointUpdateTimer) {
+      clearTimeout(this._setpointUpdateTimer)
+      this._setpointUpdateTimer = null
+    }
+    this._pendingSetpointValues = null
+    super.disconnectedCallback()
   }
 
   updateFromHass(hass: HASS) {
@@ -635,7 +727,9 @@ export default class SimpleThermostat extends LitElement {
 
     if (configuredEntities === false) {
       this.showEntities = false
+      this.entities = []
     } else if (configuredEntities) {
+      this.showEntities = true
       this.entities = configuredEntities.map(
         ({ name, entity, attribute, template, unit = '', ...rest }) => {
           let state
@@ -663,6 +757,9 @@ export default class SimpleThermostat extends LitElement {
           } as Entity
         }
       )
+    } else {
+      this.showEntities = true
+      this.entities = []
     }
   }
 
@@ -726,6 +823,7 @@ export default class SimpleThermostat extends LitElement {
       `domain-${safeClass(entityDomain)}`,
       `state-${safeClass(entity.state)}`,
       this.config.enhanced_visuals === false && 'standard-visuals',
+      this.config.embedded === true && 'embedded',
       safeClass(action),
       isUnavailable && safeClass(entity.state),
     ].filter((cx) => !!cx)
@@ -735,8 +833,9 @@ export default class SimpleThermostat extends LitElement {
       `step-${stepLayout}`,
       `setpoint-count-${setpointCount}`,
     ].filter((cx) => !!cx)
-    const cardStyle = getCardStyle(entityDomain, entity.attributes)
+    const cardStyle = getInlineCardStyle(config, entityDomain, entity.attributes)
 
+    const embedded = config.embedded === true
     const entitiesHtml = this.showEntities
       ? renderEntities({
           _hide,
@@ -750,6 +849,15 @@ export default class SimpleThermostat extends LitElement {
           openEntityPopover: this.openEntityPopover,
         })
       : ''
+    const headerHtml = embedded
+      ? html`<div class="embedded-header-reserve" aria-hidden="true"></div>`
+      : renderHeader({
+          header: this.header,
+          hass: this._hass,
+          toggleEntityChanged: this.toggleEntityChanged,
+          entity: this.entity,
+          openEntityPopover: this.openEntityPopover,
+        })
     return html`
       <ha-card class="${classes.join(' ')}" style=${cardStyle}>
         ${config.styles
@@ -758,13 +866,7 @@ export default class SimpleThermostat extends LitElement {
             </style>`
           : nothing}
         ${warnings}
-        ${renderHeader({
-          header: this.header,
-          hass: this._hass,
-          toggleEntityChanged: this.toggleEntityChanged,
-          entity: this.entity,
-          openEntityPopover: this.openEntityPopover,
-        })}
+        ${headerHtml}
         <section class="${bodyClasses.join(' ')}">
           ${entitiesHtml}
           ${this.renderSetpoints({
@@ -985,7 +1087,7 @@ export default class SimpleThermostat extends LitElement {
       ...this._values,
       [field]: +formatNumber(newValue, { decimals }),
     }
-    this._debouncedSetTemperature(this._values)
+    this._scheduleSetpointValues(this._values)
   }
 
   setMode = (type: string, mode: string) => {
@@ -1100,7 +1202,22 @@ export default class SimpleThermostat extends LitElement {
   }
 
   getCardSize() {
-    return 3
+    if (!this.config) return 1
+
+    const headerRows = this.config.embedded === true || this.header ? 1 : 0
+    const entityRows =
+      this.showEntities && this.entities?.length
+        ? Math.max(1, Math.ceil(this.entities.length / 2))
+        : 0
+    const setpointRows = this.config.hide_setpoint === true ? 0 : 1
+    const modeRows = this.modes?.length ?? 0
+    const warningRows =
+      this.stepSize < 1 && this.config.decimals === 0 ? 1 : 0
+
+    return Math.max(
+      1,
+      headerRows + entityRows + setpointRows + modeRows + warningRows
+    )
   }
 
   getUnit(): string | boolean {

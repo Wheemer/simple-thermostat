@@ -20,6 +20,8 @@ test('base ha-card keeps the default Home Assistant display contract', () => {
 
   expect(baseCardRule).not.toContain('display:')
   expect(baseCardRule).not.toContain('row-gap')
+  expect(baseCardRule).toContain('--ha-card-background')
+  expect(baseCardRule).toContain('--card-background-color')
 })
 
 test('host isolates internal z-index layers from wrapper overlays', () => {
@@ -56,7 +58,7 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-1')
   expect(styles).toContain('grid-template-columns: minmax(0, 1fr) max-content')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
-  expect(styles).toContain('minmax(160px, max-content)')
+  expect(styles).not.toContain('minmax(160px, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
   expect(styles).not.toContain(
     '.body.has-entities.step-column.setpoint-count-2 .entities.as-table.with-labels'
@@ -131,6 +133,8 @@ test('standard visuals keep upstream-style intrinsic body sizing', () => {
   expect(standardBodyRule).toContain(
     'grid-auto-columns: minmax(min-content, auto)'
   )
+  expect(standardBodyRule).not.toContain('grid-template-columns: none')
+  expect(styles).not.toContain('ha-card.standard-visuals .body > *')
 })
 
 test('standard visuals keep upstream-style header icon sizing', () => {
@@ -359,14 +363,18 @@ test('header icons keep their own compact size without shrinking controls', () =
   expect(triggerIconRule).toContain('var(--st-control-icon-size)')
 })
 
-test('group card has no shared embedded stylesheet path in the normal card', () => {
+test('group embedding does not add normal-card surface overrides', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
 
-  expect(styles).not.toContain('ha-card.embedded')
-  expect(styles).not.toContain('.embedded .body')
+  expect(styles).not.toContain(':host([embedded]) ha-card')
+  expect(styles).not.toContain('backdrop-filter: none !important')
+  expect(styles).not.toContain('box-shadow: none !important')
+  expect(styles).not.toContain('ha-card.embedded {\n  background: transparent')
   expect(styles).not.toContain('.embedded .controls')
   expect(styles).not.toContain('.embedded .entities')
+  expect(styles).toContain('ha-card.embedded .body')
+  expect(styles).toContain('padding-top: var(')
 })

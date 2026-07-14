@@ -4,13 +4,43 @@ import { LooseObject } from './types'
 
 Sqrl.defaultConfig.autoEscape = false
 
-Sqrl.filters.define('icon', (icon) => `<ha-icon icon="${icon}"></ha-icon>`)
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function escapeAttribute(value: unknown): string {
+  return escapeHtml(value)
+}
+
+function safeCssName(value: unknown): string {
+  return String(value ?? '').replace(/[^-a-zA-Z0-9_]/g, '')
+}
+
+function safeCssValue(value: unknown): string {
+  return String(value ?? '')
+    .replace(/url\s*\([^)]*\)/gi, '')
+    .replace(/expression\s*\([^)]*\)/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/[<>"'`;{}]/g, '')
+}
+
+Sqrl.filters.define(
+  'icon',
+  (icon) => `<ha-icon icon="${escapeAttribute(icon)}"></ha-icon>`
+)
 Sqrl.filters.define('join', (arr, delimiter = ', ') => arr.join(delimiter))
 Sqrl.filters.define('css', (str, css) => {
   const styles = Object.entries(css).reduce((memo, [key, val]) => {
-    return `${memo}${key}:${val};`
+    const property = safeCssName(key)
+    if (!property) return memo
+    return `${memo}${property}:${safeCssValue(val)};`
   }, '')
-  return `<span style="${styles}">${str}</span>`
+  return `<span style="${escapeAttribute(styles)}">${escapeHtml(str)}</span>`
 })
 Sqrl.filters.define('debug', (data) => {
   try {

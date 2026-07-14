@@ -385,6 +385,69 @@ test('legacy label icon template renders as an entity row heading icon', () => {
   )
 })
 
+test('icon filter escapes the icon attribute before unsafeHTML rendering', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      locale: { language: 'en' },
+    },
+    state: {
+      entity_id: 'sensor.status_window',
+      state: 'open',
+      attributes: {
+        friendly_name: 'Bedroom window',
+        icon: 'mdi:window-open" onclick="alert(1)',
+      },
+    },
+    details: {
+      heading: '{{icon|icon}}',
+    },
+    openEntityPopover: () => undefined,
+    localize: (value: string) => value,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  const icon = container.querySelector('ha-icon') as HTMLElement
+  expect(icon.getAttribute('icon')).toBe(
+    'mdi:window-open&quot; onclick=&quot;alert(1)'
+  )
+  expect(icon.getAttribute('onclick')).toBe(null)
+})
+
+test('css filter escapes content and strips unsafe style syntax', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: {},
+    state: {
+      entity_id: 'sensor.status',
+      state: 'ok',
+      attributes: {
+        friendly_name: 'Status',
+      },
+    },
+    details: {
+      template:
+        "{{ '<img src=x onerror=alert(1)>' | css({ color: 'red; background:url(javascript:alert(1))' }) }}",
+    },
+    openEntityPopover: () => undefined,
+    localize: (value: string) => value,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  const value = container.querySelector('.entity-value') as HTMLElement
+  const span = value.querySelector('span') as HTMLElement
+  expect(value.querySelector('img')).toBe(null)
+  expect(value.textContent).toContain('<img src=x onerror=alert(1)>')
+  expect(span.getAttribute('style')).not.toContain('javascript')
+  expect(span.getAttribute('style')).not.toContain('url(')
+})
+
 test('plain text rows with an entity id open more info from label and value', () => {
   const openEntityPopover = jest.fn()
   const result = renderInfoItem({
