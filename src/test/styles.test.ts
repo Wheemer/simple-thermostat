@@ -75,6 +75,9 @@ test('default entity table labels wrap only after a useful label width', () => {
   const valueRule = styles.match(/\.entity-value\s*\{[^}]*\}/)?.[0] ?? ''
 
   expect(tableLabelsRule).toContain(
+    'var(--st-entity-label-min-width, min(10ch, 34vw))'
+  )
+  expect(tableLabelsRule).toContain(
     'fit-content(var(--st-entity-label-max-width, 18ch))'
   )
   expect(tableLabelsRule).toContain('max-content')
@@ -106,8 +109,8 @@ test('entity table labels can opt into left alignment', () => {
   expect(leftAlignRule).toContain('justify-content: flex-start')
   expect(leftAlignRule).toContain('justify-self: start')
   expect(leftAlignRule).toContain('text-align: left')
-  expect(leftAlignRule).toContain('white-space: nowrap')
-  expect(leftAlignTableRule).toContain('grid: auto-flow / auto auto')
+  expect(leftAlignRule).not.toContain('white-space: nowrap')
+  expect(leftAlignTableRule).toBe('')
 })
 
 test('entity list rows keep a gap between value-only items', () => {

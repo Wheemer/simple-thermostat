@@ -304,7 +304,10 @@ ha-card.loading {
   }
   &.with-labels {
     grid-template-columns:
-      fit-content(var(--st-entity-label-max-width, 18ch))
+      minmax(
+        var(--st-entity-label-min-width, min(10ch, 34vw)),
+        fit-content(var(--st-entity-label-max-width, 18ch))
+      )
       max-content;
     grid-auto-flow: row;
     column-gap: 8px;
@@ -341,11 +344,6 @@ ha-card.loading {
   justify-content: flex-start;
   justify-self: start;
   text-align: left;
-  white-space: nowrap;
-}
-
-.entities.as-table.with-labels.align-left {
-  grid: auto-flow / auto auto;
 }
 
 .entities:empty {
