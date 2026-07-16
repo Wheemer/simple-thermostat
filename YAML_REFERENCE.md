@@ -97,8 +97,8 @@ This hides the target value and setpoint controls while keeping supported mode c
 | `setpoint_debounce_ms`             | number                 | Delay in milliseconds before sending target changes. Rapid clicks are collapsed into one service call. Defaults to `500`; set `0` to send immediately.                         |
 | `hide_setpoint`                    | boolean                | Hide target value and setpoint controls.                                                                                                                                      |
 | `disable_setpoint_change_when_off` | boolean                | Disable climate target step buttons while the climate entity is `off`, useful for TRV-style entities that reject off-mode target changes. Defaults to `false`.                 |
-| `hide.current_value_when_off`      | boolean                | Hide the built-in current value row while the main entity is `off`.                                                                                                           |
-| `hide.setpoint_when_off`           | boolean                | Hide the target value and setpoint controls while the main entity is `off`.                                                                                                  |
+| `hide_current_value_when_off`      | boolean                | Hide the built-in current value row while the main entity is `off`.                                                                                                           |
+| `hide_setpoint_when_off`           | boolean                | Hide the target value and setpoint controls while the main entity is `off`.                                                                                                  |
 | `fallback`                         | string                 | Text shown when no valid setpoint exists. Default `N/A`.                                                                                                                      |
 | `enhanced_visuals`                 | boolean                | Enable v4 visual polish. Set to `false` for v3-style visual defaults while keeping v4 fixes and compatibility. Defaults to `true` and only needs to be written when disabled. |
 | `header`                           | object, `false`        | Header configuration.                                                                                                                                                         |
@@ -113,6 +113,35 @@ This hides the target value and setpoint controls while keeping supported mode c
 | `tap_action`                       | object                 | Action fired from the target value.                                                                                                                                           |
 | `hold_action`                      | object                 | Hold action fired from the target value.                                                                                                                                      |
 | `double_tap_action`                | object                 | Double tap action fired from the target value.                                                                                                                                |
+
+### Off-state visibility
+
+Use `hide_when_off: true` on configurable rows or items that should disappear when the main card entity is off:
+
+```yaml
+header:
+  toggle:
+    entity: switch.room_fan
+    hide_when_off: true
+
+entities:
+  - entity: sensor.room_fan_power
+    hide_when_off: true
+
+control:
+  fan:
+    hide_when_off: true
+
+  hvac:
+    hide_off_when_off: true
+```
+
+Use the flat card-level options for built-in card display areas:
+
+```yaml
+hide_current_value_when_off: true
+hide_setpoint_when_off: true
+```
 
 ### Domain Defaults
 
@@ -172,11 +201,12 @@ Header options:
 
 Toggle options:
 
-| Option   | Type            | Description                                            |
-| -------- | --------------- | ------------------------------------------------------ |
-| `entity` | string          | Entity to toggle.                                      |
-| `name`   | string, boolean | Toggle label. Use `true` for the entity friendly name. |
-| `icon`   | string          | Icon shown beside or instead of the toggle label.      |
+| Option          | Type            | Description                                            |
+| --------------- | --------------- | ------------------------------------------------------ |
+| `entity`        | string          | Entity to toggle.                                      |
+| `name`          | string, boolean | Toggle label. Use `true` for the entity friendly name. |
+| `icon`          | string          | Icon shown beside or instead of the toggle label.      |
+| `hide_when_off` | boolean         | Hide the toggle when the main entity is off.           |
 
 Fault options:
 
@@ -286,22 +316,34 @@ Supported control types:
 
 Per-row options:
 
-| Option           | Description                                |
-| ---------------- | ------------------------------------------ |
-| `_name`          | Override the row heading.                  |
-| `_heading`       | Set to `true` to show the row heading.     |
-| `hide_when_off`  | Hide the row when the main entity is off.  |
-| `_hide_when_off` | Legacy alias for `hide_when_off`.          |
-| `_icons`         | Set to `false` to hide icons for this row. |
-| `_order`         | Explicit option order. Useful for numeric modes such as `"1"` through `"5"`, where JavaScript object key ordering cannot preserve YAML order. |
+| Option                | Description                                                                                                                 |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `_name`               | Override the row heading.                                                                                                   |
+| `_heading`            | Set to `true` to show the row heading.                                                                                      |
+| `hide_when_off`       | Hide the row when the main entity is off.                                                                                   |
+| `_hide_when_off`      | Legacy alias for `hide_when_off`.                                                                                           |
+| `_icons`              | Set to `false` to hide icons for this row.                                                                                  |
+| `_order`              | Explicit option order. Useful for numeric modes such as `"1"` through `"5"`, where JavaScript object key ordering cannot preserve YAML order. |
+| `hide_off_when_off`  | Hide the Off option when the main entity is off.                                                                              |
 
 Per-mode options:
 
-| Option    | Description                    |
-| --------- | ------------------------------ |
-| `name`    | Override a mode label.         |
-| `icon`    | Override a mode icon.          |
-| `include` | Set to `false` to hide a mode. |
+| Option          | Description                                      |
+| --------------- | ------------------------------------------------ |
+| `name`          | Override a mode label.                           |
+| `icon`          | Override a mode icon.                            |
+| `include`       | Set to `false` to hide a mode.                   |
+| `hide_when_off` | Hide this mode option when the main entity is off. |
+
+Hide the Off button while the device is already off:
+
+```yaml
+control:
+  hvac:
+    hide_off_when_off: true
+```
+
+Put `hide_when_off: true` directly under `hvac` to hide the whole HVAC row while off. For unusual per-option behavior, a specific mode option can also set `hide_when_off: true`.
 
 Explicit per-mode `icon:` overrides are honored wherever they are set. For swing and vane rows, default icons still require `_icons: true`, but icons you set directly on a mode render without that extra flag.
 

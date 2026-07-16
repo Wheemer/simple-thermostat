@@ -1239,6 +1239,188 @@ test('mode controls preserve explicit hidden names', async () => {
   expect(card.shadowRoot?.querySelector('.hvac .mode-label')).toBe(null)
 })
 
+test('mode options can hide when the entity is off from card config', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    layout: {
+      mode: {
+        headings: false,
+        icons: true,
+        names: true,
+      },
+    },
+    control: {
+      hvac: {
+        off: {
+          hide_when_off: true,
+        },
+        heat: true,
+        cool: true,
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'off',
+        attributes: {
+          hvac_modes: ['off', 'heat', 'cool'],
+          temperature: 20,
+          current_temperature: 19,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+    formatEntityState: (entity: any) => entity.state,
+  }
+
+  await card.updateComplete
+
+  expect(card.modes[0].list.map(({ value, hide_when_off }) => ({
+    value,
+    hide_when_off,
+  }))).toEqual([
+    { value: 'off', hide_when_off: true },
+    { value: 'heat', hide_when_off: undefined },
+    { value: 'cool', hide_when_off: undefined },
+  ])
+  const modeItems = Array.from(
+    card.shadowRoot?.querySelectorAll('.hvac .mode-item') ?? []
+  )
+
+  expect(modeItems).toHaveLength(2)
+  expect(modeItems.map((item) => item.textContent?.trim())).toEqual([
+    'heat',
+    'cool',
+  ])
+})
+
+test('hvac off option can hide while off with shortcut config', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    layout: {
+      mode: {
+        headings: false,
+        icons: true,
+        names: true,
+      },
+    },
+    control: {
+      hvac: {
+        hide_off_when_off: true,
+        off: true,
+        heat: true,
+        cool: true,
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'off',
+        attributes: {
+          hvac_modes: ['off', 'heat', 'cool'],
+          temperature: 20,
+          current_temperature: 19,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+    formatEntityState: (entity: any) => entity.state,
+  }
+
+  await card.updateComplete
+
+  const modeItems = Array.from(
+    card.shadowRoot?.querySelectorAll('.hvac .mode-item') ?? []
+  )
+
+  expect(card.modes[0].list.map(({ value, hide_when_off }) => ({
+    value,
+    hide_when_off,
+  }))).toEqual([
+    { value: 'off', hide_when_off: true },
+    { value: 'heat', hide_when_off: undefined },
+    { value: 'cool', hide_when_off: undefined },
+  ])
+  expect(modeItems.map((item) => item.textContent?.trim())).toEqual([
+    'heat',
+    'cool',
+  ])
+})
+
+test('control rows can hide when the entity is off from card config', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      hvac: {
+        hide_when_off: true,
+        off: true,
+        heat: true,
+        cool: true,
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'off',
+        attributes: {
+          hvac_modes: ['off', 'heat', 'cool'],
+          temperature: 20,
+          current_temperature: 19,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+    formatEntityState: (entity: any) => entity.state,
+  }
+
+  await card.updateComplete
+
+  expect(card.modes[0].hide_when_off).toBe(true)
+  expect(card.shadowRoot?.querySelector('.hvac')).toBe(null)
+})
+
 test('fan card does not fall back to climate current value or headings', async () => {
   document.body.innerHTML = ''
   const card = createCard()
@@ -1428,6 +1610,43 @@ test('off climate setpoint disables steppers when configured', async () => {
 })
 
 test('off climate setpoint can be hidden without disabling control by default', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.comet_dect',
+    header: false,
+    control: false,
+    hide_setpoint_when_off: true,
+  } as any)
+  card.hass = {
+    states: {
+      'climate.comet_dect': {
+        entity_id: 'climate.comet_dect',
+        state: 'off',
+        attributes: {
+          temperature: null,
+          current_temperature: 18,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  expect(card.shadowRoot?.querySelector('.current-wrapper')).toBe(null)
+  expect(card.getCardSize()).toBe(1)
+})
+
+test('off climate setpoint accepts nested prerelease hide alias', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)

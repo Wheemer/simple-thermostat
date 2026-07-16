@@ -160,11 +160,13 @@ export interface Toggle {
   entity: HAState
   label: string
   icon: string | false
+  hide_when_off?: boolean
 }
 export type ToggleConfig = {
   entity: string
   name?: string | boolean
   icon?: string
+  hide_when_off?: boolean
 }
 
 export default function parseHeaderConfig(
@@ -215,7 +217,12 @@ function parseToggle(config: ToggleConfig, hass): Toggle | null {
     label = (config?.name as string) ?? ''
   }
 
-  return { entity, label, icon: config?.icon ?? false }
+  return {
+    entity,
+    label,
+    icon: config?.icon ?? false,
+    hide_when_off: config?.hide_when_off,
+  }
 }
 
 function parseToggles(config: HeaderConfig, hass): Array<Toggle> {

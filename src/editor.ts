@@ -81,10 +81,10 @@ const LABELS: Record<string, string> = {
   step_size: 'Step size',
   fallback: 'Fallback text',
   'hide.temperature': 'Hide current value',
-  'hide.current_value_when_off': 'Hide current value while off',
+  hide_current_value_when_off: 'Hide current value while off',
   'hide.state': 'Hide state',
   'hide.setpoint_label': 'Hide target label',
-  'hide.setpoint_when_off': 'Hide target controls while off',
+  hide_setpoint_when_off: 'Hide target controls while off',
   hide_setpoint: 'Hide target controls',
   disable_setpoint_change_when_off: 'Disable target changes while off',
   'label.temperature': 'Current value label',
@@ -158,10 +158,10 @@ const DIRECT_FORM_PATHS = [
   'layout.entities.separator',
   'layout.entities.alignment',
   'hide.temperature',
-  'hide.current_value_when_off',
+  'hide_current_value_when_off',
   'hide.state',
   'hide.setpoint_label',
-  'hide.setpoint_when_off',
+  'hide_setpoint_when_off',
   'hide_setpoint',
   'disable_setpoint_change_when_off',
   'label.temperature',
@@ -437,7 +437,7 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
     ...(hasCurrentValue
       ? [
           { name: 'hide.temperature', selector: { boolean: {} } },
-          { name: 'hide.current_value_when_off', selector: { boolean: {} } },
+          { name: 'hide_current_value_when_off', selector: { boolean: {} } },
         ]
       : []),
     { name: 'hide.state', selector: { boolean: {} } },
@@ -538,7 +538,7 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
                 schema: [
                   { name: 'hide_setpoint', selector: { boolean: {} } },
                   {
-                    name: 'hide.setpoint_when_off',
+                    name: 'hide_setpoint_when_off',
                     selector: { boolean: {} },
                   },
                   { name: 'hide.setpoint_label', selector: { boolean: {} } },
@@ -722,7 +722,8 @@ export default class SimpleThermostatEditor extends LitElement {
         this.config.step_size != null ? String(this.config.step_size) : 'auto',
       fallback: this.config.fallback ?? '',
       'hide.temperature': this.config.hide?.temperature === true,
-      'hide.current_value_when_off':
+      hide_current_value_when_off:
+        this.config.hide_current_value_when_off === true ||
         this.config.hide?.current_value_when_off === true ||
         this.config.hide?.temperature_when_off === true,
       'hide.state': this.config.hide?.state === true,
@@ -730,7 +731,8 @@ export default class SimpleThermostatEditor extends LitElement {
       disable_setpoint_change_when_off:
         this.config.disable_setpoint_change_when_off === true,
       'hide.setpoint_label': this.config.hide?.setpoint_label === true,
-      'hide.setpoint_when_off':
+      hide_setpoint_when_off:
+        this.config.hide_setpoint_when_off === true ||
         this.config.hide?.setpoint_when_off === true,
       'label.temperature': this.config.label?.temperature ?? '',
       'label.state': this.config.label?.state ?? '',

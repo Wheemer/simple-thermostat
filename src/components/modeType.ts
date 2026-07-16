@@ -198,7 +198,9 @@ export default function renderModeType({
       aria-label=${title || type}
     >
       ${showHeading ? html` <div class="mode-title">${title}</div> ` : ''}
-      ${list.map(({ value, icon, iconConfigured, name }) => {
+      ${list.map(({ value, icon, iconConfigured, name, hide_when_off }) => {
+        if (hide_when_off === true && state === HVAC_MODES.OFF) return nothing
+
         const modeClass = safeClass(value)
         const displayName = maybeRenderName(name, value)
         const tooltip = displayName ? nothing : controlTooltip || nothing

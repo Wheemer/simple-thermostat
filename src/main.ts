@@ -62,7 +62,7 @@ const CONTROL_ORDER = [
   MODES.OSCILLATING,
   MODES.STATE,
 ]
-const CONTROL_METADATA_KEYS = ['entity']
+const CONTROL_METADATA_KEYS = ['entity', 'hide_when_off', 'hide_off_when_off']
 
 function getConfiguredEntities(config: CardConfig) {
   return config.entities ?? []
@@ -188,6 +188,10 @@ function getModeList(
         ? configuredMode
         : {}
       const { name: configuredName, ...modeValues } = values
+      const hideWhenOff =
+        values.hide_when_off === true ||
+        (specification.hide_off_when_off === true &&
+          normalizeModeConfigKey(modeKey) === 'off')
       const name: string | false =
         configuredName === false
           ? false
@@ -197,6 +201,7 @@ function getModeList(
 
       return {
         ...modeValues,
+        hide_when_off: hideWhenOff || undefined,
         icon:
           values.icon ??
           (type === MODES.FAN
@@ -235,6 +240,10 @@ function getModeListFromSelect(
         ? configuredMode
         : {}
       const { name: configuredName, ...modeValues } = values
+      const hideWhenOff =
+        values.hide_when_off === true ||
+        (specification.hide_off_when_off === true &&
+          normalizeModeConfigKey(modeKey) === 'off')
       const name: string | false =
         configuredName === false
           ? false
@@ -244,6 +253,7 @@ function getModeListFromSelect(
 
       return {
         ...modeValues,
+        hide_when_off: hideWhenOff || undefined,
         icon: values.icon ?? getModeIcon(modeKey),
         iconConfigured: typeof values.icon !== 'undefined',
         value: modeKey,
@@ -392,6 +402,8 @@ function buildConfiguredControlModes(
           const {
             _name,
             _hide_when_off,
+            hide_when_off,
+            hide_off_when_off,
             _icons,
             _heading,
             entity: controlEntity,
@@ -401,18 +413,22 @@ function buildConfiguredControlModes(
             ? hass?.states?.[controlEntity]
             : undefined
           const useSelectEntity = isSelectModeEntity(selectState)
+          const modeSpecification = {
+            ...controlField,
+            ...(hide_off_when_off === true ? { hide_off_when_off } : {}),
+          }
 
           return {
             type,
             entity: useSelectEntity ? controlEntity : undefined,
-            hide_when_off: _hide_when_off,
+            hide_when_off: hide_when_off ?? _hide_when_off,
             icons: _icons,
             heading: _heading,
             name: _name,
             preserve_option_order: Object.keys(controlField).length > 0,
             list: useSelectEntity
-              ? getModeListFromSelect(selectState, controlField)
-              : getModeList(type, attributes, adapter, controlField),
+              ? getModeListFromSelect(selectState, modeSpecification)
+              : getModeList(type, attributes, adapter, modeSpecification),
           }
         })
     }
@@ -937,6 +953,7 @@ export default class SimpleThermostat extends LitElement {
   }) {
     if (
       this.config.hide_setpoint === true ||
+      (this.config.hide_setpoint_when_off === true && isOff) ||
       (this.config.hide?.setpoint_when_off === true && isOff)
     ) {
       return nothing
@@ -1217,6 +1234,8 @@ export default class SimpleThermostat extends LitElement {
         : 0
     const setpointRows =
       this.config.hide_setpoint === true ||
+      (this.config.hide_setpoint_when_off === true &&
+        this.entity?.state === HVAC_MODES.OFF) ||
       (this.config.hide?.setpoint_when_off === true &&
         this.entity?.state === HVAC_MODES.OFF)
         ? 0

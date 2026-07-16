@@ -42,7 +42,8 @@ export default function renderHeader({
         header.toggles,
         openEntityPopover,
         toggleEntityChanged,
-        hass
+        hass,
+        entity
       )}
     </header>
   `
@@ -92,12 +93,22 @@ function renderFaults(faults, openEntityPopover) {
   return html` <div class="faults">${faultHtml}</div>`
 }
 
-function renderToggles(toggles, openEntityPopover, toggleEntityChanged, hass) {
+function renderToggles(
+  toggles,
+  openEntityPopover,
+  toggleEntityChanged,
+  hass,
+  mainEntity
+) {
   if (!toggles?.length) return nothing
 
   return html`
     <div class="header__toggles">
       ${toggles.map((toggle) => {
+        if (toggle.hide_when_off === true && mainEntity?.state === 'off') {
+          return nothing
+        }
+
         const entityId = toggle.entity?.entity_id
         const toggleState = toggle.entity?.state
         const toggleDomain =

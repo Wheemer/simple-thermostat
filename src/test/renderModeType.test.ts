@@ -64,6 +64,58 @@ test('hvac heading is hidden by default', () => {
   expect(document.body.querySelector('.mode-title')).toBe(null)
 })
 
+test('mode options can hide when the main entity is off', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    state: 'off',
+    mode: {
+      type: 'hvac',
+      mode: 'off',
+      list: [
+        {
+          value: 'off',
+          icon: 'mdi:power',
+          name: 'Off',
+          hide_when_off: true,
+        },
+        { value: 'heat', icon: 'mdi:fire', name: 'Heat' },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  expect(document.body.textContent).not.toContain('Off')
+  expect(document.body.textContent).toContain('Heat')
+  expect(document.body.querySelectorAll('.mode-item')).toHaveLength(1)
+})
+
+test('mode options hidden while off stay visible when on', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    state: 'heat',
+    mode: {
+      type: 'hvac',
+      mode: 'heat',
+      list: [
+        {
+          value: 'off',
+          icon: 'mdi:power',
+          name: 'Off',
+          hide_when_off: true,
+        },
+        { value: 'heat', icon: 'mdi:fire', name: 'Heat' },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  expect(document.body.textContent).toContain('Off')
+  expect(document.body.textContent).toContain('Heat')
+  expect(document.body.querySelectorAll('.mode-item')).toHaveLength(2)
+})
+
 test('renders card-local fan speed icons', () => {
   const result = renderModeType({
     ...baseOptions,

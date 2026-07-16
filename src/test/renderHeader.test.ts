@@ -72,6 +72,82 @@ test('uses entity icon for label-only header toggle color classes', async () => 
   expect(label?.querySelector('ha-icon')).toBeNull()
 })
 
+test('header toggles can hide when the main entity is off', async () => {
+  const container = document.createElement('div')
+  const result = renderHeader({
+    header: {
+      name: 'Fishy Heat',
+      icon: 'mdi:radiator',
+      slashOffIcon: false,
+      faults: [],
+      toggles: [
+        {
+          label: 'Heater',
+          icon: false,
+          hide_when_off: true,
+          entity: {
+            entity_id: 'switch.fishy_heater',
+            state: 'on',
+            attributes: {
+              friendly_name: 'Fishy Heater',
+            },
+          },
+        },
+      ],
+    },
+    entity: {
+      entity_id: 'climate.fishy',
+      state: 'off',
+      attributes: {},
+    },
+    openEntityPopover: () => undefined,
+    toggleEntityChanged: () => undefined,
+  })
+
+  render(result, container)
+  await Promise.resolve()
+
+  expect(container.querySelector('.header__toggle')).toBe(null)
+})
+
+test('header toggles stay visible while the main entity is on', async () => {
+  const container = document.createElement('div')
+  const result = renderHeader({
+    header: {
+      name: 'Fishy Heat',
+      icon: 'mdi:radiator',
+      slashOffIcon: false,
+      faults: [],
+      toggles: [
+        {
+          label: 'Heater',
+          icon: false,
+          hide_when_off: true,
+          entity: {
+            entity_id: 'switch.fishy_heater',
+            state: 'off',
+            attributes: {
+              friendly_name: 'Fishy Heater',
+            },
+          },
+        },
+      ],
+    },
+    entity: {
+      entity_id: 'climate.fishy',
+      state: 'heat',
+      attributes: {},
+    },
+    openEntityPopover: () => undefined,
+    toggleEntityChanged: () => undefined,
+  })
+
+  render(result, container)
+  await Promise.resolve()
+
+  expect(container.querySelector('.header__toggle')).not.toBe(null)
+})
+
 test('header icon includes humidifier action class', async () => {
   const container = document.createElement('div')
   const result = renderHeader({

@@ -105,7 +105,7 @@ test('advanced fields are grouped away from the common appearance workflow', () 
     expect.arrayContaining([
       'enhanced_visuals',
       'hide.temperature',
-      'hide.current_value_when_off',
+      'hide_current_value_when_off',
       'hide.state',
     ])
   )
@@ -300,7 +300,7 @@ test('target section exposes off-mode setpoint lock', () => {
     'disable_setpoint_change_when_off'
   )
   expect(schemaNames([findSection(schema, 'Target')])).toContain(
-    'hide.setpoint_when_off'
+    'hide_setpoint_when_off'
   )
 })
 

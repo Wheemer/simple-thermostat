@@ -22,6 +22,7 @@ export type ModeValue = {
   name?: string | false
   icon?: string | false
   include?: boolean
+  hide_when_off?: boolean
 }
 
 /**
@@ -35,6 +36,8 @@ export type ModeControlObject = Record<
   _name?: string | boolean
   _heading?: boolean
   _hide_when_off?: boolean
+  hide_when_off?: boolean
+  hide_off_when_off?: boolean
   _icons?: boolean
   _order?: Array<string | number | boolean>
   entity?: string
@@ -84,6 +87,8 @@ interface CardConfig {
   styles?: string
   service?: Service
   hide_setpoint?: boolean
+  hide_current_value_when_off?: boolean
+  hide_setpoint_when_off?: boolean
   disable_setpoint_change_when_off?: boolean
   hide?: {
     temperature?: boolean
