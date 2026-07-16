@@ -246,13 +246,56 @@ test('estimates card size from visible sections', async () => {
   expect(card.getCardSize()).toBe(5)
 })
 
-test('applies card_mod ha-card surface declarations on the first card render', async () => {
+test('does not apply card_mod ha-card surface declarations inline on normal cards', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)
 
   card.setConfig({
     entity: 'climate.living_room',
+    card_mod: {
+      style:
+        'ha-card { background: linear-gradient(145deg, red, blue); border-radius: 8px; }',
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          temperature: 20,
+          current_temperature: 21,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  const surface = card.shadowRoot?.querySelector('ha-card') as HTMLElement
+  expect(surface.getAttribute('style')).not.toContain(
+    'background: linear-gradient(145deg, red, blue)'
+  )
+  expect(surface.getAttribute('style')).not.toContain('border-radius: 8px')
+})
+
+test('applies card_mod ha-card surface declarations inline only for embedded cards', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    embedded: true,
     card_mod: {
       style:
         'ha-card { background: linear-gradient(145deg, red, blue); border-radius: 8px; }',
@@ -1382,6 +1425,45 @@ test('off climate setpoint disables steppers when configured', async () => {
   increase.click()
 
   expect(callService).not.toHaveBeenCalled()
+})
+
+test('off climate setpoint can be hidden without disabling control by default', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.comet_dect',
+    header: false,
+    control: false,
+    hide: {
+      setpoint_when_off: true,
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.comet_dect': {
+        entity_id: 'climate.comet_dect',
+        state: 'off',
+        attributes: {
+          temperature: null,
+          current_temperature: 18,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  expect(card.shadowRoot?.querySelector('.current-wrapper')).toBe(null)
+  expect(card.getCardSize()).toBe(1)
 })
 
 test('non-off null climate setpoint seeds min temp on increase', async () => {

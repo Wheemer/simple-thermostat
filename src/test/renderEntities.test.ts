@@ -292,6 +292,39 @@ test('extra entity rows with hide-when-off stay visible when the main entity is 
   expect(container.textContent).toContain('Visible while on')
 })
 
+test('current value row can hide when the main entity is off', () => {
+  const result = renderEntities({
+    _hide: { temperature: false, state: true },
+    entity: {
+      entity_id: 'climate.garage_heat',
+      state: 'off',
+      attributes: {
+        current_temperature: 20.4,
+      },
+    },
+    unit: '°C',
+    hass: {
+      formatEntityState: () => 'Off',
+    },
+    entities: [],
+    config: {
+      entity: 'climate.garage_heat',
+      hide: {
+        temperature_when_off: true,
+      },
+    },
+    localize: (value: string) => value,
+    openEntityPopover: () => undefined,
+    adapter: climateAdapter,
+  })
+
+  const container = freshContainer()
+  render(result, container)
+
+  expect(container.textContent).not.toContain('20.4')
+  expect(container.querySelector('.entity-row')).toBe(null)
+})
+
 test('entity rows can opt into left aligned labels', () => {
   const result = renderEntities({
     _hide: { temperature: false, state: true },

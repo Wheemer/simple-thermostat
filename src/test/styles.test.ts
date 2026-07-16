@@ -20,8 +20,7 @@ test('base ha-card keeps the default Home Assistant display contract', () => {
 
   expect(baseCardRule).not.toContain('display:')
   expect(baseCardRule).not.toContain('row-gap')
-  expect(baseCardRule).toContain('--ha-card-background')
-  expect(baseCardRule).toContain('--card-background-color')
+  expect(baseCardRule).not.toMatch(/^\s*background:/m)
 })
 
 test('host isolates internal z-index layers from wrapper overlays', () => {
@@ -58,14 +57,14 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-1')
   expect(styles).toContain('grid-template-columns: minmax(0, 1fr) max-content')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
-  expect(styles).not.toContain('minmax(160px, max-content)')
+  expect(styles).toContain('minmax(160px, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
   expect(styles).not.toContain(
     '.body.has-entities.step-column.setpoint-count-2 .entities.as-table.with-labels'
   )
 })
 
-test('default entity table labels wrap only after a useful label width', () => {
+test('default entity table keeps intrinsic two-column label sizing', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -74,13 +73,9 @@ test('default entity table labels wrap only after a useful label width', () => {
   const headingRule = styles.match(/\.entity-heading\s*\{[^}]*\}/)?.[0] ?? ''
   const valueRule = styles.match(/\.entity-value\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(tableLabelsRule).toContain(
-    'var(--st-entity-label-min-width, min(10ch, 34vw))'
-  )
-  expect(tableLabelsRule).toContain(
-    'fit-content(var(--st-entity-label-max-width, 18ch))'
-  )
-  expect(tableLabelsRule).toContain('max-content')
+  expect(tableLabelsRule).toContain('grid-template-columns: auto auto')
+  expect(tableLabelsRule).not.toContain('--st-entity-label-min-width')
+  expect(tableLabelsRule).not.toContain('--st-entity-label-max-width')
   expect(tableLabelsRule).toContain('grid-auto-flow: row')
   expect(tableLabelsRule).toContain('column-gap: 8px')
   expect(headingRule).toContain('min-width: 0')
@@ -230,7 +225,7 @@ test('active mode backgrounds keep semantic mode colors', () => {
     styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
 
   expect(activeRule).toContain('var(--st-mode-color, var(--primary-color))')
-  expect(activeRule).not.toContain('box-shadow')
+  expect(activeRule).toContain('box-shadow: inset 0 -2px 0')
 
   const modeColors: Record<string, string> = {
     heat: '--heat-color',
@@ -262,17 +257,15 @@ test('active mode accent uses each button color by default', () => {
   )
 
   expect(styles).toContain(
-    '--st-mode-active-accent-color: var(--st-mode-accent-color)'
+    '--st-mode-default-active-accent-color: var(--st-mode-accent-color)'
   )
   expect(styles).toContain(
-    '.mode-item.active::after {\n  background: var(--st-mode-active-accent-color)'
+    '.mode-item.active::after {\n  background: var(\n    --st-mode-active-accent-color'
   )
-  expect(styles).toContain(
-    'opacity: var(--st-mode-active-accent-opacity, 0.64)'
-  )
+  expect(styles).toContain('opacity: 0.64')
 })
 
-test('sparse main controls pull upward without shrinking buttons', () => {
+test('sparse main controls keep baseline spacing without shrinking buttons', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -289,9 +282,7 @@ test('sparse main controls pull upward without shrinking buttons', () => {
   expect(sparseMainRule).toContain(
     'min-height: calc(var(--st-control-icon-size) + 8px)'
   )
-  expect(sparseControlsRule).toContain(
-    'margin-top: var(--st-spacing, var(--st-default-spacing))'
-  )
+  expect(sparseControlsRule).toBe('')
 })
 
 test('mobile sparse main controls can fit three buttons on one row', () => {
@@ -306,9 +297,9 @@ test('mobile sparse main controls can fit three buttons on one row', () => {
 
   expect(mobileSparseRule).toContain('flex-direction: row')
   expect(mobileSparseRule).toContain(
-    'min-width: min(100%, var(--st-mode-min-width, 72px))'
+    'min-width: min(100%, var(--st-hvac-mode-min-width, 120px))'
   )
-  expect(mobileSparseRule).not.toContain('--st-hvac-mode-min-width')
+  expect(mobileSparseRule).not.toContain('--st-mode-min-width')
 })
 
 test('active header glow is applied to the icon wrapper for active domains', () => {

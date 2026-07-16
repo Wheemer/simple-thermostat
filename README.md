@@ -96,7 +96,7 @@ The editor handles the common v4 setup:
 - Climate, fan, humidifier, and dehumidifier controls.
 - Header toggles and toggle icons.
 - Extra entity rows, names, icons, and row layout.
-- Setpoint visibility and v4 enhanced visuals.
+- Setpoint visibility, off-state display options, and v4 enhanced visuals.
 - Advanced labels, precision, action type, and mode display options.
 
 Use the YAML reference for specialized extra row formatting such as attributes, units, decimals, relative time, timer countdowns, and custom CSS.

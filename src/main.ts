@@ -833,9 +833,10 @@ export default class SimpleThermostat extends LitElement {
       `step-${stepLayout}`,
       `setpoint-count-${setpointCount}`,
     ].filter((cx) => !!cx)
-    const cardStyle = getInlineCardStyle(config, entityDomain, entity.attributes)
-
     const embedded = config.embedded === true
+    const cardStyle = embedded
+      ? getInlineCardStyle(config, entityDomain, entity.attributes)
+      : getCardStyle(entityDomain, entity.attributes)
     const entitiesHtml = this.showEntities
       ? renderEntities({
           _hide,
@@ -934,7 +935,12 @@ export default class SimpleThermostat extends LitElement {
     isOff: boolean
     disableSteppers: boolean
   }) {
-    if (this.config.hide_setpoint === true) return nothing
+    if (
+      this.config.hide_setpoint === true ||
+      (this.config.hide?.setpoint_when_off === true && isOff)
+    ) {
+      return nothing
+    }
 
     return Object.entries(values).map(([field, value]) =>
       this.renderSetpointControl({
@@ -1209,7 +1215,12 @@ export default class SimpleThermostat extends LitElement {
       this.showEntities && this.entities?.length
         ? Math.max(1, Math.ceil(this.entities.length / 2))
         : 0
-    const setpointRows = this.config.hide_setpoint === true ? 0 : 1
+    const setpointRows =
+      this.config.hide_setpoint === true ||
+      (this.config.hide?.setpoint_when_off === true &&
+        this.entity?.state === HVAC_MODES.OFF)
+        ? 0
+        : 1
     const modeRows = this.modes?.length ?? 0
     const warningRows =
       this.stepSize < 1 && this.config.decimals === 0 ? 1 : 0

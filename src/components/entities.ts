@@ -30,10 +30,16 @@ export default function renderEntities({
   const showLabels = config?.layout?.entities?.labels ?? true
   const showSeparator = config?.layout?.entities?.separator !== false
   const stateString = getEntityStateText(entity, hass, localize)
+  const hideTemperatureWhenOff =
+    config?.hide?.temperature_when_off === true &&
+    entity.state === HVAC_MODES.OFF
   const entityHtml = [
     renderInfoItem({
       hide:
-        _hide.temperature || current === null || typeof current === 'undefined',
+        _hide.temperature ||
+        hideTemperatureWhenOff ||
+        current === null ||
+        typeof current === 'undefined',
       state: appendUnit(
         formatNumber(current, {
           ...config,
