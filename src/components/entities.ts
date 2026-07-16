@@ -31,7 +31,8 @@ export default function renderEntities({
   const showSeparator = config?.layout?.entities?.separator !== false
   const stateString = getEntityStateText(entity, hass, localize)
   const hideTemperatureWhenOff =
-    config?.hide?.temperature_when_off === true &&
+    (config?.hide?.current_value_when_off === true ||
+      config?.hide?.temperature_when_off === true) &&
     entity.state === HVAC_MODES.OFF
   const entityHtml = [
     renderInfoItem({

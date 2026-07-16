@@ -81,7 +81,7 @@ const LABELS: Record<string, string> = {
   step_size: 'Step size',
   fallback: 'Fallback text',
   'hide.temperature': 'Hide current value',
-  'hide.temperature_when_off': 'Hide current value while off',
+  'hide.current_value_when_off': 'Hide current value while off',
   'hide.state': 'Hide state',
   'hide.setpoint_label': 'Hide target label',
   'hide.setpoint_when_off': 'Hide target controls while off',
@@ -158,7 +158,7 @@ const DIRECT_FORM_PATHS = [
   'layout.entities.separator',
   'layout.entities.alignment',
   'hide.temperature',
-  'hide.temperature_when_off',
+  'hide.current_value_when_off',
   'hide.state',
   'hide.setpoint_label',
   'hide.setpoint_when_off',
@@ -437,7 +437,7 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
     ...(hasCurrentValue
       ? [
           { name: 'hide.temperature', selector: { boolean: {} } },
-          { name: 'hide.temperature_when_off', selector: { boolean: {} } },
+          { name: 'hide.current_value_when_off', selector: { boolean: {} } },
         ]
       : []),
     { name: 'hide.state', selector: { boolean: {} } },
@@ -722,7 +722,8 @@ export default class SimpleThermostatEditor extends LitElement {
         this.config.step_size != null ? String(this.config.step_size) : 'auto',
       fallback: this.config.fallback ?? '',
       'hide.temperature': this.config.hide?.temperature === true,
-      'hide.temperature_when_off':
+      'hide.current_value_when_off':
+        this.config.hide?.current_value_when_off === true ||
         this.config.hide?.temperature_when_off === true,
       'hide.state': this.config.hide?.state === true,
       hide_setpoint: this.config.hide_setpoint === true,

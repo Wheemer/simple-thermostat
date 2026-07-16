@@ -97,7 +97,7 @@ This hides the target value and setpoint controls while keeping supported mode c
 | `setpoint_debounce_ms`             | number                 | Delay in milliseconds before sending target changes. Rapid clicks are collapsed into one service call. Defaults to `500`; set `0` to send immediately.                         |
 | `hide_setpoint`                    | boolean                | Hide target value and setpoint controls.                                                                                                                                      |
 | `disable_setpoint_change_when_off` | boolean                | Disable climate target step buttons while the climate entity is `off`, useful for TRV-style entities that reject off-mode target changes. Defaults to `false`.                 |
-| `hide.temperature_when_off`        | boolean                | Hide the built-in current value row while the main entity is `off`.                                                                                                           |
+| `hide.current_value_when_off`      | boolean                | Hide the built-in current value row while the main entity is `off`.                                                                                                           |
 | `hide.setpoint_when_off`           | boolean                | Hide the target value and setpoint controls while the main entity is `off`.                                                                                                  |
 | `fallback`                         | string                 | Text shown when no valid setpoint exists. Default `N/A`.                                                                                                                      |
 | `enhanced_visuals`                 | boolean                | Enable v4 visual polish. Set to `false` for v3-style visual defaults while keeping v4 fixes and compatibility. Defaults to `true` and only needs to be written when disabled. |
@@ -290,7 +290,8 @@ Per-row options:
 | ---------------- | ------------------------------------------ |
 | `_name`          | Override the row heading.                  |
 | `_heading`       | Set to `true` to show the row heading.     |
-| `_hide_when_off` | Hide the row when the main entity is off.  |
+| `hide_when_off`  | Hide the row when the main entity is off.  |
+| `_hide_when_off` | Legacy alias for `hide_when_off`.          |
 | `_icons`         | Set to `false` to hide icons for this row. |
 | `_order`         | Explicit option order. Useful for numeric modes such as `"1"` through `"5"`, where JavaScript object key ordering cannot preserve YAML order. |
 

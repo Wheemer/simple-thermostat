@@ -105,7 +105,7 @@ test('advanced fields are grouped away from the common appearance workflow', () 
     expect.arrayContaining([
       'enhanced_visuals',
       'hide.temperature',
-      'hide.temperature_when_off',
+      'hide.current_value_when_off',
       'hide.state',
     ])
   )

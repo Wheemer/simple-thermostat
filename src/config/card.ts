@@ -87,6 +87,7 @@ interface CardConfig {
   disable_setpoint_change_when_off?: boolean
   hide?: {
     temperature?: boolean
+    current_value_when_off?: boolean
     temperature_when_off?: boolean
     state?: boolean
     setpoint_label?: boolean
