@@ -64,6 +64,26 @@ test('card body cannot overflow wrapper overlay width', () => {
   )
 })
 
+test('mobile dual setpoints keep entity rows from being squeezed', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+
+  expect(styles).toContain('@media (max-width: 560px)')
+  expect(styles).toContain(
+    '.body.has-entities.step-column.setpoint-count-2 {\n    grid-template-columns: minmax(min-content, 1fr) max-content;'
+  )
+  expect(styles).toContain('grid-template-rows: auto auto')
+  expect(styles).toContain(
+    '.body.has-entities.step-column.setpoint-count-2 > .entities'
+  )
+  expect(styles).toContain('grid-row: 1 / span 2')
+  expect(styles).toContain(
+    '.body.has-entities.step-column.setpoint-count-2\n    > .current-wrapper:nth-child(3)'
+  )
+})
+
 test('default entity table keeps intrinsic two-column label sizing', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
@@ -255,6 +275,8 @@ test('active mode accent uses each button color by default', () => {
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
+  const activeModeAccentRule =
+    styles.match(/\.mode-item\.active::after\s*\{[\s\S]*?\}/)?.[0] ?? ''
 
   expect(styles).toContain(
     '--st-mode-default-active-accent-color: var(--st-mode-accent-color)'
@@ -262,7 +284,9 @@ test('active mode accent uses each button color by default', () => {
   expect(styles).toMatch(
     /\.mode-item\.active::after\s*\{[\s\S]*?background:\s*var\(\s*--st-mode-active-accent-color/
   )
-  expect(styles).toContain('opacity: 0.64')
+  expect(activeModeAccentRule).toContain(
+    'opacity: var(--st-mode-active-accent-opacity, 0.64)'
+  )
 })
 
 test('sparse main controls keep baseline spacing without shrinking buttons', () => {

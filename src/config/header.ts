@@ -38,7 +38,7 @@ export const CLIMATE_COOLING_STATE_ICONS = {
 export const CLIMATE_HEATING_STATE_ICONS = {
   ...STATE_ICONS,
   auto: 'mdi:radiator',
-  idle: 'mdi:radiator',
+  idle: STATE_ICONS.idle,
   off: 'mdi:radiator',
 }
 
@@ -238,12 +238,15 @@ function parseToggles(config: HeaderConfig, hass): Array<Toggle> {
 
 function getDefaultHeaderIcon(entity: HAState): Icon {
   const [entityDomain] = entity.entity_id.split('.')
+  const action = getEntityAction(entity)
+  const climateActionIcons = action ? getClimateHeaderIcons(entity) : undefined
 
   return (
+    climateActionIcons ??
     entity.attributes.icon ??
     getClimateHeaderIcons(entity) ??
     DOMAIN_STATE_ICONS[entityDomain]?.[entity.state] ??
-    (getEntityAction(entity) ? STATE_ICONS : MODE_ICONS)
+    (action ? STATE_ICONS : MODE_ICONS)
   )
 }
 

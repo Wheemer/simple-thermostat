@@ -117,6 +117,47 @@ test('keeps heat-only climate fallback as radiator', () => {
   expect(result && result.slashOffIcon).toBe(true)
 })
 
+test('uses disabled radiator for idle heat-only climate action', () => {
+  const result = parseHeader(
+    {},
+    {
+      entity_id: 'climate.garage_heat',
+      state: 'heat',
+      attributes: {
+        friendly_name: 'Garage Heat',
+        hvac_action: 'idle',
+        hvac_modes: ['off', 'heat'],
+      },
+    },
+    hass
+  )
+
+  expect(result && typeof result.icon === 'object' && result.icon.idle).toBe(
+    CLIMATE_HEATING_STATE_ICONS.idle
+  )
+})
+
+test('climate action icons override static entity icons by default', () => {
+  const result = parseHeader(
+    {},
+    {
+      entity_id: 'climate.garage_heat',
+      state: 'heat',
+      attributes: {
+        friendly_name: 'Garage Heat',
+        icon: 'mdi:radiator',
+        hvac_action: 'idle',
+        hvac_modes: ['off', 'heat'],
+      },
+    },
+    hass
+  )
+
+  expect(result && typeof result.icon === 'object' && result.icon.idle).toBe(
+    CLIMATE_HEATING_STATE_ICONS.idle
+  )
+})
+
 test('uses humidifier state icon fallback', () => {
   const result = parseHeader(
     {},

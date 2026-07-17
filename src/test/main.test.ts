@@ -1943,6 +1943,48 @@ test('dual setpoints with entity rows default to compact column steppers', async
   ).toBe('hass:chevron-up')
 })
 
+test('target labels can be hidden without changing setpoint controls', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    hide: {
+      setpoint_label: true,
+    },
+  } as any)
+  card.hass = {
+    locale: { language: 'en' },
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: {
+          hvac_modes: ['off', 'heat'],
+          temperature: 21,
+          current_temperature: 20,
+          min_temp: 5,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) =>
+      key === 'ui.card.climate.target_temperature' ? 'Target' : key,
+  } as any
+
+  await card.updateComplete
+
+  expect(card.shadowRoot?.querySelector('.current-wrapper')).not.toBeNull()
+  expect(card.shadowRoot?.querySelector('.current--label')).toBeNull()
+  expect(card.shadowRoot?.textContent).not.toContain('Target')
+})
+
 test('dual setpoints with entity rows preserve explicit row steppers', async () => {
   document.body.innerHTML = ''
   const card = createCard()
