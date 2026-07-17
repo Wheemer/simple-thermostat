@@ -259,8 +259,8 @@ test('active mode accent uses each button color by default', () => {
   expect(styles).toContain(
     '--st-mode-default-active-accent-color: var(--st-mode-accent-color)'
   )
-  expect(styles).toContain(
-    '.mode-item.active::after {\n  background: var(\n    --st-mode-active-accent-color'
+  expect(styles).toMatch(
+    /\.mode-item\.active::after\s*\{[\s\S]*?background:\s*var\(\s*--st-mode-active-accent-color/
   )
   expect(styles).toContain('opacity: 0.64')
 })
@@ -300,6 +300,21 @@ test('mobile sparse main controls can fit three buttons on one row', () => {
     'min-width: min(100%, var(--st-hvac-mode-min-width, 120px))'
   )
   expect(mobileSparseRule).not.toContain('--st-mode-min-width')
+})
+
+test('standard visual mode rows keep visible options evenly sized', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const standardModesRule =
+    styles.match(
+      /ha-card\.standard-visuals \.modes,[\s\S]*?ha-card\.standard-visuals \.modes\.vane_vertical\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(standardModesRule).toContain('grid-template-columns: none')
+  expect(standardModesRule).toContain('grid-auto-columns: minmax(0, 1fr)')
+  expect(standardModesRule).not.toContain('grid-template-columns: auto')
 })
 
 test('active header glow is applied to the icon wrapper for active domains', () => {
