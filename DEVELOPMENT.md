@@ -52,7 +52,7 @@ This watches source files and rebuilds the debug bundle. Copy the rebuilt file t
 1. Update the version in `package.json`.
 2. Update README/changelog notes for the release.
 3. Run `npm run typecheck`, `npm test`, and `npm run build:prod`.
-4. Commit the source, lockfile, docs, and root `simple-thermostat.js` bundle.
+4. Commit source, lockfile, and docs. Do not commit generated release bundles.
 5. Push to `master`.
 6. Confirm HACS and test workflows pass.
 7. Draft and publish a GitHub release with tag `vX.X.X` and manual release notes.
@@ -63,7 +63,7 @@ This watches source files and rebuilds the debug bundle. Copy the rebuilt file t
 - `src/` - TypeScript source files.
 - `src/adapters/` - Domain-specific climate, fan, and humidifier behavior.
 - `src/test/` - Jest regression tests.
-- `simple-thermostat.js` - Built HACS plugin file committed at the repository root.
+- `simple-thermostat.js` - Generated release bundle. The release workflow uploads this as an asset; it is not committed during normal release prep.
 - `dist/` - Local generated output, ignored by git.
 - `.github/workflows/` - CI, build, and release automation.
 - `hacs.json` - HACS metadata.

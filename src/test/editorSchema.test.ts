@@ -118,6 +118,7 @@ test('advanced fields are grouped away from the common appearance workflow', () 
       'decimals',
       'unit',
       'fallback',
+      'setpoint_debounce_ms',
       'label.temperature',
       'label.state',
       'label.setpoint',

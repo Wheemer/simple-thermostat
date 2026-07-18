@@ -661,6 +661,21 @@ export default class SimpleThermostatGroup extends LitElement {
     this.syncTitleFit()
   }
 
+  getCardSize() {
+    if (!this.config || !this.targets.length) return 1
+
+    const target = this.getSelectedTarget()
+    const cardConfig = this.getTargetCardConfig(target)
+    const entityCount = Array.isArray(cardConfig.entities)
+      ? cardConfig.entities.length
+      : 0
+    const entityRows = entityCount ? Math.max(1, Math.ceil(entityCount / 2)) : 0
+    const modeRows = this.getConfiguredModeRowCount(cardConfig)
+    const setpointRows = cardConfig.hide_setpoint === true ? 0 : 1
+
+    return Math.max(2, 1 + entityRows + setpointRows + modeRows)
+  }
+
   disconnectedCallback() {
     this.clearOutsideClickListener()
     this.clearAutoSelectResumeTimer()
@@ -777,6 +792,22 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private getActivityStorageKey(config: GroupConfig) {
     return `${this.getStorageKey(config)}:recent-activity`
+  }
+
+  private getConfiguredModeRowCount(cardConfig: LooseObject) {
+    const control = cardConfig.control
+
+    if (control === false) return 0
+    if (Array.isArray(control)) {
+      return control.filter(Boolean).length
+    }
+    if (control && typeof control === 'object') {
+      return Object.entries(control).filter(
+        ([key, value]) => !key.startsWith('_') && value !== false
+      ).length
+    }
+
+    return 1
   }
 
   private clearAutoSelectResumeTimer() {

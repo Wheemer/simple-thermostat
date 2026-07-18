@@ -79,6 +79,7 @@ const LABELS: Record<string, string> = {
   unit: 'Unit',
   'layout.step': 'Step layout',
   step_size: 'Step size',
+  setpoint_debounce_ms: 'Target debounce',
   fallback: 'Fallback text',
   'hide.temperature': 'Hide current value',
   hide_current_value_when_off: 'Hide current value while off',
@@ -157,6 +158,7 @@ const DIRECT_FORM_PATHS = [
   'layout.entities.labels',
   'layout.entities.separator',
   'layout.entities.alignment',
+  'setpoint_debounce_ms',
   'hide.temperature',
   'hide_current_value_when_off',
   'hide.state',
@@ -619,6 +621,10 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
           : []),
         { name: 'fallback', selector: { text: {} } },
         {
+          name: 'setpoint_debounce_ms',
+          selector: { number: { min: 0, step: 100, mode: 'box' } },
+        },
+        {
           type: 'grid',
           column_min_width: '160px',
           schema: labelsSchema,
@@ -721,6 +727,7 @@ export default class SimpleThermostatEditor extends LitElement {
       step_size:
         this.config.step_size != null ? String(this.config.step_size) : 'auto',
       fallback: this.config.fallback ?? '',
+      setpoint_debounce_ms: this.config.setpoint_debounce_ms ?? '',
       'hide.temperature': this.config.hide?.temperature === true,
       hide_current_value_when_off:
         this.config.hide_current_value_when_off === true ||

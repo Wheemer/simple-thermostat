@@ -83,6 +83,25 @@ hide_setpoint: true
 
 This hides the target value and setpoint controls while keeping supported mode controls visible.
 
+### Group Card
+
+```yaml
+type: custom:simple-thermostat-group
+cards:
+  - entity: climate.living_room_ac
+    header:
+      name: Living Room AC
+  - entity: climate.bedroom_ac
+    header:
+      name: Bedroom AC
+auto_select:
+  mode: recent_activity
+remember_selection: true
+storage_key: upstairs_ac_group
+```
+
+The group card renders one normal Simple Thermostat card at a time and adds a compact selector header.
+
 ## Configuration
 
 ### Main Options
@@ -113,6 +132,33 @@ This hides the target value and setpoint controls while keeping supported mode c
 | `tap_action`                       | object                 | Action fired from the target value.                                                                                                                                           |
 | `hold_action`                      | object                 | Hold action fired from the target value.                                                                                                                                      |
 | `double_tap_action`                | object                 | Double tap action fired from the target value.                                                                                                                                |
+
+### Group Card Options
+
+| Option               | Type                    | Description                                                                                                     |
+| -------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `cards` / `entities` | array                   | Cards shown inside the group. Each entry can be an entity id string or a normal Simple Thermostat card config. |
+| `selected`           | string                  | Entity id to show first when no remembered selection is available.                                             |
+| `auto_select`        | boolean, string, object | Set to `recent_activity` to switch to the most recently active device.                                         |
+| `remember_selection` | boolean                 | Remember the last selected card across dashboard reloads. Defaults to `true`.                                  |
+| `storage_key`        | string                  | Custom local storage key for remembered group selection and recent activity.                                   |
+| `selector`           | object                  | Show or hide selector `icons`, `names`, and `states`.                                                          |
+| `card`               | object                  | Shared Simple Thermostat config merged into every grouped card.                                                |
+
+`auto_select` can be configured as a simple value:
+
+```yaml
+auto_select: recent_activity
+```
+
+or with timing options:
+
+```yaml
+auto_select:
+  mode: recent_activity
+  cooldown_ms: 0
+  manual_pause_ms: 30000
+```
 
 ### Off-state visibility
 

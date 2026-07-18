@@ -131,7 +131,9 @@ export function renderTemplate({
     }
   )
   Sqrl.filters.define('relativetime', (str) => {
-    return `<ha-relative-time fwd-datetime=${str} with-hass></ha-relative-time>`
+    return `<ha-relative-time .datetime=${escapeAttribute(
+      str
+    )} .hass=${escapeAttribute('hass')}></ha-relative-time>`
   })
   Sqrl.filters.define('translate', (str, prefix = '') => {
     if (

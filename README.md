@@ -116,7 +116,23 @@ cards:
   - entity: climate.bedroom_ac
     header:
       name: Bedroom AC
+auto_select:
+  mode: recent_activity
+remember_selection: true
+storage_key: upstairs_ac_group
 ```
+
+Group options:
+
+| Option               | Type                    | Description                                                                                                     |
+| -------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `cards` / `entities` | array                   | Cards shown inside the group. Each entry can be an entity id string or a normal Simple Thermostat card config. |
+| `selected`           | string                  | Entity id to show first when no remembered selection is available.                                             |
+| `auto_select`        | boolean, string, object | Set to `recent_activity` to switch to the most recently active device.                                         |
+| `remember_selection` | boolean                 | Remember the last selected card across dashboard reloads. Defaults to `true`.                                  |
+| `storage_key`        | string                  | Custom local storage key for remembered group selection and recent activity.                                   |
+| `selector`           | object                  | Show or hide selector `icons`, `names`, and `states`.                                                          |
+| `card`               | object                  | Shared Simple Thermostat config merged into every grouped card.                                                |
 
 ## Domain Defaults
 
@@ -155,6 +171,42 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.1</strong></td>
+      <td>Improved compact mobile layouts with extra entity rows and dual setpoints so labels and values stay paired instead of being squeezed.</td>
+    </tr>
+    <tr><td>Restored the active button accent override, including <code>--st-mode-active-accent-opacity: 0</code> for users who hide the underline.</td></tr>
+    <tr>
+      <td rowspan="8" nowrap><strong>v4.1.0</strong></td>
+      <td>Rolled the recent v4 prerelease fixes into the normal release channel.</td>
+    </tr>
+    <tr><td>Improved compact and mobile entity rows so labels, values, and units stay paired more reliably.</td></tr>
+    <tr><td>Restored safer default setpoint layout behavior while still respecting explicit <code>layout.step: row</code> configs.</td></tr>
+    <tr><td>Fixed classic <code>enhanced_visuals: false</code> mode and fan rows so buttons stay evenly sized without losing the old stacked icon-over-label style.</td></tr>
+    <tr><td>Improved multi-card embedding so grouped cards keep their own surface, spacing, remembered selection, and recent-activity behavior more reliably.</td></tr>
+    <tr><td>Fixed setpoint debouncing so rapid plus/minus clicks send the final target instead of every intermediate value.</td></tr>
+    <tr><td>Added cleaner off-state visibility options for current values, setpoints, control rows, toggles, and Off buttons.</td></tr>
+    <tr><td>Added support for separate <code>select.*</code> controls, useful for devices with independent horizontal/vertical swing selectors.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.40</strong></td>
+      <td>Restored active mode accent styling for users who customize the underline and button glow.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.39</strong></td>
+      <td>Standardized off-state hide options across built-in values, entity rows, controls, toggles, and Off buttons.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.38</strong></td>
+      <td>Added flat off-state visibility options for current values and setpoints while keeping legacy aliases working.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.37</strong></td>
+      <td>Restored the known-good compact card spacing baseline while keeping v4 compatibility fixes in place.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.36</strong></td>
+      <td>Fixed setpoint debouncing so rapid target changes collapse into one final Home Assistant service call.</td>
+    </tr>
     <tr>
       <td rowspan="1" nowrap><strong>v4.0.35</strong></td>
       <td>Fixed <code>hide_when_off</code> for extra entity rows so documented row hiding works when the main entity is off.</td>

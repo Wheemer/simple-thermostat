@@ -1429,3 +1429,25 @@ test('does not auto-select while the selector menu is open', async () => {
     'Living AC'
   )
 })
+
+test('group card reports a masonry size from the selected embedded card', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      {
+        entity: 'climate.living_room',
+        entities: [
+          { entity: 'sensor.one' },
+          { entity: 'sensor.two' },
+          { entity: 'sensor.three' },
+        ],
+        control: ['hvac', 'fan'],
+      },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  expect(group.getCardSize()).toBe(6)
+})

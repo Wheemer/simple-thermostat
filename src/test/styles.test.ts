@@ -236,6 +236,23 @@ test('mode colors keep the original simple-thermostat assignments', () => {
   expect(baseCardRule).not.toContain('--state-climate-heat-cool-color')
 })
 
+test('fan only mode uses the public fan_only color variable', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const fanOnlyRule = styles.match(/&\.fan_only\s*\{[^}]*\}/)?.[0] ?? ''
+  const standardFanOnlyRule =
+    styles.match(
+      /ha-card\.standard-visuals \.mode-item\.active\.fan_only\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(fanOnlyRule).toContain('--st-mode-color: var(--fan_only-color)')
+  expect(standardFanOnlyRule).toContain(
+    'background: var(--st-mode-active-background, var(--fan_only-color))'
+  )
+})
+
 test('active mode backgrounds keep semantic mode colors', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
@@ -277,12 +294,19 @@ test('active mode accent uses each button color by default', () => {
   )
   const activeModeAccentRule =
     styles.match(/\.mode-item\.active::after\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const activeRule =
+    styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
 
   expect(styles).toContain(
-    '--st-mode-default-active-accent-color: var(--st-mode-accent-color)'
+    '--st-mode-active-accent-color: var(--st-mode-accent-color)'
   )
+  expect(activeRule).toContain('--st-mode-active-accent-color')
+  expect(activeRule).not.toContain('--st-mode-default-active-accent-color')
   expect(styles).toMatch(
     /\.mode-item\.active::after\s*\{[\s\S]*?background:\s*var\(\s*--st-mode-active-accent-color/
+  )
+  expect(activeModeAccentRule).not.toContain(
+    '--st-mode-default-active-accent-color'
   )
   expect(activeModeAccentRule).toContain(
     'opacity: var(--st-mode-active-accent-opacity, 0.64)'

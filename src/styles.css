@@ -828,7 +828,7 @@ ha-card.cooling .header__icon-wrap::before {
     currentColor 50%,
     var(--st-mode-color, var(--primary-color)) 50%
   );
-  --st-mode-default-active-accent-color: var(--st-mode-accent-color);
+  --st-mode-active-accent-color: var(--st-mode-accent-color);
   --st-mode-neutral-hover-background: color-mix(
     in srgb,
     var(--st-mode-background, var(--secondary-background-color)) 88%,
@@ -897,10 +897,7 @@ ha-card.cooling .header__icon-wrap::before {
     box-shadow: inset 0 -2px 0
       var(
         --st-mode-active-accent-color,
-        var(
-          --st-mode-default-active-accent-color,
-          color-mix(in srgb, var(--text-primary-color) 72%, transparent)
-        )
+        color-mix(in srgb, var(--text-primary-color) 72%, transparent)
       );
     filter: none;
     transform: none;
@@ -926,7 +923,7 @@ ha-card.cooling .header__icon-wrap::before {
 .mode-item.active::after {
   background: var(
     --st-mode-active-accent-color,
-    var(--st-mode-default-active-accent-color)
+    color-mix(in srgb, var(--text-primary-color) 72%, transparent)
   );
   opacity: var(--st-mode-active-accent-opacity, 0.64);
   transform: scaleX(1);

@@ -272,6 +272,23 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     })
   }
 
+  private updateRememberSelection(enabled: boolean) {
+    const { remember_selection: _rememberSelection, ...config } = this.config
+    this.commit({
+      ...config,
+      ...(enabled ? {} : { remember_selection: false }),
+    })
+  }
+
+  private updateStorageKey(value: string) {
+    const storageKey = value.trim()
+    const { storage_key: _storageKey, ...config } = this.config
+    this.commit({
+      ...config,
+      ...(storageKey ? { storage_key: storageKey } : {}),
+    })
+  }
+
   private getTargetCardConfig(target: EditableTarget) {
     const { name, icon, ...config } = target
     const header =
@@ -426,6 +443,12 @@ export default class SimpleThermostatGroupEditor extends LitElement {
             (checked) => this.updateAutoSelect(checked)
           )}
           ${this.renderOption(
+            'Remember selection',
+            'Keep the last selected card after the dashboard reloads.',
+            this.config.remember_selection !== false,
+            (checked) => this.updateRememberSelection(checked)
+          )}
+          ${this.renderOption(
             'Show icons',
             'Show each card icon in the selector and menu.',
             selector.icons !== false,
@@ -444,6 +467,12 @@ export default class SimpleThermostatGroupEditor extends LitElement {
             (checked) => this.updateSelector('states', checked)
           )}
         </div>
+        <ha-textfield
+          label="Storage key"
+          .value=${this.config.storage_key ?? ''}
+          @input=${(ev: InputEvent) =>
+            this.updateStorageKey((ev.target as HTMLInputElement).value)}
+        ></ha-textfield>
       </div>
     `
   }

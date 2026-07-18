@@ -223,3 +223,57 @@ test('group editor only writes selector options that differ from defaults', asyn
     })
   )
 })
+
+test('group editor exposes remember selection and storage key', async () => {
+  const editor = createEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+
+  editor.setConfig({
+    cards: [{ entity: 'climate.living_room' }],
+  })
+
+  await editor.updateComplete
+
+  const rememberRow = Array.from(
+    editor.shadowRoot?.querySelectorAll('.option-row') ?? []
+  ).find((row) => row.textContent?.includes('Remember selection'))
+  const rememberSwitch = rememberRow?.querySelector(
+    'ha-switch'
+  ) as HTMLInputElement
+
+  Object.defineProperty(rememberSwitch, 'checked', {
+    configurable: true,
+    value: false,
+  })
+  rememberSwitch.dispatchEvent(new Event('change', { bubbles: true }))
+
+  expect(configChanged).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: expect.objectContaining({
+        config: expect.objectContaining({
+          remember_selection: false,
+        }),
+      }),
+    })
+  )
+
+  const storageKey = editor.shadowRoot?.querySelector(
+    'ha-textfield[label="Storage key"]'
+  ) as HTMLInputElement
+  Object.defineProperty(storageKey, 'value', {
+    configurable: true,
+    value: 'garage-climates',
+  })
+  storageKey.dispatchEvent(new Event('input', { bubbles: true }))
+
+  expect(configChanged).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: expect.objectContaining({
+        config: expect.objectContaining({
+          storage_key: 'garage-climates',
+        }),
+      }),
+    })
+  )
+})
