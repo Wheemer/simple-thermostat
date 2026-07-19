@@ -247,15 +247,17 @@ test('fan only mode uses the public fan_only color variable', () => {
       /ha-card\.standard-visuals \.mode-item\.active\.fan_only\s*\{[^}]*\}/
     )?.[0] ?? ''
   const enhancedFanOnlyRule =
-    styles.match(/ha-card \.mode-item\.active\.fan_only\s*\{[^}]*\}/)?.[0] ??
-    ''
+    styles.match(
+      /ha-card \.mode-item\.active\.fan_only,\s*ha-card \.mode-item\.active\.fan_only:hover\s*\{[^}]*\}/
+    )?.[0] ?? ''
 
   expect(fanOnlyRule).toContain('--st-mode-color: var(--fan_only-color)')
+  expect(enhancedFanOnlyRule).toContain('background: var(--fan_only-color)')
   expect(enhancedFanOnlyRule).toContain(
     '--st-mode-active-background: var(--fan_only-color)'
   )
   expect(standardFanOnlyRule).toContain(
-    'background: var(--st-mode-active-background, var(--fan_only-color))'
+    'background: var(--fan_only-color)'
   )
 })
 
@@ -283,13 +285,21 @@ test('active mode backgrounds keep semantic mode colors', () => {
     const rule =
       styles.match(
         new RegExp(
-          `ha-card\\.standard-visuals \\.mode-item\\.active\\.${mode} \\{[^}]*\\}`
+          `ha-card\\.standard-visuals \\.mode-item\\.active\\.${mode}\\s*\\{[^}]*\\}`
+        )
+      )?.[0] ?? ''
+    const enhancedRule =
+      styles.match(
+        new RegExp(
+          `ha-card \\.mode-item\\.active\\.${mode},\\s*ha-card \\.mode-item\\.active\\.${mode}:hover\\s*\\{[^}]*\\}`
         )
       )?.[0] ?? ''
 
-    expect(rule).toContain(
-      `background: var(--st-mode-active-background, var(${color}))`
+    expect(enhancedRule).toContain(`background: var(${color})`)
+    expect(enhancedRule).toContain(
+      `--st-mode-active-background: var(${color})`
     )
+    expect(rule).toContain(`background: var(${color})`)
   }
 })
 
