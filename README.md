@@ -172,6 +172,14 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="5" nowrap><strong>v4.1.2</strong></td>
+      <td>Restored <code>--fan_only-color</code> as the active Fan only button color source.</td>
+    </tr>
+    <tr><td>Added missing Simple Thermostat Group YAML documentation for activity following, remembered selection, and custom storage keys.</td></tr>
+    <tr><td>Added group-card sizing hints for better Lovelace masonry placement.</td></tr>
+    <tr><td>Fixed relative-time templates so they use Home Assistant's current relative-time binding path.</td></tr>
+    <tr><td>Updated release/development docs so generated bundles stay out of source commits.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.1.1</strong></td>
       <td>Improved compact mobile layouts with extra entity rows and dual setpoints so labels and values stay paired instead of being squeezed.</td>
     </tr>
