@@ -173,6 +173,10 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="1" nowrap><strong>v4.1.4</strong></td>
+      <td>Fixed active mode button backgrounds so card-level color variables such as <code>--fan_only-color</code> are used directly in both visual styles.</td>
+    </tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.1.3</strong></td>
       <td>Fixed enhanced visual mode buttons so <code>--fan_only-color</code> applies to the active Fan only button.</td>
     </tr>
