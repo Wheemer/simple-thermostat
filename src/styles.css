@@ -1507,6 +1507,34 @@ ha-card.standard-visuals .mode-item.active {
   box-shadow: none;
 }
 
+ha-card .mode-item.active.off {
+  --st-mode-active-background: var(--off-color);
+}
+
+ha-card .mode-item.active.heat {
+  --st-mode-active-background: var(--heat-color);
+}
+
+ha-card .mode-item.active.cool {
+  --st-mode-active-background: var(--cool-color);
+}
+
+ha-card .mode-item.active.heat_cool {
+  --st-mode-active-background: var(--heat_cool-color);
+}
+
+ha-card .mode-item.active.auto {
+  --st-mode-active-background: var(--auto-color);
+}
+
+ha-card .mode-item.active.dry {
+  --st-mode-active-background: var(--dry-color);
+}
+
+ha-card .mode-item.active.fan_only {
+  --st-mode-active-background: var(--fan_only-color);
+}
+
 ha-card.standard-visuals .mode-item.active.off {
   background: var(--st-mode-active-background, var(--off-color));
 }

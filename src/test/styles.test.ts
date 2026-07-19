@@ -246,8 +246,14 @@ test('fan only mode uses the public fan_only color variable', () => {
     styles.match(
       /ha-card\.standard-visuals \.mode-item\.active\.fan_only\s*\{[^}]*\}/
     )?.[0] ?? ''
+  const enhancedFanOnlyRule =
+    styles.match(/ha-card \.mode-item\.active\.fan_only\s*\{[^}]*\}/)?.[0] ??
+    ''
 
   expect(fanOnlyRule).toContain('--st-mode-color: var(--fan_only-color)')
+  expect(enhancedFanOnlyRule).toContain(
+    '--st-mode-active-background: var(--fan_only-color)'
+  )
   expect(standardFanOnlyRule).toContain(
     'background: var(--st-mode-active-background, var(--fan_only-color))'
   )
