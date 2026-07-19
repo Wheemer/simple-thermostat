@@ -156,6 +156,7 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
 - extra entity attributes, units, decimals, timer countdowns, and relative time,
 - manual setpoint definitions,
 - off-mode target step behavior,
+- display-only state row labels,
 - service overrides,
 - target value tap, hold, and double tap actions,
 - scoped custom CSS,

@@ -292,6 +292,40 @@ test('extra entity rows with hide-when-off stay visible when the main entity is 
   expect(container.textContent).toContain('Visible while on')
 })
 
+test('state row can use configured display labels', () => {
+  const result = renderEntities({
+    _hide: { temperature: true, state: false },
+    entity: {
+      entity_id: 'climate.bedroom',
+      state: 'cool',
+      attributes: {
+        current_temperature: 21,
+      },
+    },
+    unit: '°C',
+    hass: {
+      formatEntityState: () => 'Cooling mode',
+    },
+    entities: [],
+    config: {
+      entity: 'climate.bedroom',
+      state_labels: {
+        cool: 'Kühlen',
+      },
+    },
+    localize: (value: string) => value,
+    openEntityPopover: () => undefined,
+    adapter: climateAdapter,
+  })
+
+  const container = freshContainer()
+  render(result, container)
+
+  const text = container.textContent
+  expect(text).toContain('Kühlen')
+  expect(text).not.toContain('Cooling mode')
+})
+
 test('current value row can hide when the main entity is off', () => {
   const result = renderEntities({
     _hide: { temperature: false, state: true },

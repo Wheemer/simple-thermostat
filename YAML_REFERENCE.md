@@ -118,6 +118,7 @@ The group card renders one normal Simple Thermostat card at a time and adds a co
 | `disable_setpoint_change_when_off` | boolean                | Disable climate target step buttons while the climate entity is `off`, useful for TRV-style entities that reject off-mode target changes. Defaults to `false`.                 |
 | `hide_current_value_when_off`      | boolean                | Hide the built-in current value row while the main entity is `off`.                                                                                                           |
 | `hide_setpoint_when_off`           | boolean                | Hide the target value and setpoint controls while the main entity is `off`.                                                                                                  |
+| `state_labels`                     | object                 | Display-only aliases for the built-in state row, keyed by the raw entity state such as `cool`, `heat`, or `fan_only`.                                                        |
 | `fallback`                         | string                 | Text shown when no valid setpoint exists. Default `N/A`.                                                                                                                      |
 | `enhanced_visuals`                 | boolean                | Enable v4 visual polish. Set to `false` for v3-style visual defaults while keeping v4 fixes and compatibility. Defaults to `true` and only needs to be written when disabled. |
 | `header`                           | object, `false`        | Header configuration.                                                                                                                                                         |
@@ -188,6 +189,22 @@ Use the flat card-level options for built-in card display areas:
 hide_current_value_when_off: true
 hide_setpoint_when_off: true
 ```
+
+### State row labels
+
+Use `state_labels` when the built-in state row should show shorter or custom text without changing the actual Home Assistant entity state:
+
+```yaml
+type: custom:simple-thermostat
+entity: climate.schlafzimmer
+state_labels:
+  cool: Kühlen
+  heat: Heizen
+  dry: Trocknen
+  fan_only: Lüften
+```
+
+Aliases are display-only. Controls, service calls, and Home Assistant state values still use the real entity state.
 
 ### Domain Defaults
 

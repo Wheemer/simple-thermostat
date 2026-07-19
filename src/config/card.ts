@@ -66,6 +66,7 @@ interface CardConfig {
   step_size?: number
   setpoint_debounce_ms?: number
   variables?: LooseObject
+  state_labels?: Record<string, string>
   layout?: {
     mode: {
       names: boolean

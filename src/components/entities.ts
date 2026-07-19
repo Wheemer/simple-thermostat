@@ -29,7 +29,9 @@ export default function renderEntities({
 
   const showLabels = config?.layout?.entities?.labels ?? true
   const showSeparator = config?.layout?.entities?.separator !== false
-  const stateString = getEntityStateText(entity, hass, localize)
+  const stateString =
+    config?.state_labels?.[entity.state] ??
+    getEntityStateText(entity, hass, localize)
   const hideTemperatureWhenOff =
     (config?.hide_current_value_when_off === true ||
       config?.hide?.current_value_when_off === true ||
