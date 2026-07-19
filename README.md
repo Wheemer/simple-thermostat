@@ -173,6 +173,11 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.1.3</strong></td>
+      <td>Fixed enhanced visual mode buttons so <code>--fan_only-color</code> applies to the active Fan only button.</td>
+    </tr>
+    <tr><td>Added <code>state_labels</code> for display-only aliases on the built-in state row.</td></tr>
+    <tr>
       <td rowspan="5" nowrap><strong>v4.1.2</strong></td>
       <td>Restored <code>--fan_only-color</code> as the active Fan only button color source.</td>
     </tr>
