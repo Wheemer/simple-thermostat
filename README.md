@@ -173,6 +173,10 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="1" nowrap><strong>v4.1.6</strong></td>
+      <td>Restored the older active-mode color cascade so custom active backgrounds and mode colors such as <code>--fan_only-color</code> work together again.</td>
+    </tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.1.5</strong></td>
       <td>Restored the default dual-setpoint entity layout so compact/mobile cards no longer get forced into a special split layout.</td>
     </tr>

@@ -244,22 +244,15 @@ test('fan only mode uses the public fan_only color variable', () => {
     styles.match(
       /ha-card\.standard-visuals \.mode-item\.active\.fan_only\s*\{[^}]*\}/
     )?.[0] ?? ''
-  const enhancedFanOnlyRule =
-    styles.match(
-      /ha-card \.mode-item\.active\.fan_only,\s*ha-card \.mode-item\.active\.fan_only:hover\s*\{[^}]*\}/
-    )?.[0] ?? ''
 
   expect(fanOnlyRule).toContain('--st-mode-color: var(--fan_only-color)')
-  expect(enhancedFanOnlyRule).toContain('background: var(--fan_only-color)')
-  expect(enhancedFanOnlyRule).toContain(
-    '--st-mode-active-background: var(--fan_only-color)'
-  )
+  expect(styles).not.toMatch(/ha-card \.mode-item\.active\.fan_only/)
   expect(standardFanOnlyRule).toContain(
-    'background: var(--fan_only-color)'
+    'background: var(--st-mode-active-background, var(--fan_only-color))'
   )
 })
 
-test('active mode backgrounds keep semantic mode colors', () => {
+test('active mode backgrounds keep semantic colors while allowing overrides', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -267,7 +260,9 @@ test('active mode backgrounds keep semantic mode colors', () => {
   const activeRule =
     styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(activeRule).toContain('var(--st-mode-color, var(--primary-color))')
+  expect(activeRule).toMatch(
+    /background:\s*var\(\s*--st-mode-active-background,\s*var\(--st-mode-color,\s*var\(--primary-color\)\)\s*\)/
+  )
   expect(activeRule).toContain('box-shadow: inset 0 -2px 0')
 
   const modeColors: Record<string, string> = {
@@ -280,24 +275,19 @@ test('active mode backgrounds keep semantic mode colors', () => {
   }
 
   for (const [mode, color] of Object.entries(modeColors)) {
+    expect(styles).not.toMatch(
+      new RegExp(`ha-card \\.mode-item\\.active\\.${mode}`)
+    )
+
     const rule =
       styles.match(
         new RegExp(
           `ha-card\\.standard-visuals \\.mode-item\\.active\\.${mode}\\s*\\{[^}]*\\}`
         )
       )?.[0] ?? ''
-    const enhancedRule =
-      styles.match(
-        new RegExp(
-          `ha-card \\.mode-item\\.active\\.${mode},\\s*ha-card \\.mode-item\\.active\\.${mode}:hover\\s*\\{[^}]*\\}`
-        )
-      )?.[0] ?? ''
-
-    expect(enhancedRule).toContain(`background: var(${color})`)
-    expect(enhancedRule).toContain(
-      `--st-mode-active-background: var(${color})`
+    expect(rule).toContain(
+      `background: var(--st-mode-active-background, var(${color}))`
     )
-    expect(rule).toContain(`background: var(${color})`)
   }
 })
 
