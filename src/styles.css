@@ -181,37 +181,8 @@ ha-card.loading {
 }
 .body.has-entities.step-column.setpoint-count-2 {
   grid-template-columns:
-    minmax(160px, max-content) minmax(max-content, 1fr)
+    minmax(min-content, max-content) minmax(max-content, 1fr)
     minmax(max-content, 1fr);
-}
-
-@media (max-width: 560px) {
-  .body.has-entities.step-column.setpoint-count-2 {
-    grid-template-columns: minmax(min-content, 1fr) max-content;
-    grid-template-rows: auto auto;
-    column-gap: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
-  }
-
-  .body.has-entities.step-column.setpoint-count-2 > .entities {
-    grid-column: 1;
-    grid-row: 1 / span 2;
-    justify-self: start;
-  }
-
-  .body.has-entities.step-column.setpoint-count-2 > .current-wrapper {
-    grid-column: 2;
-    justify-self: end;
-  }
-
-  .body.has-entities.step-column.setpoint-count-2
-    > .current-wrapper:nth-child(2) {
-    grid-row: 1;
-  }
-
-  .body.has-entities.step-column.setpoint-count-2
-    > .current-wrapper:nth-child(3) {
-    grid-row: 2;
-  }
 }
 
 .toggle-label {

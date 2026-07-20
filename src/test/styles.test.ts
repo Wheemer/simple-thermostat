@@ -57,31 +57,29 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-1')
   expect(styles).toContain('grid-template-columns: minmax(0, 1fr) max-content')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
-  expect(styles).toContain('minmax(160px, max-content)')
+  expect(styles).toContain(
+    'minmax(min-content, max-content) minmax(max-content, 1fr)'
+  )
+  expect(styles).not.toContain('minmax(160px, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
   expect(styles).not.toContain(
     '.body.has-entities.step-column.setpoint-count-2 .entities.as-table.with-labels'
   )
 })
 
-test('mobile dual setpoints keep entity rows from being squeezed', () => {
+test('mobile dual setpoints do not force a special default layout override', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
 
-  expect(styles).toContain('@media (max-width: 560px)')
-  expect(styles).toContain(
-    '.body.has-entities.step-column.setpoint-count-2 {\n    grid-template-columns: minmax(min-content, 1fr) max-content;'
-  )
-  expect(styles).toContain('grid-template-rows: auto auto')
-  expect(styles).toContain(
-    '.body.has-entities.step-column.setpoint-count-2 > .entities'
-  )
-  expect(styles).toContain('grid-row: 1 / span 2')
-  expect(styles).toContain(
-    '.body.has-entities.step-column.setpoint-count-2\n    > .current-wrapper:nth-child(3)'
-  )
+  const mobileBodyOverride =
+    styles.match(
+      /@media \(max-width: 560px\)\s*\{[\s\S]*?\.body\.has-entities\.step-column\.setpoint-count-2[\s\S]*?\n\}/
+    )?.[0] ?? ''
+
+  expect(mobileBodyOverride).toBe('')
+  expect(styles).not.toContain('grid-row: 1 / span 2')
 })
 
 test('default entity table keeps intrinsic two-column label sizing', () => {

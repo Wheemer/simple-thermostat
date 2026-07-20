@@ -173,6 +173,11 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.1.5</strong></td>
+      <td>Restored the default dual-setpoint entity layout so compact/mobile cards no longer get forced into a special split layout.</td>
+    </tr>
+    <tr><td>Fixed relative-time template rows so they render with Home Assistant's standard relative-time element attributes.</td></tr>
+    <tr>
       <td rowspan="1" nowrap><strong>v4.1.4</strong></td>
       <td>Fixed active mode button backgrounds so card-level color variables such as <code>--fan_only-color</code> are used directly in both visual styles.</td>
     </tr>
