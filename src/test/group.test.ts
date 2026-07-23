@@ -479,6 +479,8 @@ test('keeps header controls in fixed columns so embedded content cannot nudge th
   expect(styles).toContain('width: 34px')
   expect(styles).toContain('width: 20px')
   expect(styles).toContain('height: 34px')
+  expect(styles).toContain('background: transparent')
+  expect(styles).toContain('.group-nav:hover:not(:disabled)')
   expect(styles).toContain('transform: translateY(-1px)')
 })
 
@@ -614,7 +616,7 @@ test('keeps the embedded stock card surface intact without mutating its shadow h
   expect(childHeader.style.display).toBe('')
   expect(
     child.style.getPropertyValue('--st-group-embedded-header-min-height')
-  ).toBe('56px')
+  ).toBe('52px')
 })
 
 test('measures the selector reserve without mutating the embedded shadow DOM', async () => {
@@ -903,7 +905,7 @@ test('fades the embedded card during selector changes', async () => {
   expect(styles).toContain('.embedded-card-host.fading')
   expect(styles).toContain('transition: opacity 120ms ease')
   expect(styles).toContain(
-    'transform: translateY(var(--st-group-header-top-buffer, 6px))'
+    'transform: translateY(var(--st-group-header-top-buffer, 2px))'
   )
   expect(styles).not.toContain(
     'padding-top: var(--st-group-body-top-buffer, 14px)'

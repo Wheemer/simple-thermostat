@@ -30,6 +30,8 @@
   --st-active-icon-glow-min-strength: 28%;
   --st-active-icon-glow-mid-strength: 44%;
   --st-active-icon-glow-max-strength: 60%;
+  --fan-color: #4f7f8d;
+  --fan_only-color: var(--state-climate-fan-only-color, var(--fan-color));
 }
 ha-card {
   -webkit-font-smoothing: var(--ha-font-smoothing, antialiased);
@@ -49,11 +51,6 @@ ha-card {
   --manual-color: #44739e;
   --on-color: var(--primary-color);
   --off-color: #8a8a8a;
-  --fan-color: var(--state-fan-active-color, var(--manual-color));
-  --fan_only-color: var(
-    --state-climate-fan-only-color,
-    var(--fan-color)
-  );
   --dry-color: #efbd07;
   --st-mode-surface-background: color-mix(
     in srgb,
@@ -1270,7 +1267,7 @@ ha-card.drying {
 }
 .modes.fan .mode-item,
 .modes.fan-preset .mode-item {
-  --st-mode-color: var(--fan-color);
+  --st-mode-color: var(--fan_only-color);
   --st-mode-min-width: 88px;
   flex-direction: row;
   align-items: center;
@@ -1499,32 +1496,74 @@ ha-card.standard-visuals .mode-item.active {
   box-shadow: none;
 }
 
+ha-card .mode-item.active.off,
+ha-card .mode-item.active.off:hover {
+  background: var(--off-color);
+  --st-mode-active-background: var(--off-color);
+}
+
+ha-card .mode-item.active.heat,
+ha-card .mode-item.active.heat:hover {
+  background: var(--heat-color);
+  --st-mode-active-background: var(--heat-color);
+}
+
+ha-card .mode-item.active.cool,
+ha-card .mode-item.active.cool:hover {
+  background: var(--cool-color);
+  --st-mode-active-background: var(--cool-color);
+}
+
+ha-card .mode-item.active.heat_cool,
+ha-card .mode-item.active.heat_cool:hover {
+  background: var(--heat_cool-color);
+  --st-mode-active-background: var(--heat_cool-color);
+}
+
+ha-card .mode-item.active.auto,
+ha-card .mode-item.active.auto:hover {
+  background: var(--auto-color);
+  --st-mode-active-background: var(--auto-color);
+}
+
+ha-card .mode-item.active.dry,
+ha-card .mode-item.active.dry:hover {
+  background: var(--dry-color);
+  --st-mode-active-background: var(--dry-color);
+}
+
+ha-card .mode-item.active.fan_only,
+ha-card .mode-item.active.fan_only:hover {
+  background: var(--fan_only-color);
+  --st-mode-active-background: var(--fan_only-color);
+}
+
 ha-card.standard-visuals .mode-item.active.off {
-  background: var(--st-mode-active-background, var(--off-color));
+  background: var(--off-color);
 }
 
 ha-card.standard-visuals .mode-item.active.heat {
-  background: var(--st-mode-active-background, var(--heat-color));
+  background: var(--heat-color);
 }
 
 ha-card.standard-visuals .mode-item.active.cool {
-  background: var(--st-mode-active-background, var(--cool-color));
+  background: var(--cool-color);
 }
 
 ha-card.standard-visuals .mode-item.active.heat_cool {
-  background: var(--st-mode-active-background, var(--heat_cool-color));
+  background: var(--heat_cool-color);
 }
 
 ha-card.standard-visuals .mode-item.active.auto {
-  background: var(--st-mode-active-background, var(--auto-color));
+  background: var(--auto-color);
 }
 
 ha-card.standard-visuals .mode-item.active.dry {
-  background: var(--st-mode-active-background, var(--dry-color));
+  background: var(--dry-color);
 }
 
 ha-card.standard-visuals .mode-item.active.fan_only {
-  background: var(--st-mode-active-background, var(--fan_only-color));
+  background: var(--fan_only-color);
 }
 
 ha-card.standard-visuals .mode-item:active,

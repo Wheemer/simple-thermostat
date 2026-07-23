@@ -173,6 +173,14 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="5" nowrap><strong>v4.1.8</strong></td>
+      <td>Restored custom <code>--fan_only-color</code> overrides for Fan only and fan-speed controls across the v4 visual paths.</td>
+    </tr>
+    <tr><td>Kept host, card-mod, and card-level Fan only color overrides from being masked by the card surface defaults.</td></tr>
+    <tr><td>Kept fan controls on the same public color path used by the working v4.0.37 behavior.</td></tr>
+    <tr><td>Made Simple Thermostat Group navigation buttons transparent and tightened the top header spacing.</td></tr>
+    <tr><td>Added CSS regression coverage for Fan only and fan control color overrides.</td></tr>
+    <tr>
       <td rowspan="4" nowrap><strong>v4.1.7</strong></td>
       <td>Fixed a 4.1 mobile regression where three visible HVAC mode buttons could wrap into two rows.</td>
     </tr>

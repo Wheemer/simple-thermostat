@@ -237,20 +237,20 @@ test('mode colors keep the original simple-thermostat assignments', () => {
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
+  const hostRule = styles.match(/:host\s*\{[^}]*\}/)?.[0] ?? ''
   const baseCardRule = styles.match(/ha-card\s*\{[^}]*\}/)?.[0] ?? ''
 
+  expect(hostRule).toContain('--fan-color: #4f7f8d')
+  expect(hostRule).toContain('--fan_only-color: var(')
+  expect(hostRule).toContain('--state-climate-fan-only-color')
+  expect(hostRule).toContain('var(--fan-color)')
   expect(baseCardRule).toContain('--auto-color: green')
   expect(baseCardRule).toContain('--heat_cool-color: springgreen')
   expect(baseCardRule).toContain('--cool-color: #2b9af9')
   expect(baseCardRule).toContain('--heat-color: #ff8100')
   expect(baseCardRule).toContain('--manual-color: #44739e')
   expect(baseCardRule).toContain('--off-color: #8a8a8a')
-  expect(baseCardRule).toContain(
-    '--fan-color: var(--state-fan-active-color, var(--manual-color))'
-  )
-  expect(baseCardRule).toContain('--fan_only-color: var(')
-  expect(baseCardRule).toContain('--state-climate-fan-only-color')
-  expect(baseCardRule).toContain('var(--fan-color)')
+  expect(baseCardRule).not.toContain('--fan_only-color')
   expect(baseCardRule).toContain('--dry-color: #efbd07')
   expect(baseCardRule).not.toContain('--state-climate-heat-color')
   expect(baseCardRule).not.toContain('--state-climate-cool-color')
@@ -267,15 +267,22 @@ test('fan only mode uses the public fan_only color variable', () => {
     styles.match(
       /ha-card\.standard-visuals \.mode-item\.active\.fan_only\s*\{[^}]*\}/
     )?.[0] ?? ''
+  const enhancedFanOnlyRule =
+    styles.match(
+      /ha-card \.mode-item\.active\.fan_only,\s*ha-card \.mode-item\.active\.fan_only:hover\s*\{[^}]*\}/
+    )?.[0] ?? ''
 
   expect(fanOnlyRule).toContain('--st-mode-color: var(--fan_only-color)')
-  expect(styles).not.toMatch(/ha-card \.mode-item\.active\.fan_only/)
+  expect(enhancedFanOnlyRule).toContain('background: var(--fan_only-color)')
+  expect(enhancedFanOnlyRule).toContain(
+    '--st-mode-active-background: var(--fan_only-color)'
+  )
   expect(standardFanOnlyRule).toContain(
-    'background: var(--st-mode-active-background, var(--fan_only-color))'
+    'background: var(--fan_only-color)'
   )
 })
 
-test('fan mode controls use fan color instead of off color', () => {
+test('fan mode controls keep the public fan_only color path', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -285,7 +292,7 @@ test('fan mode controls use fan color instead of off color', () => {
       /\.modes\.fan \.mode-item,\s*\.modes\.fan-preset \.mode-item\s*\{[^}]*\}/
     )?.[0] ?? ''
 
-  expect(fanRule).toContain('--st-mode-color: var(--fan-color)')
+  expect(fanRule).toContain('--st-mode-color: var(--fan_only-color)')
   expect(fanRule).not.toContain('--st-mode-color: var(--off-color)')
 })
 
@@ -312,9 +319,12 @@ test('active mode backgrounds keep semantic colors while allowing overrides', ()
   }
 
   for (const [mode, color] of Object.entries(modeColors)) {
-    expect(styles).not.toMatch(
-      new RegExp(`ha-card \\.mode-item\\.active\\.${mode}`)
-    )
+    const enhancedRule =
+      styles.match(
+        new RegExp(
+          `ha-card \\.mode-item\\.active\\.${mode},\\s*ha-card \\.mode-item\\.active\\.${mode}:hover\\s*\\{[^}]*\\}`
+        )
+      )?.[0] ?? ''
 
     const rule =
       styles.match(
@@ -322,9 +332,11 @@ test('active mode backgrounds keep semantic colors while allowing overrides', ()
           `ha-card\\.standard-visuals \\.mode-item\\.active\\.${mode}\\s*\\{[^}]*\\}`
         )
       )?.[0] ?? ''
-    expect(rule).toContain(
-      `background: var(--st-mode-active-background, var(${color}))`
+    expect(enhancedRule).toContain(`background: var(${color})`)
+    expect(enhancedRule).toContain(
+      `--st-mode-active-background: var(${color})`
     )
+    expect(rule).toContain(`background: var(${color})`)
   }
 })
 

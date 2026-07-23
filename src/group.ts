@@ -203,7 +203,7 @@ export default class SimpleThermostatGroup extends LitElement {
         );
         min-width: 0;
         box-sizing: border-box;
-        transform: translateY(var(--st-group-header-top-buffer, 6px));
+        transform: translateY(var(--st-group-header-top-buffer, 2px));
       }
 
       .group-title {
@@ -264,7 +264,7 @@ export default class SimpleThermostatGroup extends LitElement {
         appearance: none;
         border: 0;
         border-radius: 8px;
-        background: var(--secondary-background-color);
+        background: transparent;
         color: var(--primary-text-color);
         display: inline-flex;
         align-items: center;
@@ -273,6 +273,17 @@ export default class SimpleThermostatGroup extends LitElement {
         height: 34px;
         padding: 0;
         cursor: pointer;
+      }
+
+      .group-nav:hover:not(:disabled),
+      .group-nav:focus-visible,
+      .group-menu:hover,
+      .group-menu:focus-visible {
+        background: color-mix(
+          in srgb,
+          var(--primary-text-color) 10%,
+          transparent
+        );
       }
 
       .group-nav ha-icon,
@@ -291,7 +302,6 @@ export default class SimpleThermostatGroup extends LitElement {
         grid-area: menu;
         width: 20px;
         height: 34px;
-        background: transparent;
         color: var(--secondary-text-color);
       }
 
@@ -1431,7 +1441,7 @@ export default class SimpleThermostatGroup extends LitElement {
     selector: HTMLElement | null
   ) {
     const fallback =
-      'calc(var(--st-group-header-control-height, 34px) + var(--st-group-header-top-buffer, 6px) + calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 6))'
+      'calc(var(--st-group-header-control-height, 34px) + var(--st-group-header-top-buffer, 2px) + calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 6))'
     const minimum = this.getEmbeddedHeaderReserveMinimum()
 
     if (!selector) return fallback
@@ -1450,7 +1460,7 @@ export default class SimpleThermostatGroup extends LitElement {
       parseFloat(styles.getPropertyValue('--st-group-header-control-height')) ||
       34
     const topBuffer =
-      parseFloat(styles.getPropertyValue('--st-group-header-top-buffer')) || 6
+      parseFloat(styles.getPropertyValue('--st-group-header-top-buffer')) || 2
     const spacing =
       parseFloat(styles.getPropertyValue('--st-spacing')) ||
       parseFloat(styles.getPropertyValue('--st-default-spacing')) ||
