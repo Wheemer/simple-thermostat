@@ -214,6 +214,24 @@ test('inactive mode buttons use a consistent theme-derived overlay surface', () 
   )
 })
 
+test('enhanced sparse hvac controls can fit four buttons on one row', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const sparseRule =
+    styles.match(
+      /\.modes\.hvac\.sparse \.mode-item,\s*\n\.modes\.state\.sparse \.mode-item\s*\{[^}]*\}/
+    )?.[0] ?? ''
+  const mobileSparseRule =
+    styles.match(
+      /ha-card:not\(\.standard-visuals\) \.modes\.hvac\.sparse \.mode-item,\s*\n\s*ha-card:not\(\.standard-visuals\) \.modes\.state\.sparse \.mode-item\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(sparseRule).toContain('min-width: 0')
+  expect(mobileSparseRule).toContain('min-width: 0')
+})
+
 test('mode colors keep the original simple-thermostat assignments', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
@@ -227,7 +245,12 @@ test('mode colors keep the original simple-thermostat assignments', () => {
   expect(baseCardRule).toContain('--heat-color: #ff8100')
   expect(baseCardRule).toContain('--manual-color: #44739e')
   expect(baseCardRule).toContain('--off-color: #8a8a8a')
-  expect(baseCardRule).toContain('--fan_only-color: #8a8a8a')
+  expect(baseCardRule).toContain(
+    '--fan-color: var(--state-fan-active-color, var(--manual-color))'
+  )
+  expect(baseCardRule).toContain('--fan_only-color: var(')
+  expect(baseCardRule).toContain('--state-climate-fan-only-color')
+  expect(baseCardRule).toContain('var(--fan-color)')
   expect(baseCardRule).toContain('--dry-color: #efbd07')
   expect(baseCardRule).not.toContain('--state-climate-heat-color')
   expect(baseCardRule).not.toContain('--state-climate-cool-color')
@@ -250,6 +273,20 @@ test('fan only mode uses the public fan_only color variable', () => {
   expect(standardFanOnlyRule).toContain(
     'background: var(--st-mode-active-background, var(--fan_only-color))'
   )
+})
+
+test('fan mode controls use fan color instead of off color', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const fanRule =
+    styles.match(
+      /\.modes\.fan \.mode-item,\s*\.modes\.fan-preset \.mode-item\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(fanRule).toContain('--st-mode-color: var(--fan-color)')
+  expect(fanRule).not.toContain('--st-mode-color: var(--off-color)')
 })
 
 test('active mode backgrounds keep semantic colors while allowing overrides', () => {
@@ -317,7 +354,7 @@ test('active mode accent uses each button color by default', () => {
   )
 })
 
-test('sparse main controls keep baseline spacing without shrinking buttons', () => {
+test('sparse main controls keep baseline spacing while allowing four buttons', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -334,10 +371,28 @@ test('sparse main controls keep baseline spacing without shrinking buttons', () 
   expect(sparseMainRule).toContain(
     'min-height: calc(var(--st-control-icon-size) + 8px)'
   )
+  expect(sparseMainRule).toContain('gap: var(--st-sparse-control-gap, 2px)')
+  expect(sparseMainRule).toContain('min-width: 0')
   expect(sparseControlsRule).toBe('')
 })
 
-test('mobile sparse main controls can fit three buttons on one row', () => {
+test('sparse hvac labels stay inline without using the broad clipping rule', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const sparseLabelRule =
+    styles.match(
+      /\.modes\.hvac\.sparse \.mode-label,\s*\.modes\.state\.sparse \.mode-label\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(sparseLabelRule).toContain('white-space: nowrap')
+  expect(styles).not.toMatch(
+    /ha-card:not\(\.standard-visuals\) \.modes\.sparse \.mode-label/
+  )
+})
+
+test('mobile sparse main controls keep enhanced row geometry without forcing wrap', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -349,9 +404,66 @@ test('mobile sparse main controls can fit three buttons on one row', () => {
 
   expect(mobileSparseRule).toContain('flex-direction: row')
   expect(mobileSparseRule).toContain(
-    'min-width: min(100%, var(--st-hvac-mode-min-width, 120px))'
+    'gap: var(--st-sparse-control-gap, 2px)'
   )
-  expect(mobileSparseRule).not.toContain('--st-mode-min-width')
+  expect(mobileSparseRule).toContain('min-width: 0')
+  expect(mobileSparseRule).not.toContain('.modes.fan.sparse')
+})
+
+test('enhanced sparse main controls do not override the row wrapper geometry', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const sparseGroupRule =
+    styles.match(
+      /ha-card:not\(\.standard-visuals\) \.modes\.hvac\.sparse,\s*ha-card:not\(\.standard-visuals\) \.modes\.state\.sparse,\s*ha-card:not\(\.standard-visuals\) \.modes\.fan\.sparse\s*\{[^}]*\}/
+    )?.[0] ?? ''
+  const sparseItemRule =
+    styles.match(/\.modes\.hvac\.sparse \.mode-item,\s*\.modes\.state\.sparse \.mode-item\s*\{[^}]*\}/)
+      ?.[0] ?? ''
+
+  expect(sparseGroupRule).toBe('')
+  expect(sparseItemRule).toContain('min-width: 0')
+})
+
+test('enhanced sparse main controls keep normal v4 icon and text sizing', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+
+  expect(styles).not.toContain('--st-sparse-mode-font-size')
+  expect(styles).not.toContain('--st-sparse-mode-icon-size')
+})
+
+test('dense hvac controls keep compact stacked layout', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const denseHvacRule =
+    styles.match(/\.modes\.hvac\.dense \.mode-item\s*\{[^}]*\}/)?.[0] ?? ''
+
+  expect(denseHvacRule).toContain('flex-direction: column')
+  expect(denseHvacRule).toContain('gap: 0')
+  expect(denseHvacRule).not.toContain('flex-direction: row')
+})
+
+test('dense main controls keep primary icon sizing', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const denseMainIconRule =
+    styles.match(
+      /\.modes\.hvac\.dense \.mode-icon,\s*\.modes\.state\.dense \.mode-icon\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(denseMainIconRule).toContain(
+    '--iron-icon-width: var(--st-control-icon-size)'
+  )
+  expect(denseMainIconRule).toContain('width: var(--st-control-icon-size)')
 })
 
 test('standard visual mode rows keep visible options evenly sized', () => {

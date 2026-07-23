@@ -173,6 +173,13 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="4" nowrap><strong>v4.1.7</strong></td>
+      <td>Fixed a 4.1 mobile regression where three visible HVAC mode buttons could wrap into two rows.</td>
+    </tr>
+    <tr><td>Kept four-button HVAC rows compact enough for enhanced visuals while preserving the larger primary control styling.</td></tr>
+    <tr><td>Restored the larger primary HVAC icon size for dense mode rows.</td></tr>
+    <tr><td>Made active fan speeds and Fan only use fan-themed coloring instead of resembling Off.</td></tr>
+    <tr>
       <td rowspan="1" nowrap><strong>v4.1.6</strong></td>
       <td>Restored the older active-mode color cascade so custom active backgrounds and mode colors such as <code>--fan_only-color</code> work together again.</td>
     </tr>

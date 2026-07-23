@@ -205,7 +205,7 @@ test('editor preserves custom control order when changing enabled controls', () 
   ])
 })
 
-test('editor materializes configured control and option order', () => {
+test('editor materializes option order without inventing top-level control order', () => {
   const editor = new SimpleThermostatEditor()
 
   editor.setConfig({
@@ -223,10 +223,7 @@ test('editor materializes configured control and option order', () => {
     },
   } as any)
 
-  expect((editor.config.control as Record<string, unknown>)._order).toEqual([
-    'fan',
-    'preset',
-  ])
+  expect((editor.config.control as Record<string, unknown>)._order).toBeUndefined()
   expect(
     (
       (editor.config.control as Record<string, any>).fan as Record<
@@ -237,7 +234,7 @@ test('editor materializes configured control and option order', () => {
   ).toEqual(['1', 'auto', 'quiet'])
 })
 
-test('editor emits materialized order as a saveable config change', async () => {
+test('editor emits materialized option order as a saveable config change', async () => {
   const editor = new SimpleThermostatEditor()
   const configChanged = jest.fn()
   editor.addEventListener('config-changed', configChanged)
@@ -260,10 +257,12 @@ test('editor emits materialized order as a saveable config change', async () => 
 
   expect(configChanged).toHaveBeenCalledTimes(1)
   expect(configChanged.mock.calls[0][0].detail.config.control).toMatchObject({
-    _order: ['fan', 'preset'],
     fan: { _order: ['auto', 'quiet'] },
     preset: { _order: ['none', 'boost'] },
   })
+  expect(
+    configChanged.mock.calls[0][0].detail.config.control._order
+  ).toBeUndefined()
 })
 
 test('setpoint controls are hidden when the selected fan has no percentage support', () => {
@@ -517,7 +516,7 @@ test('editor updates its local form data when enhanced visuals changes', () => {
   )
 })
 
-test('enhanced visuals on returns to column default when step layout was never explicit', () => {
+test('enhanced visuals on returns to row default when step layout was never explicit', () => {
   if (!customElements.get('simple-thermostat-editor-test')) {
     customElements.define(
       'simple-thermostat-editor-test',
@@ -547,7 +546,7 @@ test('enhanced visuals on returns to column default when step layout was never e
   editor.config = editor._applyFormChange({ enhanced_visuals: true } as any)
   expect(editor.config.enhanced_visuals).toBeUndefined()
   expect(editor.config.layout?.step).toBeUndefined()
-  expect(editor._buildFormData()['layout.step']).toBe('column')
+  expect(editor._buildFormData()['layout.step']).toBe('row')
 })
 
 test('enhanced visuals toggle does not save unrelated displayed defaults', () => {
@@ -617,7 +616,7 @@ test('enhanced visuals toggle ignores full-form step default changes', () => {
   const onForm = {
     ...editor._buildFormData(),
     enhanced_visuals: true,
-    'layout.step': 'column',
+    'layout.step': 'row',
   }
   const onConfig = editor._applyFormChange(onForm as any)
   expect(onConfig).toEqual({

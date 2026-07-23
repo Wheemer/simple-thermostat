@@ -479,7 +479,7 @@ function shouldPreserveConfiguredControlOrder(control: CardConfig['control']) {
   if (Array.isArray(control)) return true
   if (!control || typeof control !== 'object') return false
 
-  return Object.keys(control).length > 0
+  return Array.isArray(control._order)
 }
 
 interface Values {
@@ -828,8 +828,10 @@ export default class SimpleThermostat extends LitElement {
     const unit = this.getUnit()
     const entityDomain = config.entity.split('.')[0]
     const setpointCount = Object.keys(_values).length
-    const configuredStepLayout = this.config?.layout?.step
-    const stepLayout = configuredStepLayout ?? 'column'
+    const stepLayout =
+      this.config.enhanced_visuals === false
+        ? (this.config?.layout?.step ?? 'column')
+        : (this.config?.layout?.step ?? 'row')
     const row = stepLayout === 'row'
     const isUnavailable = ['unavailable', 'unknown'].includes(entity.state)
     const safeClass = (value: unknown) =>

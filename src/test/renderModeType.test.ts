@@ -64,6 +64,117 @@ test('hvac heading is hidden by default', () => {
   expect(document.body.querySelector('.mode-title')).toBe(null)
 })
 
+test('four hvac controls keep the enhanced sparse row layout', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    mode: {
+      type: 'hvac',
+      mode: 'off',
+      list: [
+        { value: 'off', icon: 'mdi:power', name: 'Off' },
+        { value: 'cool', icon: 'mdi:snowflake', name: 'Cool' },
+        { value: 'dry', icon: 'mdi:water-percent', name: 'Dry' },
+        { value: 'fan_only', icon: 'mdi:fan', name: 'Fan' },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const classList = document.body.querySelector('.modes.hvac')?.classList
+  expect(classList).toContain('sparse')
+  expect(classList).not.toContain('dense')
+})
+
+test('three visible hvac controls stay sparse for portrait mobile layout', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    mode: {
+      type: 'hvac',
+      mode: 'off',
+      list: [
+        { value: 'heat', icon: 'mdi:fire', name: 'Heat' },
+        { value: 'cool', icon: 'mdi:snowflake', name: 'Cool' },
+        { value: 'off', icon: 'mdi:power', name: 'Off' },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const classList = document.body.querySelector('.modes.hvac')?.classList
+  expect(classList).toContain('sparse')
+  expect(classList).not.toContain('dense')
+})
+
+test('five hvac controls use the compact dense layout', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    mode: {
+      type: 'hvac',
+      mode: 'off',
+      list: [
+        { value: 'off', icon: 'mdi:power', name: 'Off' },
+        { value: 'heat', icon: 'mdi:fire', name: 'Heat' },
+        { value: 'cool', icon: 'mdi:snowflake', name: 'Cool' },
+        { value: 'dry', icon: 'mdi:water-percent', name: 'Dry' },
+        { value: 'fan_only', icon: 'mdi:fan', name: 'Fan' },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const classList = document.body.querySelector('.modes.hvac')?.classList
+  expect(classList).toContain('dense')
+  expect(classList).not.toContain('sparse')
+})
+
+test('four fan controls keep the enhanced sparse row layout', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    mode: {
+      type: 'fan',
+      mode: 'auto',
+      list: [
+        { value: 'auto', icon: 'mdi:fan-auto', name: 'Auto' },
+        { value: 'low', icon: 'mdi:fan-speed-1', name: 'Low' },
+        { value: 'medium', icon: 'mdi:fan-speed-2', name: 'Mid' },
+        { value: 'high', icon: 'mdi:fan-speed-3', name: 'High' },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const classList = document.body.querySelector('.modes.fan')?.classList
+  expect(classList).toContain('sparse')
+  expect(classList).not.toContain('dense')
+})
+
+test('five fan controls use the compact dense layout', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    mode: {
+      type: 'fan',
+      mode: 'auto',
+      list: [
+        { value: 'auto', icon: 'mdi:fan-auto', name: 'Auto' },
+        { value: 'low', icon: 'mdi:fan-speed-1', name: 'Low' },
+        { value: 'medium', icon: 'mdi:fan-speed-2', name: 'Mid' },
+        { value: 'high', icon: 'mdi:fan-speed-3', name: 'High' },
+        { value: 'full', icon: 'mdi:fan-chevron-up', name: 'Full' },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const classList = document.body.querySelector('.modes.fan')?.classList
+  expect(classList).toContain('dense')
+  expect(classList).not.toContain('sparse')
+})
+
 test('mode options can hide when the main entity is off', () => {
   const result = renderModeType({
     ...baseOptions,
