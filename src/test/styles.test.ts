@@ -58,27 +58,29 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(styles).toContain('grid-template-columns: minmax(0, 1fr) max-content')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
   expect(styles).toContain(
-    'minmax(min-content, max-content) minmax(max-content, 1fr)'
+    'minmax(var(--st-entity-column-min-width), max-content)'
   )
-  expect(styles).not.toContain('minmax(160px, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
   expect(styles).not.toContain(
     '.body.has-entities.step-column.setpoint-count-2 .entities.as-table.with-labels'
   )
 })
 
-test('mobile dual setpoints do not force a special default layout override', () => {
+test('dual setpoint step-column cards preserve a readable entity column', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
-
-  const mobileBodyOverride =
+  const hostRule = styles.match(/:host\s*\{[^}]*\}/)?.[0] ?? ''
+  const dualStepRule =
     styles.match(
-      /@media \(max-width: 560px\)\s*\{[\s\S]*?\.body\.has-entities\.step-column\.setpoint-count-2[\s\S]*?\n\}/
+      /\.body\.has-entities\.step-column\.setpoint-count-2\s*\{[^}]*\}/
     )?.[0] ?? ''
 
-  expect(mobileBodyOverride).toBe('')
+  expect(hostRule).toContain('--st-entity-column-min-width: 160px')
+  expect(dualStepRule).toContain(
+    'minmax(var(--st-entity-column-min-width), max-content)'
+  )
   expect(styles).not.toContain('grid-row: 1 / span 2')
 })
 

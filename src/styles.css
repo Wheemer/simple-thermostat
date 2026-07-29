@@ -23,6 +23,7 @@
     --st-font-size-compact-mode,
     var(--ha-font-size-m, 14px)
   );
+  --st-entity-column-min-width: 160px;
   --st-active-icon-glow-duration: 4s;
   --st-active-icon-glow-min-size: 1px;
   --st-active-icon-glow-mid-size: 4px;
@@ -182,7 +183,8 @@ ha-card.loading {
 }
 .body.has-entities.step-column.setpoint-count-2 {
   grid-template-columns:
-    minmax(min-content, max-content) minmax(max-content, 1fr)
+    minmax(var(--st-entity-column-min-width), max-content)
+      minmax(max-content, 1fr)
     minmax(max-content, 1fr);
 }
 

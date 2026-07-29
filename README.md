@@ -173,6 +173,11 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.1.9</strong></td>
+      <td>Restored the compact mobile entity-column width for dual setpoint cards with vertical step buttons.</td>
+    </tr>
+    <tr><td>Added <code>--st-entity-column-min-width</code> so narrow entity-table layouts can be tuned without changing the card config.</td></tr>
+    <tr>
       <td rowspan="5" nowrap><strong>v4.1.8</strong></td>
       <td>Restored custom <code>--fan_only-color</code> overrides for Fan only and fan-speed controls across the v4 visual paths.</td>
     </tr>
