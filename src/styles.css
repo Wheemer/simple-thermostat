@@ -321,10 +321,9 @@ ha-card.loading {
 }
 .entity-heading {
   font-weight: 300;
-  min-width: 0;
   padding-right: 8px;
   padding-bottom: 0;
-  white-space: normal;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: flex-end;

@@ -173,6 +173,11 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.1.10</strong></td>
+      <td>Restored non-wrapping extra entity labels so mobile sensor names stay together like earlier versions.</td>
+    </tr>
+    <tr><td>Kept left entity alignment scoped to alignment only, without changing label/value wrapping behavior.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.1.9</strong></td>
       <td>Restored the compact mobile entity-column width for dual setpoint cards with vertical step buttons.</td>
     </tr>

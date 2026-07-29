@@ -84,7 +84,7 @@ test('dual setpoint step-column cards preserve a readable entity column', () => 
   expect(styles).not.toContain('grid-row: 1 / span 2')
 })
 
-test('default entity table keeps intrinsic two-column label sizing', () => {
+test('default entity table keeps labels and values on one line', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -98,8 +98,7 @@ test('default entity table keeps intrinsic two-column label sizing', () => {
   expect(tableLabelsRule).not.toContain('--st-entity-label-max-width')
   expect(tableLabelsRule).toContain('grid-auto-flow: row')
   expect(tableLabelsRule).toContain('column-gap: 8px')
-  expect(headingRule).toContain('min-width: 0')
-  expect(headingRule).toContain('white-space: normal')
+  expect(headingRule).toContain('white-space: nowrap')
   expect(valueRule).toContain('min-width: max-content')
   expect(valueRule).toContain('white-space: nowrap')
 })
@@ -124,7 +123,7 @@ test('entity table labels can opt into left alignment', () => {
   expect(leftAlignRule).toContain('justify-content: flex-start')
   expect(leftAlignRule).toContain('justify-self: start')
   expect(leftAlignRule).toContain('text-align: left')
-  expect(leftAlignRule).not.toContain('white-space: nowrap')
+  expect(leftAlignRule).not.toContain('white-space')
   expect(leftAlignTableRule).toBe('')
 })
 
