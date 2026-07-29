@@ -163,15 +163,9 @@ ha-card.loading {
 .body {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
+  grid-auto-columns: minmax(min-content, auto);
   place-items: center;
   padding: 0 calc(var(--st-spacing, var(--st-default-spacing)) * 4);
-}
-.body > * {
-  min-width: 0;
 }
 .body.has-entities.setpoint-count-2 {
   grid-template-columns:

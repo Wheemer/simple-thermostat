@@ -173,6 +173,12 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="3" nowrap><strong>v4.1.11</strong></td>
+      <td>Uses Home Assistant fan <code>percentage_step</code> values for setpoint buttons, so fans step through their supported speeds instead of moving one percent at a time.</td>
+    </tr>
+    <tr><td>Improves Lovelace card-size estimates by ignoring controls with no visible options.</td></tr>
+    <tr><td>Keeps setpoint units visually smaller without breaking the value/unit pairing.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.1.10</strong></td>
       <td>Restored non-wrapping extra entity labels so mobile sensor names stay together like earlier versions.</td>
     </tr>

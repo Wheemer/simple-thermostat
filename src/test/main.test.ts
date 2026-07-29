@@ -240,10 +240,33 @@ test('estimates card size from visible sections', async () => {
   card.header = { name: 'Living Room', icon: false } as any
   card.showEntities = true
   card.entities = [{ entity: 'sensor.one' }, { entity: 'sensor.two' }] as any
-  card.modes = [{ type: 'hvac' }, { type: 'preset' }] as any
+  card.modes = [
+    { type: 'hvac', list: [{ value: 'heat' }] },
+    { type: 'preset', list: [{ value: 'eco' }] },
+  ] as any
   card.config.hide_setpoint = false
 
   expect(card.getCardSize()).toBe(5)
+})
+
+test('card size ignores controls with no rendered options', async () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'fan.range_hood',
+    header: { name: 'Range Hood Fan' },
+  } as any)
+  card.header = { name: 'Range Hood Fan', icon: 'mdi:fan' } as any
+  card.showEntities = true
+  card.entities = [{ entity: 'light.rangehood_light' }] as any
+  card.entity = { state: 'on' } as any
+  card.modes = [
+    { type: 'preset', list: [] },
+    { type: 'direction', list: [] },
+    { type: 'oscillating', list: [] },
+    { type: 'state', list: [{ value: 'off' }, { value: 'on' }] },
+  ] as any
+
+  expect(card.getCardSize()).toBe(4)
 })
 
 test('does not apply card_mod ha-card surface declarations inline on normal cards', async () => {
@@ -1699,6 +1722,53 @@ test('fan card shows current temperature when the fan exposes one', async () => 
   expect(text).toContain('22.4 °C')
 })
 
+test('fan setpoint uses the entity percentage step', async () => {
+  document.body.innerHTML = ''
+  const callService = jest.fn()
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'fan.range_hood',
+    header: false,
+    control: false,
+    setpoint_debounce_ms: 0,
+  } as any)
+  card.hass = {
+    states: {
+      'fan.range_hood': {
+        entity_id: 'fan.range_hood',
+        state: 'on',
+        attributes: {
+          percentage: 25,
+          percentage_step: 25,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+    callService,
+  }
+
+  await card.updateComplete
+
+  const increase = card.shadowRoot?.querySelector(
+    'button.increase'
+  ) as HTMLButtonElement
+
+  expect(card.stepSize).toBe(25)
+  increase.click()
+
+  expect(card._values.percentage).toBe(50)
+  expect(callService).toHaveBeenCalledWith('fan', 'set_percentage', {
+    entity_id: 'fan.range_hood',
+    percentage: 50,
+  })
+})
+
 test('off climate setpoint allows setpoint changes by default', async () => {
   document.body.innerHTML = ''
   const callService = jest.fn()
@@ -2177,6 +2247,47 @@ test('target labels can be hidden without changing setpoint controls', async () 
   expect(card.shadowRoot?.querySelector('.current-wrapper')).not.toBeNull()
   expect(card.shadowRoot?.querySelector('.current--label')).toBeNull()
   expect(card.shadowRoot?.textContent).not.toContain('Target')
+})
+
+test('setpoint unit renders in the smaller unit span', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+  } as any)
+  card.hass = {
+    locale: { language: 'en' },
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: {
+          hvac_modes: ['off', 'heat'],
+          temperature: 21,
+          current_temperature: 20,
+          min_temp: 5,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  } as any
+
+  await card.updateComplete
+
+  const value = card.shadowRoot?.querySelector('.current--value')
+  const unit = value?.querySelector('.current--unit')
+  expect(value?.textContent?.replace(/\s+/g, ' ').trim()).toBe('21.0 °C')
+  expect(unit?.textContent).toBe('°C')
 })
 
 test('dual setpoints with entity rows preserve explicit row steppers', async () => {

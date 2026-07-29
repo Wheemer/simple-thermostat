@@ -33,7 +33,7 @@ test('host isolates internal z-index layers from wrapper overlays', () => {
   expect(hostRule).toContain('isolation: isolate')
 })
 
-test('card body cannot overflow wrapper overlay width', () => {
+test('card body keeps the legacy intrinsic column flow', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -48,9 +48,9 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(hostRule).toContain('min-width: 0')
   expect(baseCardRule).toContain('max-width: 100%')
   expect(baseCardRule).toContain('overflow: hidden')
-  expect(bodyRule).toContain('grid-auto-columns: minmax(0, 1fr)')
-  expect(bodyRule).toContain('overflow: hidden')
-  expect(bodyChildrenRule).toContain('min-width: 0')
+  expect(bodyRule).toContain('grid-auto-columns: minmax(min-content, auto)')
+  expect(bodyRule).not.toContain('overflow: hidden')
+  expect(bodyChildrenRule).toBe('')
   expect(styles).toContain('.body.has-entities.setpoint-count-2')
   expect(styles).toContain('minmax(min-content, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
