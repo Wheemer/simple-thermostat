@@ -186,6 +186,51 @@ test('switches the embedded card without rewriting the selected card config', as
   ).toBe('climate.bedroom')
 })
 
+test('opens more-info for the selected card from the group title', async () => {
+  const group = createGroup()
+  const moreInfo = jest.fn()
+  group.addEventListener('hass-more-info', moreInfo)
+
+  group.setConfig({
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const header = group.shadowRoot?.querySelector(
+    '.group-selector .header__main'
+  ) as HTMLElement
+
+  expect(header.classList.contains('clickable')).toBe(true)
+  expect(header.getAttribute('role')).toBe('button')
+  expect(header.getAttribute('tabindex')).toBe('0')
+
+  header.click()
+  expect(moreInfo).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: { entityId: 'climate.living_room' },
+    })
+  )
+
+  const nextButton = group.shadowRoot?.querySelector(
+    'button[aria-label="Next device"]'
+  ) as HTMLButtonElement
+  nextButton.click()
+  await group.updateComplete
+
+  header.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+  )
+  expect(moreInfo).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: { entityId: 'climate.bedroom' },
+    })
+  )
+})
+
 test('keeps nested fan controls on grouped climate cards', async () => {
   const group = createGroup()
 
@@ -507,6 +552,18 @@ test('uses fit-to-space group title sizing without changing normal card titles',
   expect(styles).toContain('--st-group-title-fit-line-height')
   expect(styles).toContain('--st-group-title-font-size')
   expect(styles).toContain('0.9')
+})
+
+test('uses normal clickable header affordance for the group title', () => {
+  const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
+
+  expect(styles).toContain('.header__main.clickable')
+  expect(styles).toContain('cursor: pointer')
+  expect(styles).toContain('.header__main.clickable:hover .header__title')
+  expect(styles).toContain('.header__main.clickable:focus-visible .header__title')
+  expect(styles).toContain(
+    'color: var(--st-interactive-tint, var(--primary-color))'
+  )
 })
 
 test('does not reserve toggle space when the selected card has no toggles', async () => {

@@ -49,6 +49,10 @@ layout:
   <strong style="color: #41bdf5;">Compatibility:</strong> v4 imports older <code>current_temperature_entity</code>, <code>sensors</code>, and <code>layout.sensors</code> YAML into the current <code>current_value_entity</code>, <code>entities</code>, and <code>layout.entities</code> config shape. If you are staying on v3, use the <a href="https://github.com/Wheemer/simple-thermostat/tree/v3">v3 documentation</a>.
 </div>
 
+<div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
+  <strong style="color: #41bdf5;">Known browser limitation:</strong> Brave Mobile may render some compact entity-row layouts differently from the Home Assistant companion app and other mobile browsers. The Home Assistant app, Firefox Mobile, DuckDuckGo Mobile, and most desktop browsers are expected to render these layouts normally.
+</div>
+
 ## Installation
 
 ### HACS
@@ -172,6 +176,16 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="7" nowrap><strong>v4.2.0</strong></td>
+      <td>Rolls the tested v4.1 prerelease fixes into the normal release channel.</td>
+    </tr>
+    <tr><td>Restores compact and mobile entity-row behavior so labels, values, and units stay paired more reliably.</td></tr>
+    <tr><td>Improves sparse HVAC and fan control rows so buttons stay on one line where practical while preserving enhanced v4 visuals.</td></tr>
+    <tr><td>Restores mode color overrides such as <code>--fan_only-color</code> across active mode and fan-speed controls.</td></tr>
+    <tr><td>Uses Home Assistant fan <code>percentage_step</code> values for fan setpoint buttons.</td></tr>
+    <tr><td>Improves Simple Thermostat Group sizing, remembered selection, navigation, and title more-info behavior.</td></tr>
+    <tr><td>Documents Brave Mobile as a known browser limitation for some compact entity-row layouts.</td></tr>
     <tr>
       <td rowspan="3" nowrap><strong>v4.1.11</strong></td>
       <td>Uses Home Assistant fan <code>percentage_step</code> values for setpoint buttons, so fans step through their supported speeds instead of moving one percent at a time.</td>

@@ -4,6 +4,7 @@ import { name as CARD_NAME } from '../package.json'
 import { CardConfig } from './config/card'
 import parseHeader from './config/header'
 import { getEntityAction } from './entityAction'
+import fireEvent from './fireEvent'
 import { HASS, LooseObject } from './types'
 
 type AutoSelectMode = 'off' | 'recent_activity'
@@ -212,6 +213,7 @@ export default class SimpleThermostatGroup extends LitElement {
         overflow: hidden;
         text-overflow: clip;
         white-space: nowrap;
+        transition: color 180ms var(--st-motion-ease, ease);
         font-size: var(
           --st-group-title-fit-size,
           var(
@@ -458,6 +460,26 @@ export default class SimpleThermostatGroup extends LitElement {
         align-items: center;
         min-width: 0;
         flex: 1 1 auto;
+      }
+
+      .header__main.clickable {
+        cursor: pointer;
+      }
+
+      .header__main.clickable:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      .header__main.clickable:focus-visible .header__title {
+        color: var(--st-interactive-tint, var(--primary-color));
+      }
+
+      @media (hover: hover) {
+        .header__main.clickable:hover .header__title {
+          color: var(--st-interactive-tint, var(--primary-color));
+        }
       }
 
       .header__icon-wrap {
@@ -837,6 +859,22 @@ export default class SimpleThermostatGroup extends LitElement {
   private getSelectedState() {
     const target = this.getSelectedTarget()
     return this.hass?.states?.[target.entity]
+  }
+
+  private openSelectedPopover() {
+    const target = this.getSelectedTarget()
+    if (!target?.entity) return
+
+    fireEvent(this, 'hass-more-info', {
+      entityId: target.entity,
+    })
+  }
+
+  private onSelectorHeaderKeyDown(ev: KeyboardEvent) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return
+
+    ev.preventDefault()
+    this.openSelectedPopover()
   }
 
   private getGroupCardClasses() {
@@ -1681,7 +1719,13 @@ export default class SimpleThermostatGroup extends LitElement {
     return html`
       <div class="group-selector">
         <div class="group-header-content">
-          <div class="header__main">
+          <div
+            class="header__main clickable"
+            role="button"
+            tabindex="0"
+            @click=${() => this.openSelectedPopover()}
+            @keydown=${(ev: KeyboardEvent) => this.onSelectorHeaderKeyDown(ev)}
+          >
             ${this.renderHeaderIcon(target)}
             <div class="group-title header__title" title=${label}>${label}</div>
           </div>
