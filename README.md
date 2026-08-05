@@ -177,6 +177,12 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="3" nowrap><strong>v4.2.1</strong></td>
+      <td>Keeps card-level active mode overrides working while preserving the semantic active colors introduced in v4.</td>
+    </tr>
+    <tr><td>Restores classic visuals automatically for imported <code>version: 3</code> cards unless <code>enhanced_visuals: true</code> is explicitly set.</td></tr>
+    <tr><td>Includes the latest v4.2.0 layout, group-card, fan step, and mobile compatibility fixes.</td></tr>
+    <tr>
       <td rowspan="7" nowrap><strong>v4.2.0</strong></td>
       <td>Rolls the tested v4.1 prerelease fixes into the normal release channel.</td>
     </tr>
