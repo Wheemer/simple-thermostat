@@ -14,7 +14,6 @@ import fireEvent from './fireEvent'
 import renderHeader from './components/header'
 import renderEntities from './components/entities'
 import renderModeType from './components/modeType'
-import { appendUnit } from './unitFormat'
 import { getEntityAction } from './entityAction'
 import normalizeConfig from './config/normalize'
 
@@ -479,7 +478,7 @@ function shouldPreserveConfiguredControlOrder(control: CardConfig['control']) {
   if (Array.isArray(control)) return true
   if (!control || typeof control !== 'object') return false
 
-  return Object.keys(control).length > 0
+  return Array.isArray(control._order)
 }
 
 interface Values {
@@ -828,8 +827,10 @@ export default class SimpleThermostat extends LitElement {
     const unit = this.getUnit()
     const entityDomain = config.entity.split('.')[0]
     const setpointCount = Object.keys(_values).length
-    const configuredStepLayout = this.config?.layout?.step
-    const stepLayout = configuredStepLayout ?? 'column'
+    const stepLayout =
+      this.config.enhanced_visuals === false
+        ? (this.config?.layout?.step ?? 'column')
+        : (this.config?.layout?.step ?? 'row')
     const row = stepLayout === 'row'
     const isUnavailable = ['unavailable', 'unknown'].includes(entity.state)
     const safeClass = (value: unknown) =>
@@ -1069,6 +1070,15 @@ export default class SimpleThermostat extends LitElement {
           ...this.config,
           locale: this._hass.locale,
         })
+    const unitText = showUnit && typeof unit === 'string' ? unit : ''
+    const unitSeparator = unitText === '%' ? '' : ' '
+    const valueText =
+      unitText && displayValue.endsWith(unitText)
+        ? displayValue.slice(0, -unitText.length).trimEnd()
+        : displayValue
+    const displayWithUnit = unitText
+      ? `${valueText}${unitSeparator}${unitText}`
+      : displayValue
 
     return html`
       <h3
@@ -1079,7 +1089,7 @@ export default class SimpleThermostat extends LitElement {
         @keydown=${this._onSetpointKeyDown}
         role="button"
         tabindex="0"
-        aria-label=${`${field}: ${displayValue}${showUnit ? ` ${unit}` : ''}`}
+        aria-label=${`${field}: ${displayWithUnit}`}
         class=${[
           'current--value',
           showOffFallback && 'current--off',
@@ -1088,7 +1098,9 @@ export default class SimpleThermostat extends LitElement {
           .filter(Boolean)
           .join(' ')}
       >
-        ${appendUnit(displayValue, showUnit ? unit : false)}
+        ${valueText}${unitText
+          ? html`${unitSeparator}<span class="current--unit">${unitText}</span>`
+          : nothing}
       </h3>
     `
   }
@@ -1240,7 +1252,16 @@ export default class SimpleThermostat extends LitElement {
         this.entity?.state === HVAC_MODES.OFF)
         ? 0
         : 1
-    const modeRows = this.modes?.length ?? 0
+    const modeRows =
+      this.modes?.filter((mode) => {
+        if (mode.hide_when_off === true && this.entity?.state === HVAC_MODES.OFF) {
+          return false
+        }
+        return (mode.list ?? []).some(
+          ({ hide_when_off }) =>
+            !(hide_when_off === true && this.entity?.state === HVAC_MODES.OFF)
+        )
+      }).length ?? 0
     const warningRows =
       this.stepSize < 1 && this.config.decimals === 0 ? 1 : 0
 

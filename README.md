@@ -49,6 +49,10 @@ layout:
   <strong style="color: #41bdf5;">Compatibility:</strong> v4 imports older <code>current_temperature_entity</code>, <code>sensors</code>, and <code>layout.sensors</code> YAML into the current <code>current_value_entity</code>, <code>entities</code>, and <code>layout.entities</code> config shape. If you are staying on v3, use the <a href="https://github.com/Wheemer/simple-thermostat/tree/v3">v3 documentation</a>.
 </div>
 
+<div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
+  <strong style="color: #41bdf5;">Known browser limitation:</strong> Brave Mobile may render some compact entity-row layouts differently from the Home Assistant companion app and other mobile browsers. The Home Assistant app, Firefox Mobile, DuckDuckGo Mobile, and most desktop browsers are expected to render these layouts normally.
+</div>
+
 ## Installation
 
 ### HACS
@@ -172,6 +176,56 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="7" nowrap><strong>v4.2.0</strong></td>
+      <td>Rolls the tested v4.1 prerelease fixes into the normal release channel.</td>
+    </tr>
+    <tr><td>Restores compact and mobile entity-row behavior so labels, values, and units stay paired more reliably.</td></tr>
+    <tr><td>Improves sparse HVAC and fan control rows so buttons stay on one line where practical while preserving enhanced v4 visuals.</td></tr>
+    <tr><td>Restores mode color overrides such as <code>--fan_only-color</code> across active mode and fan-speed controls.</td></tr>
+    <tr><td>Uses Home Assistant fan <code>percentage_step</code> values for fan setpoint buttons.</td></tr>
+    <tr><td>Improves Simple Thermostat Group sizing, remembered selection, navigation, and title more-info behavior.</td></tr>
+    <tr><td>Documents Brave Mobile as a known browser limitation for some compact entity-row layouts.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.1.11</strong></td>
+      <td>Uses Home Assistant fan <code>percentage_step</code> values for setpoint buttons, so fans step through their supported speeds instead of moving one percent at a time.</td>
+    </tr>
+    <tr><td>Improves Lovelace card-size estimates by ignoring controls with no visible options.</td></tr>
+    <tr><td>Keeps setpoint units visually smaller without breaking the value/unit pairing.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.10</strong></td>
+      <td>Restored non-wrapping extra entity labels so mobile sensor names stay together like earlier versions.</td>
+    </tr>
+    <tr><td>Kept left entity alignment scoped to alignment only, without changing label/value wrapping behavior.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.9</strong></td>
+      <td>Restored the compact mobile entity-column width for dual setpoint cards with vertical step buttons.</td>
+    </tr>
+    <tr><td>Added <code>--st-entity-column-min-width</code> so narrow entity-table layouts can be tuned without changing the card config.</td></tr>
+    <tr>
+      <td rowspan="5" nowrap><strong>v4.1.8</strong></td>
+      <td>Restored custom <code>--fan_only-color</code> overrides for Fan only and fan-speed controls across the v4 visual paths.</td>
+    </tr>
+    <tr><td>Kept host, card-mod, and card-level Fan only color overrides from being masked by the card surface defaults.</td></tr>
+    <tr><td>Kept fan controls on the same public color path used by the working v4.0.37 behavior.</td></tr>
+    <tr><td>Made Simple Thermostat Group navigation buttons transparent and tightened the top header spacing.</td></tr>
+    <tr><td>Added CSS regression coverage for Fan only and fan control color overrides.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.1.7</strong></td>
+      <td>Fixed a 4.1 mobile regression where three visible HVAC mode buttons could wrap into two rows.</td>
+    </tr>
+    <tr><td>Kept four-button HVAC rows compact enough for enhanced visuals while preserving the larger primary control styling.</td></tr>
+    <tr><td>Restored the larger primary HVAC icon size for dense mode rows.</td></tr>
+    <tr><td>Made active fan speeds and Fan only use fan-themed coloring instead of resembling Off.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.1.6</strong></td>
+      <td>Restored the older active-mode color cascade so custom active backgrounds and mode colors such as <code>--fan_only-color</code> work together again.</td>
+    </tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.5</strong></td>
+      <td>Restored the default dual-setpoint entity layout so compact/mobile cards no longer get forced into a special split layout.</td>
+    </tr>
+    <tr><td>Fixed relative-time template rows so they render with Home Assistant's standard relative-time element attributes.</td></tr>
     <tr>
       <td rowspan="1" nowrap><strong>v4.1.4</strong></td>
       <td>Fixed active mode button backgrounds so card-level color variables such as <code>--fan_only-color</code> are used directly in both visual styles.</td>

@@ -11,8 +11,14 @@ export const fanAdapter: EntityAdapter = {
     }
   },
 
-  getRange(_attributes: LooseObject): Range {
-    return { min: 0, max: 100, step: 1 }
+  getRange(attributes: LooseObject): Range {
+    const percentageStep = Number(attributes?.percentage_step)
+    const step =
+      Number.isFinite(percentageStep) && percentageStep > 0
+        ? percentageStep
+        : 1
+
+    return { min: 0, max: 100, step }
   },
 
   getCurrentValue(attributes: LooseObject) {

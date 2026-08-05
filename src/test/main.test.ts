@@ -240,10 +240,33 @@ test('estimates card size from visible sections', async () => {
   card.header = { name: 'Living Room', icon: false } as any
   card.showEntities = true
   card.entities = [{ entity: 'sensor.one' }, { entity: 'sensor.two' }] as any
-  card.modes = [{ type: 'hvac' }, { type: 'preset' }] as any
+  card.modes = [
+    { type: 'hvac', list: [{ value: 'heat' }] },
+    { type: 'preset', list: [{ value: 'eco' }] },
+  ] as any
   card.config.hide_setpoint = false
 
   expect(card.getCardSize()).toBe(5)
+})
+
+test('card size ignores controls with no rendered options', async () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'fan.range_hood',
+    header: { name: 'Range Hood Fan' },
+  } as any)
+  card.header = { name: 'Range Hood Fan', icon: 'mdi:fan' } as any
+  card.showEntities = true
+  card.entities = [{ entity: 'light.rangehood_light' }] as any
+  card.entity = { state: 'on' } as any
+  card.modes = [
+    { type: 'preset', list: [] },
+    { type: 'direction', list: [] },
+    { type: 'oscillating', list: [] },
+    { type: 'state', list: [{ value: 'off' }, { value: 'on' }] },
+  ] as any
+
+  expect(card.getCardSize()).toBe(4)
 })
 
 test('does not apply card_mod ha-card surface declarations inline on normal cards', async () => {
@@ -815,12 +838,13 @@ test('climate controls preserve explicit array order', () => {
   expect(card.modes.map(({ type }) => type)).toEqual(['swing', 'fan', 'hvac'])
 })
 
-test('climate controls preserve explicit object order', () => {
+test('climate controls preserve explicit _order from object config', () => {
   const card = createCard()
   card.setConfig({
     entity: 'climate.living_room',
     header: false,
     control: {
+      _order: ['hvac', 'fan', 'swing', 'preset'],
       hvac: true,
       fan: true,
       swing: true,
@@ -856,6 +880,99 @@ test('climate controls preserve explicit object order', () => {
     'swing',
     'preset',
   ])
+})
+
+test('climate controls use display order for object config without _order', () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      hvac: true,
+      fan: true,
+      preset: true,
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          hvac_modes: ['off', 'cool'],
+          fan_modes: ['low', 'high'],
+          fan_mode: 'high',
+          preset_modes: ['eco', 'boost'],
+          preset_mode: 'eco',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  expect(card.modes.map(({ type }) => type)).toEqual(['preset', 'fan', 'hvac'])
+})
+
+test('climate object control config renders fan before hvac without _order', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.acir',
+    header: false,
+    control: {
+      hvac: true,
+      fan: true,
+    },
+    layout: {
+      step: 'row',
+      mode: {
+        headings: false,
+        icons: true,
+        names: true,
+      },
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.acir': {
+        entity_id: 'climate.acir',
+        state: 'cool',
+        attributes: {
+          current_temperature: 21,
+          temperature: 20,
+          min_temp: 16,
+          max_temp: 30,
+          hvac_modes: ['off', 'cool', 'dry', 'fan_only'],
+          fan_modes: ['auto', 'low', 'mid', 'high'],
+          fan_mode: 'auto',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  } as any
+
+  await card.updateComplete
+
+  const rows = Array.from(
+    card.shadowRoot?.querySelectorAll('.controls > .modes') ?? []
+  ).map((row) =>
+    Array.from(row.classList).find((className) =>
+      ['preset', 'fan', 'hvac'].includes(className)
+    )
+  )
+
+  expect(rows).toEqual(['fan', 'hvac'])
 })
 
 test('climate control options preserve explicit YAML order', () => {
@@ -947,6 +1064,106 @@ test('configured control options append unconfigured integration options', () =>
     'medium',
     'high',
   ])
+})
+
+test('plain object control config uses default display order', () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      hvac: true,
+      fan: true,
+      preset: true,
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          hvac_modes: ['off', 'heat', 'cool'],
+          fan_modes: ['auto', 'low'],
+          fan_mode: 'auto',
+          preset_modes: ['none', 'sleep'],
+          preset_mode: 'none',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  expect(card.modes.map(({ type }) => type)).toEqual(['preset', 'fan', 'hvac'])
+})
+
+test('object control config can preserve explicit _order', () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: {
+      _order: ['hvac', 'fan', 'preset'],
+      preset: true,
+      fan: true,
+      hvac: true,
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          hvac_modes: ['off', 'heat', 'cool'],
+          fan_modes: ['auto', 'low'],
+          fan_mode: 'auto',
+          preset_modes: ['none', 'sleep'],
+          preset_mode: 'none',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  expect(card.modes.map(({ type }) => type)).toEqual(['hvac', 'fan', 'preset'])
+})
+
+test('array control config still preserves explicit order', () => {
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: ['hvac', 'fan'],
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          hvac_modes: ['off', 'heat', 'cool'],
+          fan_modes: ['auto', 'low'],
+          fan_mode: 'auto',
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+  }
+
+  expect(card.modes.map(({ type }) => type)).toEqual(['hvac', 'fan'])
 })
 
 test('configured mode order can be supplied explicitly for numeric options', () => {
@@ -1505,6 +1722,53 @@ test('fan card shows current temperature when the fan exposes one', async () => 
   expect(text).toContain('22.4 °C')
 })
 
+test('fan setpoint uses the entity percentage step', async () => {
+  document.body.innerHTML = ''
+  const callService = jest.fn()
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'fan.range_hood',
+    header: false,
+    control: false,
+    setpoint_debounce_ms: 0,
+  } as any)
+  card.hass = {
+    states: {
+      'fan.range_hood': {
+        entity_id: 'fan.range_hood',
+        state: 'on',
+        attributes: {
+          percentage: 25,
+          percentage_step: 25,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+    callService,
+  }
+
+  await card.updateComplete
+
+  const increase = card.shadowRoot?.querySelector(
+    'button.increase'
+  ) as HTMLButtonElement
+
+  expect(card.stepSize).toBe(25)
+  increase.click()
+
+  expect(card._values.percentage).toBe(50)
+  expect(callService).toHaveBeenCalledWith('fan', 'set_percentage', {
+    entity_id: 'fan.range_hood',
+    percentage: 50,
+  })
+})
+
 test('off climate setpoint allows setpoint changes by default', async () => {
   document.body.innerHTML = ''
   const callService = jest.fn()
@@ -1790,7 +2054,7 @@ test('enhanced visuals off keeps legacy column setpoint layout by default', asyn
   ).toBe('hass:chevron-down')
 })
 
-test('unset step layout uses column steppers by default', async () => {
+test('unset step layout uses enhanced row steppers by default', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)
@@ -1825,11 +2089,11 @@ test('unset step layout uses column steppers by default', async () => {
   expect(
     card.shadowRoot
       ?.querySelector('.current-wrapper')
-      ?.classList.contains('column')
+      ?.classList.contains('row')
   ).toBe(true)
   expect(
     (card.shadowRoot?.querySelector('button.increase ha-icon') as any)?.icon
-  ).toBe('hass:chevron-up')
+  ).toBe('mdi:plus')
 })
 
 test('enhanced visuals off preserves explicitly configured row step layout', async () => {
@@ -1936,11 +2200,11 @@ test('dual setpoints with entity rows default to compact column steppers', async
   )
   expect(wrappers).toHaveLength(2)
   expect(
-    wrappers.every((wrapper) => wrapper.classList.contains('column'))
+    wrappers.every((wrapper) => wrapper.classList.contains('row'))
   ).toBe(true)
   expect(
     (card.shadowRoot?.querySelector('button.increase ha-icon') as any)?.icon
-  ).toBe('hass:chevron-up')
+  ).toBe('mdi:plus')
 })
 
 test('target labels can be hidden without changing setpoint controls', async () => {
@@ -1983,6 +2247,47 @@ test('target labels can be hidden without changing setpoint controls', async () 
   expect(card.shadowRoot?.querySelector('.current-wrapper')).not.toBeNull()
   expect(card.shadowRoot?.querySelector('.current--label')).toBeNull()
   expect(card.shadowRoot?.textContent).not.toContain('Target')
+})
+
+test('setpoint unit renders in the smaller unit span', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+  } as any)
+  card.hass = {
+    locale: { language: 'en' },
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: {
+          hvac_modes: ['off', 'heat'],
+          temperature: 21,
+          current_temperature: 20,
+          min_temp: 5,
+          max_temp: 30,
+        },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  } as any
+
+  await card.updateComplete
+
+  const value = card.shadowRoot?.querySelector('.current--value')
+  const unit = value?.querySelector('.current--unit')
+  expect(value?.textContent?.replace(/\s+/g, ' ').trim()).toBe('21.0 °C')
+  expect(unit?.textContent).toBe('°C')
 })
 
 test('dual setpoints with entity rows preserve explicit row steppers', async () => {

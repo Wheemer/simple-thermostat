@@ -4,6 +4,7 @@ import { name as CARD_NAME } from '../package.json'
 import { CardConfig } from './config/card'
 import parseHeader from './config/header'
 import { getEntityAction } from './entityAction'
+import fireEvent from './fireEvent'
 import { HASS, LooseObject } from './types'
 
 type AutoSelectMode = 'off' | 'recent_activity'
@@ -203,7 +204,7 @@ export default class SimpleThermostatGroup extends LitElement {
         );
         min-width: 0;
         box-sizing: border-box;
-        transform: translateY(var(--st-group-header-top-buffer, 6px));
+        transform: translateY(var(--st-group-header-top-buffer, 2px));
       }
 
       .group-title {
@@ -212,6 +213,7 @@ export default class SimpleThermostatGroup extends LitElement {
         overflow: hidden;
         text-overflow: clip;
         white-space: nowrap;
+        transition: color 180ms var(--st-motion-ease, ease);
         font-size: var(
           --st-group-title-fit-size,
           var(
@@ -264,7 +266,7 @@ export default class SimpleThermostatGroup extends LitElement {
         appearance: none;
         border: 0;
         border-radius: 8px;
-        background: var(--secondary-background-color);
+        background: transparent;
         color: var(--primary-text-color);
         display: inline-flex;
         align-items: center;
@@ -273,6 +275,17 @@ export default class SimpleThermostatGroup extends LitElement {
         height: 34px;
         padding: 0;
         cursor: pointer;
+      }
+
+      .group-nav:hover:not(:disabled),
+      .group-nav:focus-visible,
+      .group-menu:hover,
+      .group-menu:focus-visible {
+        background: color-mix(
+          in srgb,
+          var(--primary-text-color) 10%,
+          transparent
+        );
       }
 
       .group-nav ha-icon,
@@ -291,7 +304,6 @@ export default class SimpleThermostatGroup extends LitElement {
         grid-area: menu;
         width: 20px;
         height: 34px;
-        background: transparent;
         color: var(--secondary-text-color);
       }
 
@@ -448,6 +460,26 @@ export default class SimpleThermostatGroup extends LitElement {
         align-items: center;
         min-width: 0;
         flex: 1 1 auto;
+      }
+
+      .header__main.clickable {
+        cursor: pointer;
+      }
+
+      .header__main.clickable:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      .header__main.clickable:focus-visible .header__title {
+        color: var(--st-interactive-tint, var(--primary-color));
+      }
+
+      @media (hover: hover) {
+        .header__main.clickable:hover .header__title {
+          color: var(--st-interactive-tint, var(--primary-color));
+        }
       }
 
       .header__icon-wrap {
@@ -827,6 +859,22 @@ export default class SimpleThermostatGroup extends LitElement {
   private getSelectedState() {
     const target = this.getSelectedTarget()
     return this.hass?.states?.[target.entity]
+  }
+
+  private openSelectedPopover() {
+    const target = this.getSelectedTarget()
+    if (!target?.entity) return
+
+    fireEvent(this, 'hass-more-info', {
+      entityId: target.entity,
+    })
+  }
+
+  private onSelectorHeaderKeyDown(ev: KeyboardEvent) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return
+
+    ev.preventDefault()
+    this.openSelectedPopover()
   }
 
   private getGroupCardClasses() {
@@ -1431,7 +1479,7 @@ export default class SimpleThermostatGroup extends LitElement {
     selector: HTMLElement | null
   ) {
     const fallback =
-      'calc(var(--st-group-header-control-height, 34px) + var(--st-group-header-top-buffer, 6px) + calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 6))'
+      'calc(var(--st-group-header-control-height, 34px) + var(--st-group-header-top-buffer, 2px) + calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 6))'
     const minimum = this.getEmbeddedHeaderReserveMinimum()
 
     if (!selector) return fallback
@@ -1450,7 +1498,7 @@ export default class SimpleThermostatGroup extends LitElement {
       parseFloat(styles.getPropertyValue('--st-group-header-control-height')) ||
       34
     const topBuffer =
-      parseFloat(styles.getPropertyValue('--st-group-header-top-buffer')) || 6
+      parseFloat(styles.getPropertyValue('--st-group-header-top-buffer')) || 2
     const spacing =
       parseFloat(styles.getPropertyValue('--st-spacing')) ||
       parseFloat(styles.getPropertyValue('--st-default-spacing')) ||
@@ -1671,7 +1719,13 @@ export default class SimpleThermostatGroup extends LitElement {
     return html`
       <div class="group-selector">
         <div class="group-header-content">
-          <div class="header__main">
+          <div
+            class="header__main clickable"
+            role="button"
+            tabindex="0"
+            @click=${() => this.openSelectedPopover()}
+            @keydown=${(ev: KeyboardEvent) => this.onSelectorHeaderKeyDown(ev)}
+          >
             ${this.renderHeaderIcon(target)}
             <div class="group-title header__title" title=${label}>${label}</div>
           </div>

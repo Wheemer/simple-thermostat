@@ -170,7 +170,8 @@ export default function renderModeType({
   const isFanPreset =
     type === 'preset' && adapter.getLocalizationDomain() === 'fan'
   const sparseMainControls =
-    (type === 'hvac' || type === 'state') && list.length <= 3
+    (type === 'hvac' || type === 'state' || type === 'fan') &&
+    list.length <= 4
   const compact =
     (type === 'preset' && list.length <= 4) ||
     [
@@ -182,8 +183,8 @@ export default function renderModeType({
     ].includes(type)
   const dense =
     list.length > 4 ||
-    (type === 'hvac' && list.length > 3) ||
-    (type === 'fan' && list.length > 3)
+    (type === 'hvac' && list.length > 4) ||
+    (type === 'fan' && list.length > 4)
   const safeClass = (value: unknown) =>
     String(value).replace(/[^a-z0-9_-]/gi, '')
 

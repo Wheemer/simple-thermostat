@@ -56,6 +56,19 @@ test('fan adapter skips missing percentage setpoint', () => {
   })
 })
 
+test('fan adapter uses supported percentage step for setpoint changes', () => {
+  expect(fanAdapter.getRange({ percentage_step: 25 })).toEqual({
+    min: 0,
+    max: 100,
+    step: 25,
+  })
+  expect(fanAdapter.getRange({ percentage_step: 0 })).toEqual({
+    min: 0,
+    max: 100,
+    step: 1,
+  })
+})
+
 test('fan adapter shows temperature as current value without duplicating percentage', () => {
   expect(fanAdapter.getCurrentValue({ percentage: 55 })).toBe(null)
   expect(fanAdapter.getCurrentValue({ current_temperature: 22.4 })).toBe(22.4)

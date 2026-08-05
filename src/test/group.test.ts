@@ -186,6 +186,51 @@ test('switches the embedded card without rewriting the selected card config', as
   ).toBe('climate.bedroom')
 })
 
+test('opens more-info for the selected card from the group title', async () => {
+  const group = createGroup()
+  const moreInfo = jest.fn()
+  group.addEventListener('hass-more-info', moreInfo)
+
+  group.setConfig({
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const header = group.shadowRoot?.querySelector(
+    '.group-selector .header__main'
+  ) as HTMLElement
+
+  expect(header.classList.contains('clickable')).toBe(true)
+  expect(header.getAttribute('role')).toBe('button')
+  expect(header.getAttribute('tabindex')).toBe('0')
+
+  header.click()
+  expect(moreInfo).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: { entityId: 'climate.living_room' },
+    })
+  )
+
+  const nextButton = group.shadowRoot?.querySelector(
+    'button[aria-label="Next device"]'
+  ) as HTMLButtonElement
+  nextButton.click()
+  await group.updateComplete
+
+  header.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+  )
+  expect(moreInfo).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: { entityId: 'climate.bedroom' },
+    })
+  )
+})
+
 test('keeps nested fan controls on grouped climate cards', async () => {
   const group = createGroup()
 
@@ -479,6 +524,8 @@ test('keeps header controls in fixed columns so embedded content cannot nudge th
   expect(styles).toContain('width: 34px')
   expect(styles).toContain('width: 20px')
   expect(styles).toContain('height: 34px')
+  expect(styles).toContain('background: transparent')
+  expect(styles).toContain('.group-nav:hover:not(:disabled)')
   expect(styles).toContain('transform: translateY(-1px)')
 })
 
@@ -505,6 +552,18 @@ test('uses fit-to-space group title sizing without changing normal card titles',
   expect(styles).toContain('--st-group-title-fit-line-height')
   expect(styles).toContain('--st-group-title-font-size')
   expect(styles).toContain('0.9')
+})
+
+test('uses normal clickable header affordance for the group title', () => {
+  const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
+
+  expect(styles).toContain('.header__main.clickable')
+  expect(styles).toContain('cursor: pointer')
+  expect(styles).toContain('.header__main.clickable:hover .header__title')
+  expect(styles).toContain('.header__main.clickable:focus-visible .header__title')
+  expect(styles).toContain(
+    'color: var(--st-interactive-tint, var(--primary-color))'
+  )
 })
 
 test('does not reserve toggle space when the selected card has no toggles', async () => {
@@ -614,7 +673,7 @@ test('keeps the embedded stock card surface intact without mutating its shadow h
   expect(childHeader.style.display).toBe('')
   expect(
     child.style.getPropertyValue('--st-group-embedded-header-min-height')
-  ).toBe('56px')
+  ).toBe('52px')
 })
 
 test('measures the selector reserve without mutating the embedded shadow DOM', async () => {
@@ -903,7 +962,7 @@ test('fades the embedded card during selector changes', async () => {
   expect(styles).toContain('.embedded-card-host.fading')
   expect(styles).toContain('transition: opacity 120ms ease')
   expect(styles).toContain(
-    'transform: translateY(var(--st-group-header-top-buffer, 6px))'
+    'transform: translateY(var(--st-group-header-top-buffer, 2px))'
   )
   expect(styles).not.toContain(
     'padding-top: var(--st-group-body-top-buffer, 14px)'

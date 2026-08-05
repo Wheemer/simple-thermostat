@@ -36,7 +36,7 @@ test('host isolates internal z-index layers from wrapper overlays', () => {
   expect(hostRule).toContain('isolation: isolate')
 })
 
-test('card body cannot overflow wrapper overlay width', () => {
+test('card body keeps the legacy intrinsic column flow', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -51,43 +51,43 @@ test('card body cannot overflow wrapper overlay width', () => {
   expect(hostRule).toContain('min-width: 0')
   expect(baseCardRule).toContain('max-width: 100%')
   expect(baseCardRule).toContain('overflow: hidden')
-  expect(bodyRule).toContain('grid-auto-columns: minmax(0, 1fr)')
-  expect(bodyRule).toContain('overflow: hidden')
-  expect(bodyChildrenRule).toContain('min-width: 0')
+  expect(bodyRule).toContain('grid-auto-columns: minmax(min-content, auto)')
+  expect(bodyRule).not.toContain('overflow: hidden')
+  expect(bodyChildrenRule).toBe('')
   expect(styles).toContain('.body.has-entities.setpoint-count-2')
   expect(styles).toContain('minmax(min-content, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-1')
   expect(styles).toContain('grid-template-columns: minmax(0, 1fr) max-content')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
-  expect(styles).toContain('minmax(160px, max-content)')
+  expect(styles).toContain(
+    'minmax(var(--st-entity-column-min-width), max-content)'
+  )
   expect(styles).toContain('minmax(max-content, 1fr)')
   expect(styles).not.toContain(
     '.body.has-entities.step-column.setpoint-count-2 .entities.as-table.with-labels'
   )
 })
 
-test('mobile dual setpoints keep entity rows from being squeezed', () => {
+test('dual setpoint step-column cards preserve a readable entity column', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
+  const hostRule = styles.match(/:host\s*\{[^}]*\}/)?.[0] ?? ''
+  const dualStepRule =
+    styles.match(
+      /\.body\.has-entities\.step-column\.setpoint-count-2\s*\{[^}]*\}/
+    )?.[0] ?? ''
 
-  expect(styles).toContain('@media (max-width: 560px)')
-  expect(styles).toContain(
-    '.body.has-entities.step-column.setpoint-count-2 {\n    grid-template-columns: minmax(min-content, 1fr) max-content;'
+  expect(hostRule).toContain('--st-entity-column-min-width: 160px')
+  expect(dualStepRule).toContain(
+    'minmax(var(--st-entity-column-min-width), max-content)'
   )
-  expect(styles).toContain('grid-template-rows: auto auto')
-  expect(styles).toContain(
-    '.body.has-entities.step-column.setpoint-count-2 > .entities'
-  )
-  expect(styles).toContain('grid-row: 1 / span 2')
-  expect(styles).toContain(
-    '.body.has-entities.step-column.setpoint-count-2\n    > .current-wrapper:nth-child(3)'
-  )
+  expect(styles).not.toContain('grid-row: 1 / span 2')
 })
 
-test('default entity table keeps intrinsic two-column label sizing', () => {
+test('default entity table keeps labels and values on one line', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -101,8 +101,7 @@ test('default entity table keeps intrinsic two-column label sizing', () => {
   expect(tableLabelsRule).not.toContain('--st-entity-label-max-width')
   expect(tableLabelsRule).toContain('grid-auto-flow: row')
   expect(tableLabelsRule).toContain('column-gap: 8px')
-  expect(headingRule).toContain('min-width: 0')
-  expect(headingRule).toContain('white-space: normal')
+  expect(headingRule).toContain('white-space: nowrap')
   expect(valueRule).toContain('min-width: max-content')
   expect(valueRule).toContain('white-space: nowrap')
 })
@@ -127,7 +126,7 @@ test('entity table labels can opt into left alignment', () => {
   expect(leftAlignRule).toContain('justify-content: flex-start')
   expect(leftAlignRule).toContain('justify-self: start')
   expect(leftAlignRule).toContain('text-align: left')
-  expect(leftAlignRule).not.toContain('white-space: nowrap')
+  expect(leftAlignRule).not.toContain('white-space')
   expect(leftAlignTableRule).toBe('')
 })
 
@@ -219,20 +218,43 @@ test('inactive mode buttons use a consistent theme-derived overlay surface', () 
   )
 })
 
+test('enhanced sparse hvac controls can fit four buttons on one row', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const sparseRule =
+    styles.match(
+      /\.modes\.hvac\.sparse \.mode-item,\s*\n\.modes\.state\.sparse \.mode-item\s*\{[^}]*\}/
+    )?.[0] ?? ''
+  const mobileSparseRule =
+    styles.match(
+      /ha-card:not\(\.standard-visuals\) \.modes\.hvac\.sparse \.mode-item,\s*\n\s*ha-card:not\(\.standard-visuals\) \.modes\.state\.sparse \.mode-item\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(sparseRule).toContain('min-width: 0')
+  expect(mobileSparseRule).toContain('min-width: 0')
+})
+
 test('mode colors keep the original simple-thermostat assignments', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
+  const hostRule = styles.match(/:host\s*\{[^}]*\}/)?.[0] ?? ''
   const baseCardRule = styles.match(/ha-card\s*\{[^}]*\}/)?.[0] ?? ''
 
+  expect(hostRule).toContain('--fan-color: #4f7f8d')
+  expect(hostRule).toContain('--fan_only-color: var(')
+  expect(hostRule).toContain('--state-climate-fan-only-color')
+  expect(hostRule).toContain('var(--fan-color)')
   expect(baseCardRule).toContain('--auto-color: green')
   expect(baseCardRule).toContain('--heat_cool-color: springgreen')
   expect(baseCardRule).toContain('--cool-color: #2b9af9')
   expect(baseCardRule).toContain('--heat-color: #ff8100')
   expect(baseCardRule).toContain('--manual-color: #44739e')
   expect(baseCardRule).toContain('--off-color: #8a8a8a')
-  expect(baseCardRule).toContain('--fan_only-color: #8a8a8a')
+  expect(baseCardRule).not.toContain('--fan_only-color')
   expect(baseCardRule).toContain('--dry-color: #efbd07')
   expect(baseCardRule).not.toContain('--state-climate-heat-color')
   expect(baseCardRule).not.toContain('--state-climate-cool-color')
@@ -268,7 +290,21 @@ test('fan only mode uses the public fan_only color variable', () => {
   expect(standardFanOnlyRule).not.toMatch(declarationPattern('background'))
 })
 
-test('active mode backgrounds keep semantic mode colors', () => {
+test('fan mode controls keep the public fan_only color path', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const fanRule =
+    styles.match(
+      /\.modes\.fan \.mode-item,\s*\.modes\.fan-preset \.mode-item\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(fanRule).toContain('--st-mode-color: var(--fan_only-color)')
+  expect(fanRule).not.toContain('--st-mode-color: var(--off-color)')
+})
+
+test('active mode backgrounds keep semantic colors while allowing overrides', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -290,12 +326,6 @@ test('active mode backgrounds keep semantic mode colors', () => {
   }
 
   for (const [mode, color] of Object.entries(modeColors)) {
-    const rule =
-      styles.match(
-        new RegExp(
-          `ha-card\\.standard-visuals \\.mode-item\\.active\\.${mode}\\s*\\{[^}]*\\}`
-        )
-      )?.[0] ?? ''
     const enhancedRule =
       styles.match(
         new RegExp(
@@ -303,6 +333,12 @@ test('active mode backgrounds keep semantic mode colors', () => {
         )
       )?.[0] ?? ''
 
+    const rule =
+      styles.match(
+        new RegExp(
+          `ha-card\\.standard-visuals \\.mode-item\\.active\\.${mode}\\s*\\{[^}]*\\}`
+        )
+      )?.[0] ?? ''
     expect(enhancedRule).toContain(
       `--st-mode-computed-active-background: var(${color})`
     )
@@ -371,7 +407,7 @@ test('active mode accent uses each button color by default', () => {
   )
 })
 
-test('sparse main controls keep baseline spacing without shrinking buttons', () => {
+test('sparse main controls keep baseline spacing while allowing four buttons', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -388,10 +424,28 @@ test('sparse main controls keep baseline spacing without shrinking buttons', () 
   expect(sparseMainRule).toContain(
     'min-height: calc(var(--st-control-icon-size) + 8px)'
   )
+  expect(sparseMainRule).toContain('gap: var(--st-sparse-control-gap, 2px)')
+  expect(sparseMainRule).toContain('min-width: 0')
   expect(sparseControlsRule).toBe('')
 })
 
-test('mobile sparse main controls can fit three buttons on one row', () => {
+test('sparse hvac labels stay inline without using the broad clipping rule', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const sparseLabelRule =
+    styles.match(
+      /\.modes\.hvac\.sparse \.mode-label,\s*\.modes\.state\.sparse \.mode-label\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(sparseLabelRule).toContain('white-space: nowrap')
+  expect(styles).not.toMatch(
+    /ha-card:not\(\.standard-visuals\) \.modes\.sparse \.mode-label/
+  )
+})
+
+test('mobile sparse main controls keep enhanced row geometry without forcing wrap', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -403,9 +457,66 @@ test('mobile sparse main controls can fit three buttons on one row', () => {
 
   expect(mobileSparseRule).toContain('flex-direction: row')
   expect(mobileSparseRule).toContain(
-    'min-width: min(100%, var(--st-hvac-mode-min-width, 120px))'
+    'gap: var(--st-sparse-control-gap, 2px)'
   )
-  expect(mobileSparseRule).not.toContain('--st-mode-min-width')
+  expect(mobileSparseRule).toContain('min-width: 0')
+  expect(mobileSparseRule).not.toContain('.modes.fan.sparse')
+})
+
+test('enhanced sparse main controls do not override the row wrapper geometry', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const sparseGroupRule =
+    styles.match(
+      /ha-card:not\(\.standard-visuals\) \.modes\.hvac\.sparse,\s*ha-card:not\(\.standard-visuals\) \.modes\.state\.sparse,\s*ha-card:not\(\.standard-visuals\) \.modes\.fan\.sparse\s*\{[^}]*\}/
+    )?.[0] ?? ''
+  const sparseItemRule =
+    styles.match(/\.modes\.hvac\.sparse \.mode-item,\s*\.modes\.state\.sparse \.mode-item\s*\{[^}]*\}/)
+      ?.[0] ?? ''
+
+  expect(sparseGroupRule).toBe('')
+  expect(sparseItemRule).toContain('min-width: 0')
+})
+
+test('enhanced sparse main controls keep normal v4 icon and text sizing', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+
+  expect(styles).not.toContain('--st-sparse-mode-font-size')
+  expect(styles).not.toContain('--st-sparse-mode-icon-size')
+})
+
+test('dense hvac controls keep compact stacked layout', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const denseHvacRule =
+    styles.match(/\.modes\.hvac\.dense \.mode-item\s*\{[^}]*\}/)?.[0] ?? ''
+
+  expect(denseHvacRule).toContain('flex-direction: column')
+  expect(denseHvacRule).toContain('gap: 0')
+  expect(denseHvacRule).not.toContain('flex-direction: row')
+})
+
+test('dense main controls keep primary icon sizing', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const denseMainIconRule =
+    styles.match(
+      /\.modes\.hvac\.dense \.mode-icon,\s*\.modes\.state\.dense \.mode-icon\s*\{[^}]*\}/
+    )?.[0] ?? ''
+
+  expect(denseMainIconRule).toContain(
+    '--iron-icon-width: var(--st-control-icon-size)'
+  )
+  expect(denseMainIconRule).toContain('width: var(--st-control-icon-size)')
 })
 
 test('standard visual mode rows keep visible options evenly sized', () => {

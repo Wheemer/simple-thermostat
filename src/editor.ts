@@ -395,7 +395,7 @@ function materializeControlOrder(config: CardConfig) {
   }
 
   let changed =
-    !Array.isArray(control._order) ||
+    Array.isArray(control._order) &&
     !areStringArraysEqual(control._order, orderedTypes)
 
   const nextConfig = {
@@ -407,11 +407,13 @@ function materializeControlOrder(config: CardConfig) {
         changed = changed || materialized.changed
         return result
       },
-      { _order: orderedTypes } as ModeControl
+      (Array.isArray(control._order)
+        ? { _order: orderedTypes }
+        : {}) as ModeControl
     ),
   }
 
-  return { config: nextConfig, changed }
+  return { config: changed ? nextConfig : config, changed }
 }
 
 export function buildSchema(config: CardConfig, hass?: HASS) {
@@ -723,7 +725,10 @@ export default class SimpleThermostatEditor extends LitElement {
       'layout.mode.headings': this.config.layout?.mode?.headings === true,
       decimals: this.config.decimals ?? '',
       unit: typeof this.config.unit === 'string' ? this.config.unit : '',
-      'layout.step': this.config.layout?.step ?? 'column',
+      'layout.step':
+        this.config.enhanced_visuals === false
+          ? (this.config.layout?.step ?? 'column')
+          : (this.config.layout?.step ?? 'row'),
       step_size:
         this.config.step_size != null ? String(this.config.step_size) : 'auto',
       fallback: this.config.fallback ?? '',
