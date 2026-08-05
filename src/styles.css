@@ -818,6 +818,11 @@ ha-card.cooling .header__icon-wrap::before {
     var(--st-mode-color, var(--primary-color)) 68%,
     var(--primary-text-color) 32%
   );
+  --st-mode-computed-active-background: var(
+    --st-mode-color,
+    var(--primary-color)
+  );
+  --st-mode-computed-active-accent-color: var(--st-mode-accent-color);
   --st-mode-active-icon-color: color-mix(
     in srgb,
     var(--st-mode-color, var(--primary-color)) 42%,
@@ -828,7 +833,6 @@ ha-card.cooling .header__icon-wrap::before {
     currentColor 50%,
     var(--st-mode-color, var(--primary-color)) 50%
   );
-  --st-mode-active-accent-color: var(--st-mode-accent-color);
   --st-mode-neutral-hover-background: color-mix(
     in srgb,
     var(--st-mode-background, var(--secondary-background-color)) 88%,
@@ -891,13 +895,16 @@ ha-card.cooling .header__icon-wrap::before {
   &.active:hover {
     background: var(
       --st-mode-active-background,
-      var(--st-mode-color, var(--primary-color))
+      var(--st-mode-computed-active-background)
     );
     color: var(--st-mode-active-color, var(--text-primary-color));
     box-shadow: inset 0 -2px 0
       var(
         --st-mode-active-accent-color,
-        color-mix(in srgb, var(--text-primary-color) 72%, transparent)
+        var(
+          --st-mode-computed-active-accent-color,
+          color-mix(in srgb, var(--text-primary-color) 72%, transparent)
+        )
       );
     filter: none;
     transform: none;
@@ -923,7 +930,10 @@ ha-card.cooling .header__icon-wrap::before {
 .mode-item.active::after {
   background: var(
     --st-mode-active-accent-color,
-    color-mix(in srgb, var(--text-primary-color) 72%, transparent)
+    var(
+      --st-mode-computed-active-accent-color,
+      color-mix(in srgb, var(--text-primary-color) 72%, transparent)
+    )
   );
   opacity: var(--st-mode-active-accent-opacity, 0.64);
   transform: scaleX(1);
@@ -1091,7 +1101,7 @@ ha-card:not(.standard-visuals)
   ha-card.standard-visuals .mode-item.active:hover {
     background: var(
       --st-mode-active-background,
-      var(--st-mode-color, var(--primary-color))
+      var(--st-mode-computed-active-background)
     );
     color: var(--st-mode-active-color, var(--text-primary-color));
   }
@@ -1509,72 +1519,65 @@ ha-card.standard-visuals .mode-item.active {
 
 ha-card .mode-item.active.off,
 ha-card .mode-item.active.off:hover {
-  background: var(--off-color);
-  --st-mode-active-background: var(--off-color);
+  --st-mode-computed-active-background: var(--off-color);
 }
 
 ha-card .mode-item.active.heat,
 ha-card .mode-item.active.heat:hover {
-  background: var(--heat-color);
-  --st-mode-active-background: var(--heat-color);
+  --st-mode-computed-active-background: var(--heat-color);
 }
 
 ha-card .mode-item.active.cool,
 ha-card .mode-item.active.cool:hover {
-  background: var(--cool-color);
-  --st-mode-active-background: var(--cool-color);
+  --st-mode-computed-active-background: var(--cool-color);
 }
 
 ha-card .mode-item.active.heat_cool,
 ha-card .mode-item.active.heat_cool:hover {
-  background: var(--heat_cool-color);
-  --st-mode-active-background: var(--heat_cool-color);
+  --st-mode-computed-active-background: var(--heat_cool-color);
 }
 
 ha-card .mode-item.active.auto,
 ha-card .mode-item.active.auto:hover {
-  background: var(--auto-color);
-  --st-mode-active-background: var(--auto-color);
+  --st-mode-computed-active-background: var(--auto-color);
 }
 
 ha-card .mode-item.active.dry,
 ha-card .mode-item.active.dry:hover {
-  background: var(--dry-color);
-  --st-mode-active-background: var(--dry-color);
+  --st-mode-computed-active-background: var(--dry-color);
 }
 
 ha-card .mode-item.active.fan_only,
 ha-card .mode-item.active.fan_only:hover {
-  background: var(--fan_only-color);
-  --st-mode-active-background: var(--fan_only-color);
+  --st-mode-computed-active-background: var(--fan_only-color);
 }
 
 ha-card.standard-visuals .mode-item.active.off {
-  background: var(--off-color);
+  --st-mode-computed-active-background: var(--off-color);
 }
 
 ha-card.standard-visuals .mode-item.active.heat {
-  background: var(--heat-color);
+  --st-mode-computed-active-background: var(--heat-color);
 }
 
 ha-card.standard-visuals .mode-item.active.cool {
-  background: var(--cool-color);
+  --st-mode-computed-active-background: var(--cool-color);
 }
 
 ha-card.standard-visuals .mode-item.active.heat_cool {
-  background: var(--heat_cool-color);
+  --st-mode-computed-active-background: var(--heat_cool-color);
 }
 
 ha-card.standard-visuals .mode-item.active.auto {
-  background: var(--auto-color);
+  --st-mode-computed-active-background: var(--auto-color);
 }
 
 ha-card.standard-visuals .mode-item.active.dry {
-  background: var(--dry-color);
+  --st-mode-computed-active-background: var(--dry-color);
 }
 
 ha-card.standard-visuals .mode-item.active.fan_only {
-  background: var(--fan_only-color);
+  --st-mode-computed-active-background: var(--fan_only-color);
 }
 
 ha-card.standard-visuals .mode-item:active,

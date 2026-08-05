@@ -88,6 +88,13 @@ export default function normalizeConfig(
   }
   const legacyVersion = normalized.version === 3
 
+  if (
+    legacyVersion &&
+    typeof normalized.enhanced_visuals === 'undefined'
+  ) {
+    normalized.enhanced_visuals = false
+  }
+
   if (legacyVersion && !normalized.layout?.step) {
     normalized.layout = {
       ...(normalized.layout ?? {}),

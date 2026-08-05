@@ -1,6 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 
+const declarationPattern = (property: string) =>
+  new RegExp(`(^|\\n)\\s*${property.replace(/-/g, '\\-')}\\s*:`, 'm')
+
 test('card styles do not use CSS containment for responsive layout', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
@@ -252,13 +255,17 @@ test('fan only mode uses the public fan_only color variable', () => {
     )?.[0] ?? ''
 
   expect(fanOnlyRule).toContain('--st-mode-color: var(--fan_only-color)')
-  expect(enhancedFanOnlyRule).toContain('background: var(--fan_only-color)')
   expect(enhancedFanOnlyRule).toContain(
-    '--st-mode-active-background: var(--fan_only-color)'
+    '--st-mode-computed-active-background: var(--fan_only-color)'
   )
+  expect(enhancedFanOnlyRule).not.toMatch(
+    declarationPattern('--st-mode-active-background')
+  )
+  expect(enhancedFanOnlyRule).not.toMatch(declarationPattern('background'))
   expect(standardFanOnlyRule).toContain(
-    'background: var(--fan_only-color)'
+    '--st-mode-computed-active-background: var(--fan_only-color)'
   )
+  expect(standardFanOnlyRule).not.toMatch(declarationPattern('background'))
 })
 
 test('active mode backgrounds keep semantic mode colors', () => {
@@ -269,7 +276,8 @@ test('active mode backgrounds keep semantic mode colors', () => {
   const activeRule =
     styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
 
-  expect(activeRule).toContain('var(--st-mode-color, var(--primary-color))')
+  expect(activeRule).toContain('--st-mode-active-background')
+  expect(activeRule).toContain('--st-mode-computed-active-background')
   expect(activeRule).toContain('box-shadow: inset 0 -2px 0')
 
   const modeColors: Record<string, string> = {
@@ -295,12 +303,45 @@ test('active mode backgrounds keep semantic mode colors', () => {
         )
       )?.[0] ?? ''
 
-    expect(enhancedRule).toContain(`background: var(${color})`)
     expect(enhancedRule).toContain(
-      `--st-mode-active-background: var(${color})`
+      `--st-mode-computed-active-background: var(${color})`
     )
-    expect(rule).toContain(`background: var(${color})`)
+    expect(enhancedRule).not.toMatch(
+      declarationPattern('--st-mode-active-background')
+    )
+    expect(enhancedRule).not.toMatch(declarationPattern('background'))
+    expect(rule).toContain(
+      `--st-mode-computed-active-background: var(${color})`
+    )
+    expect(rule).not.toMatch(declarationPattern('background'))
   }
+})
+
+test('mode defaults do not overwrite card-level active overrides', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const modeItemRule = styles.match(/\.mode-item\s*\{[\s\S]*?\n\}/)?.[0] ?? ''
+  const activeModeRules = [
+    ...styles.matchAll(
+      /ha-card(?:\.standard-visuals)? \.mode-item\.active[\s\S]*?\{[^}]*\}/g
+    ),
+  ].map((match) => match[0])
+  const publicOverrideDeclarations = [
+    '--st-mode-active-background',
+    '--st-mode-active-accent-color',
+  ]
+
+  for (const property of publicOverrideDeclarations) {
+    expect(modeItemRule).not.toMatch(declarationPattern(property))
+    for (const rule of activeModeRules) {
+      expect(rule).not.toMatch(declarationPattern(property))
+    }
+  }
+
+  expect(modeItemRule).toContain('--st-mode-computed-active-background')
+  expect(modeItemRule).toContain('--st-mode-computed-active-accent-color')
 })
 
 test('active mode accent uses each button color by default', () => {
@@ -314,16 +355,17 @@ test('active mode accent uses each button color by default', () => {
     styles.match(/&\.active,\s*&\.active:hover\s*\{[^}]*\}/)?.[0] ?? ''
 
   expect(styles).toContain(
+    '--st-mode-computed-active-accent-color: var(--st-mode-accent-color)'
+  )
+  expect(styles).not.toContain(
     '--st-mode-active-accent-color: var(--st-mode-accent-color)'
   )
   expect(activeRule).toContain('--st-mode-active-accent-color')
-  expect(activeRule).not.toContain('--st-mode-default-active-accent-color')
+  expect(activeRule).toContain('--st-mode-computed-active-accent-color')
   expect(styles).toMatch(
     /\.mode-item\.active::after\s*\{[\s\S]*?background:\s*var\(\s*--st-mode-active-accent-color/
   )
-  expect(activeModeAccentRule).not.toContain(
-    '--st-mode-default-active-accent-color'
-  )
+  expect(activeModeAccentRule).toContain('--st-mode-computed-active-accent-color')
   expect(activeModeAccentRule).toContain(
     'opacity: var(--st-mode-active-accent-opacity, 0.64)'
   )

@@ -2069,7 +2069,7 @@ test('legacy config names are normalized to v4 names', () => {
   expect((card.config as any).sensors).toBeUndefined()
   expect(card.config.layout?.entities).toEqual({ type: 'table', labels: true })
   expect(card.config.layout?.step).toBe('column')
-  expect(card.config.enhanced_visuals).toBeUndefined()
+  expect(card.config.enhanced_visuals).toBe(false)
   expect((card.config.layout as any)?.sensors).toBeUndefined()
   expect(card.config.label?.temperature).toBe('Currently')
   expect(card.config.label?.state).toBe('State')
@@ -2077,7 +2077,7 @@ test('legacy config names are normalized to v4 names', () => {
   expect((card.config as any).version).toBeUndefined()
 })
 
-test('legacy version 3 import does not change enhanced visuals choice', () => {
+test('legacy version 3 import uses classic visuals unless explicitly opted in', () => {
   document.body.innerHTML = ''
   const card = createCard()
 
@@ -2086,7 +2086,7 @@ test('legacy version 3 import does not change enhanced visuals choice', () => {
     version: 3,
   } as any)
 
-  expect(card.config.enhanced_visuals).toBeUndefined()
+  expect(card.config.enhanced_visuals).toBe(false)
   expect((card.config as any).version).toBeUndefined()
 
   card.setConfig({
