@@ -430,7 +430,7 @@ test('css filter escapes content and strips unsafe style syntax', () => {
     },
     details: {
       template:
-        "{{ '<img src=x onerror=alert(1)>' | css({ color: 'red; background:url(javascript:alert(1))' }) }}",
+        "{{ '<img src=x onerror=alert(1)>' | css({ color: 'red; background:url(javascript:alert(1)); border-image:data:text/html; cursor:vbscript:msgbox(1)' }) }}",
     },
     openEntityPopover: () => undefined,
     localize: (value: string) => value,
@@ -445,6 +445,8 @@ test('css filter escapes content and strips unsafe style syntax', () => {
   expect(value.querySelector('img')).toBe(null)
   expect(value.textContent).toContain('<img src=x onerror=alert(1)>')
   expect(span.getAttribute('style')).not.toContain('javascript')
+  expect(span.getAttribute('style')).not.toContain('data:')
+  expect(span.getAttribute('style')).not.toContain('vbscript')
   expect(span.getAttribute('style')).not.toContain('url(')
 })
 

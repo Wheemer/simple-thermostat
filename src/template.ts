@@ -25,7 +25,7 @@ function safeCssValue(value: unknown): string {
   return String(value ?? '')
     .replace(/url\s*\([^)]*\)/gi, '')
     .replace(/expression\s*\([^)]*\)/gi, '')
-    .replace(/javascript:/gi, '')
+    .replace(/(?:javascript|data|vbscript)\s*:/gi, '')
     .replace(/[<>"'`;{}]/g, '')
 }
 

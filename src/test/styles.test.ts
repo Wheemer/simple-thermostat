@@ -1,8 +1,11 @@
 import fs from 'fs'
 import path from 'path'
 
+const regexMetaPattern = /[.*+?^${}()|[\]\\]/g
+const escapeRegExp = (value: string) => value.replace(regexMetaPattern, '\\$&')
+
 const declarationPattern = (property: string) =>
-  new RegExp(`(^|\\n)\\s*${property.replace(/-/g, '\\-')}\\s*:`, 'm')
+  new RegExp(`(^|\\n)\\s*${escapeRegExp(property)}\\s*:`, 'm')
 
 test('card styles do not use CSS containment for responsive layout', () => {
   const styles = fs.readFileSync(
