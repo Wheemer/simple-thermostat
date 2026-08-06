@@ -166,6 +166,8 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
 - scoped custom CSS,
 - the full option reference.
 
+Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`. The existing row layout remains the default; use `display: row` explicitly when you want to force the classic label/value row style.
+
 ## Changelog
 
 <table border="1" cellspacing="0" cellpadding="6">

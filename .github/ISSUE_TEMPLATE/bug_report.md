@@ -1,33 +1,20 @@
 ---
 name: Bug report
-about: A bug you see in the latest release
+about: Something is not working correctly
 title: ''
 labels: bug
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**What happened?**
+Describe the issue in your own words.
 
-**To Reproduce**
-1. Click on '....'
-2. See error
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**Optional details**
+Add anything that helps explain it, such as YAML, screenshots, logs, versions, or browser/mobile app details.
 
 ```yaml
-# The least amount of code possible to reproduce my error
-type: 'custom:simple-thermostat'
+# Optional card config
+type: custom:simple-thermostat
 entity: ...
 ```
-
-**Screenshots**
-Always include a screenshot
-
-**Browser**
- - OS: Mac/Win/iOS/Android
- - Browser: Chrome/Firefox/Mobile app?
- - Simple Thermostat version from browser console: 
- - Home Assistant version:
