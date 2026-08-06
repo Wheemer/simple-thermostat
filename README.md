@@ -179,6 +179,11 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.2.2</strong></td>
+      <td>Fixes the visual editor's extra entity display dropdowns so selections apply and the menu closes normally.</td>
+    </tr>
+    <tr><td>Allows extra entity display controls to return to the default row behavior from the editor.</td></tr>
+    <tr>
       <td rowspan="7" nowrap><strong>v4.2.1</strong></td>
       <td>Keeps card-level active mode overrides working while preserving the semantic active colors introduced in v4.</td>
     </tr>

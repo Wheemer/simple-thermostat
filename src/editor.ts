@@ -148,6 +148,10 @@ const ENTITY_DISPLAY_OPTIONS = [
   { value: 'toggle', label: 'Toggles' },
   { value: 'chip', label: 'Chips' },
 ]
+const ENTITY_DISPLAY_SELECT_OPTIONS = [
+  { value: '', label: 'Default' },
+  ...ENTITY_DISPLAY_OPTIONS,
+]
 const ENTITY_DISPLAY_VALUES = ENTITY_DISPLAY_OPTIONS.map(
   (option) => option.value
 ) as Array<EntityDisplay>
@@ -238,6 +242,27 @@ function deleteNested(obj: Record<string, unknown>, path: string) {
     target = target[part] as Record<string, unknown>
   }
   delete target[parts[0]]
+}
+
+function getSelectValue(ev: Event) {
+  const target = ev.target as HTMLInputElement & {
+    selected?: {
+      value?: string
+      getAttribute?: (name: string) => string | null
+    }
+  }
+  const detail = (ev as CustomEvent).detail as
+    | { value?: string; item?: { value?: string } }
+    | undefined
+
+  return (
+    detail?.value ??
+    detail?.item?.value ??
+    target.selected?.value ??
+    target.selected?.getAttribute?.('value') ??
+    target.value ??
+    ''
+  )
 }
 
 function isModeEnabled(
@@ -592,7 +617,7 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
               selector: {
                 select: {
                   mode: 'dropdown',
-                  options: ENTITY_DISPLAY_OPTIONS,
+                  options: ENTITY_DISPLAY_SELECT_OPTIONS,
                 },
               },
             },
@@ -773,8 +798,7 @@ export default class SimpleThermostatEditor extends LitElement {
       'label.state': this.config.label?.state ?? '',
       'label.setpoint': this.config.label?.setpoint ?? '',
       'layout.entities.type': this.config.layout?.entities?.type ?? 'table',
-      'layout.entities.display':
-        this.config.layout?.entities?.display ?? 'row',
+      'layout.entities.display': this.config.layout?.entities?.display ?? '',
       'layout.entities.labels': this.config.layout?.entities?.labels !== false,
       'layout.entities.separator':
         this.config.layout?.entities?.separator !== false,
@@ -992,15 +1016,31 @@ export default class SimpleThermostatEditor extends LitElement {
                   ></ha-icon-picker>
                   <ha-select
                     label="Display"
+                    clearable
                     .value=${entity.display ?? ''}
-                    @selected=${(ev: CustomEvent) =>
-                      this._updateEntityRow(index, 'display', ev.detail.value)}
-                    @closed=${(ev: Event) => ev.stopPropagation()}
+                    @value-changed=${(ev: Event) =>
+                      this._updateEntityRow(
+                        index,
+                        'display',
+                        getSelectValue(ev)
+                      )}
+                    @selected=${(ev: Event) =>
+                      this._updateEntityRow(
+                        index,
+                        'display',
+                        getSelectValue(ev)
+                      )}
+                    @change=${(ev: Event) =>
+                      this._updateEntityRow(
+                        index,
+                        'display',
+                        getSelectValue(ev)
+                      )}
                   >
                     <mwc-list-item value="">Default</mwc-list-item>
                     ${ENTITY_DISPLAY_OPTIONS.map(
                       (option) => html`
-                        <mwc-list-item .value=${option.value}>
+                        <mwc-list-item value=${option.value}>
                           ${option.label}
                         </mwc-list-item>
                       `

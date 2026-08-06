@@ -223,7 +223,9 @@ test('editor materializes option order without inventing top-level control order
     },
   } as any)
 
-  expect((editor.config.control as Record<string, unknown>)._order).toBeUndefined()
+  expect(
+    (editor.config.control as Record<string, unknown>)._order
+  ).toBeUndefined()
   expect(
     (
       (editor.config.control as Record<string, any>).fan as Record<
@@ -364,6 +366,30 @@ test('extra entity row layout controls are prominent in their own section', () =
   )
 })
 
+test('extra entity display default stays clearable in editor form data', () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  const editor = new SimpleThermostatEditor()
+  editor.setConfig({ entity: 'climate.living_room' } as any)
+
+  expect(editor._buildFormData()['layout.entities.display']).toBe('')
+
+  const updated = editor._applyFormChange({
+    'layout.entities.display': 'auto',
+  } as any)
+  expect(updated.layout?.entities?.display).toBe('auto')
+
+  editor.setConfig(updated)
+  const cleared = editor._applyFormChange({
+    'layout.entities.display': '',
+  } as any)
+  expect(cleared.layout?.entities?.display).toBeUndefined()
+})
+
 test('toggle icon control only shows after a header toggle entity is configured', () => {
   const hass = {
     performAction,
@@ -446,6 +472,8 @@ test('extra entity row editor adds and updates common row fields', () => {
   editor._updateEntityRow(0, 'entity', 'sensor.living_room_humidity')
   editor._updateEntityRow(0, 'name', 'Humidity')
   editor._updateEntityRow(0, 'icon', 'mdi:water-percent')
+  editor._updateEntityRow(0, 'display', 'chip')
+  editor._updateEntityRow(0, 'display', '')
   editor._updateEntityRow(0, 'display', 'chip')
 
   expect(editor.config.entities).toEqual([
