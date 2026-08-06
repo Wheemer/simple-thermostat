@@ -179,10 +179,12 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
   </thead>
   <tbody>
     <tr>
-      <td rowspan="2" nowrap><strong>v4.2.3</strong></td>
-      <td>Resolves dependency security alerts raised after the Dependabot merge.</td>
+      <td rowspan="4" nowrap><strong>v4.2.3</strong></td>
+      <td>Updates shell-quote through concurrently to resolve the Dependabot security alert.</td>
     </tr>
-    <tr><td>Keeps the v4.2.2 editor dropdown fixes while shipping a clean dependency audit.</td></tr>
+    <tr><td>Updates postcss and pins vulnerable transitive packages to patched versions.</td></tr>
+    <tr><td>Refreshes Babel, js-yaml, brace-expansion, nanoid, and svgo through the lockfile cleanup.</td></tr>
+    <tr><td>Confirms the package audit is clean after the dependency updates.</td></tr>
     <tr>
       <td rowspan="2" nowrap><strong>v4.2.2</strong></td>
       <td>Fixes the visual editor's extra entity display dropdowns so selections apply and the menu closes normally.</td>
