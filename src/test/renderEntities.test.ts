@@ -511,3 +511,57 @@ test('separator-free left-aligned entity rows keep labels and values paired', ()
     [...entities!.children].map((child) => child.textContent?.trim())
   ).toEqual(['Guest', '72', 'Motion', 'Clear', 'Office', '74'])
 })
+
+test('card-level entity display auto renders domain-aware extra controls', () => {
+  const result = renderEntities({
+    _hide: { temperature: true, state: true },
+    entity: {
+      entity_id: 'climate.garage_heat',
+      state: 'heat',
+      attributes: {},
+    },
+    unit: '°C',
+    hass: {
+      states: {
+        'switch.dehumidifier': {
+          entity_id: 'switch.dehumidifier',
+          state: 'on',
+          attributes: {},
+        },
+      },
+      formatEntityState: (stateObj) => stateObj.state,
+    },
+    entities: [
+      {
+        name: 'Dehumidifier',
+        state: {
+          entity_id: 'switch.dehumidifier',
+          state: 'on',
+          attributes: {},
+        },
+      },
+    ],
+    config: {
+      entity: 'climate.garage_heat',
+      layout: {
+        entities: {
+          display: 'auto',
+        },
+      },
+    },
+    localize: (value: string) => value,
+    openEntityPopover: () => undefined,
+    adapter: climateAdapter,
+  })
+
+  const container = freshContainer()
+  render(result, container)
+
+  const action = container.querySelector('.entity-action')
+
+  expect(action?.classList.contains('display-toggle')).toBe(true)
+  expect(container.querySelector('.entity-heading')).toBeNull()
+  expect(action?.textContent).toContain('Dehumidifier')
+  expect(container.textContent?.match(/Dehumidifier/g)).toHaveLength(1)
+  expect(container.querySelector('ha-switch')).toBe(null)
+})

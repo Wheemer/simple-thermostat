@@ -76,6 +76,7 @@ interface CardConfig {
     entities: {
       type: 'table' | 'list'
       labels: boolean
+      display?: 'row' | 'auto' | 'button' | 'toggle' | 'chip'
       separator?: boolean
       alignment?: 'left' | 'right'
     }

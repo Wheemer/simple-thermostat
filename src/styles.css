@@ -332,6 +332,66 @@ ha-card.loading {
   justify-self: start;
   text-align: left;
 }
+.entity-action {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  border: 0;
+  border-radius: var(--st-mode-border-radius, var(--st-default-mode-radius));
+  padding: var(--st-spacing, var(--st-default-spacing))
+    calc(var(--st-spacing, var(--st-default-spacing)) * 2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--st-spacing, var(--st-default-spacing)) * 1.5);
+  color: var(--secondary-text-color);
+  background: var(--st-mode-background, var(--st-mode-surface-background));
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    background-color
+      var(--st-mode-transition, var(--st-default-mode-transition)),
+    color var(--st-mode-transition, var(--st-default-mode-transition)),
+    box-shadow var(--st-mode-transition, var(--st-default-mode-transition)),
+    filter var(--st-mode-transition, var(--st-default-mode-transition));
+}
+.entity-action ha-icon {
+  --mdc-icon-size: var(--st-entity-action-icon-size, 20px);
+  width: var(--st-entity-action-icon-size, 20px);
+  height: var(--st-entity-action-icon-size, 20px);
+  flex: 0 0 auto;
+}
+.entity-action__label,
+.entity-action__state {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.entity-action__state {
+  color: var(--secondary-text-color);
+  font-size: 0.9em;
+}
+.entity-action.display-chip {
+  width: auto;
+  justify-self: start;
+  border-radius: 999px;
+  padding-inline: calc(var(--st-spacing, var(--st-default-spacing)) * 2.5);
+}
+.entity-action.active,
+.entity-action.state-on {
+  color: var(--st-mode-active-color, var(--text-primary-color));
+  background: var(
+    --st-mode-active-background,
+    var(--st-toggle-color, var(--primary-color))
+  );
+}
+.entity-action:hover {
+  filter: brightness(1.08);
+}
 
 .entities:empty {
   display: none;

@@ -521,6 +521,123 @@ test('toggle entity rows expose domain, state, and icon classes for styling', ()
   expect(value.querySelector('ha-switch')).not.toBeNull()
 })
 
+test('entity display toggle renders a button and toggles the entity', () => {
+  const performAction = jest.fn()
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      performAction,
+      states: {
+        'switch.dehumidifier': {
+          entity_id: 'switch.dehumidifier',
+          state: 'off',
+          attributes: {},
+        },
+      },
+      formatEntityState: () => 'Off',
+    },
+    state: {
+      entity_id: 'switch.dehumidifier',
+      state: 'off',
+      attributes: {},
+    },
+    details: {
+      heading: 'Dehumidifier',
+      display: 'toggle',
+    },
+    openEntityPopover: () => undefined,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  const action = container.querySelector('.entity-action') as HTMLElement
+  expect(action.classList.contains('display-toggle')).toBe(true)
+  expect(container.querySelector('.entity-heading')).toBeNull()
+  expect(action.textContent).toContain('Dehumidifier')
+  expect(container.textContent?.match(/Dehumidifier/g)).toHaveLength(1)
+  expect(container.querySelector('ha-switch')).toBeNull()
+
+  action.click()
+
+  expect(performAction).toHaveBeenCalledWith({
+    action: 'homeassistant.turn_on',
+    data: { entity_id: 'switch.dehumidifier' },
+  })
+})
+
+test('entity display button calls the entity action for momentary domains', () => {
+  const callService = jest.fn()
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      callService,
+      formatEntityState: () => 'Idle',
+    },
+    state: {
+      entity_id: 'button.restart_hvac',
+      state: 'idle',
+      attributes: {},
+    },
+    details: {
+      heading: 'Restart',
+      display: 'button',
+    },
+    openEntityPopover: () => undefined,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  const action = container.querySelector('.entity-action') as HTMLElement
+  expect(container.querySelector('.entity-heading')).toBeNull()
+  expect(action.textContent).toContain('Restart')
+  expect(container.textContent?.match(/Restart/g)).toHaveLength(1)
+
+  action.click()
+
+  expect(callService).toHaveBeenCalledWith('button', 'press', {
+    entity_id: 'button.restart_hvac',
+  })
+})
+
+test('entity display chip opens more info for passive entities', () => {
+  const openEntityPopover = jest.fn()
+  const result = renderInfoItem({
+    hide: false,
+    hass: {
+      formatEntityState: () => '48%',
+    },
+    state: {
+      entity_id: 'sensor.humidity',
+      state: '48',
+      attributes: {
+        unit_of_measurement: '%',
+      },
+    },
+    details: {
+      heading: 'Humidity',
+      display: 'chip',
+    },
+    openEntityPopover,
+  })
+
+  const container = document.createElement('div')
+  document.body.replaceChildren(container)
+  render(result, container)
+
+  const action = container.querySelector('.entity-action') as HTMLElement
+  expect(container.querySelector('.entity-heading')).toBeNull()
+  expect(action.textContent).toContain('Humidity')
+  expect(container.textContent?.match(/Humidity/g)).toHaveLength(1)
+
+  action.click()
+
+  expect(openEntityPopover).toHaveBeenCalledWith('sensor.humidity')
+})
+
 test('active timer entity rows render a live remaining countdown', async () => {
   jest.useFakeTimers().setSystemTime(new Date('2026-07-04T12:00:00Z'))
 

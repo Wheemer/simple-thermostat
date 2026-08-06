@@ -79,7 +79,15 @@ export default function renderEntities({
       },
     }),
     ...((entities ?? []).map(
-      ({ name, state, show, _hide_when_off, hide_when_off, ...rest }) => {
+      ({
+        name,
+        state,
+        show,
+        display,
+        _hide_when_off,
+        hide_when_off,
+        ...rest
+      }) => {
         const hideWhenOff = _hide_when_off === true || hide_when_off === true
 
         return renderInfoItem({
@@ -96,6 +104,7 @@ export default function renderEntities({
             config,
             variables: config.variables,
             separator: showSeparator,
+            display: display ?? config?.layout?.entities?.display,
           },
         })
       }

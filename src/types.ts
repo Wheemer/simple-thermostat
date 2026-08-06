@@ -5,6 +5,7 @@ export interface ConfigEntity {
   id?: string
   name?: string
   icon?: string
+  display?: 'row' | 'auto' | 'button' | 'toggle' | 'chip'
   attribute?: string
   unit?: string
   decimals?: number

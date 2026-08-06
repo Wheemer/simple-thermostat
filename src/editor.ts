@@ -92,6 +92,7 @@ const LABELS: Record<string, string> = {
   'label.state': 'State label',
   'label.setpoint': 'Target label',
   'layout.entities.type': 'Entity row layout',
+  'layout.entities.display': 'Entity display',
   'layout.entities.labels': 'Show entity row labels',
   'layout.entities.separator': 'Show entity label separator',
   'layout.entities.alignment': 'Entity label alignment',
@@ -112,6 +113,7 @@ const cloneDeep = <T>(obj: T): T =>
 
 type FormData = Record<string, unknown>
 type FormSchema = Record<string, unknown>
+type EntityDisplay = NonNullable<ConfigEntity['display']>
 
 const nonEmptySchema = (item: FormSchema) =>
   !Array.isArray(item.schema) || item.schema.length !== 0
@@ -139,6 +141,17 @@ const ENTITY_LAYOUT_OPTIONS = [
   { value: 'list', label: 'List' },
 ]
 
+const ENTITY_DISPLAY_OPTIONS = [
+  { value: 'row', label: 'Rows' },
+  { value: 'auto', label: 'Auto' },
+  { value: 'button', label: 'Buttons' },
+  { value: 'toggle', label: 'Toggles' },
+  { value: 'chip', label: 'Chips' },
+]
+const ENTITY_DISPLAY_VALUES = ENTITY_DISPLAY_OPTIONS.map(
+  (option) => option.value
+) as Array<EntityDisplay>
+
 const ENTITY_ALIGNMENT_OPTIONS = [
   { value: 'right', label: 'Right' },
   { value: 'left', label: 'Left' },
@@ -155,6 +168,7 @@ const DIRECT_FORM_PATHS = [
   'layout.mode.icons',
   'layout.mode.headings',
   'layout.entities.type',
+  'layout.entities.display',
   'layout.entities.labels',
   'layout.entities.separator',
   'layout.entities.alignment',
@@ -573,6 +587,15 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
                 },
               },
             },
+            {
+              name: 'layout.entities.display',
+              selector: {
+                select: {
+                  mode: 'dropdown',
+                  options: ENTITY_DISPLAY_OPTIONS,
+                },
+              },
+            },
             { name: 'layout.entities.labels', selector: { boolean: {} } },
             { name: 'layout.entities.separator', selector: { boolean: {} } },
             {
@@ -750,6 +773,8 @@ export default class SimpleThermostatEditor extends LitElement {
       'label.state': this.config.label?.state ?? '',
       'label.setpoint': this.config.label?.setpoint ?? '',
       'layout.entities.type': this.config.layout?.entities?.type ?? 'table',
+      'layout.entities.display':
+        this.config.layout?.entities?.display ?? 'row',
       'layout.entities.labels': this.config.layout?.entities?.labels !== false,
       'layout.entities.separator':
         this.config.layout?.entities?.separator !== false,
@@ -897,12 +922,24 @@ export default class SimpleThermostatEditor extends LitElement {
 
   _updateEntityRow(
     index: number,
-    field: keyof Pick<ConfigEntity, 'entity' | 'name' | 'icon'>,
+    field: keyof Pick<ConfigEntity, 'entity' | 'name' | 'icon' | 'display'>,
     value: unknown
   ) {
     const entities = this._getExtraEntities().map((entity, entityIndex) => {
       if (entityIndex !== index) return entity
       const next = { ...entity }
+      if (field === 'display') {
+        if (
+          typeof value === 'string' &&
+          ENTITY_DISPLAY_VALUES.includes(value as EntityDisplay)
+        ) {
+          next.display = value as EntityDisplay
+        } else {
+          delete next.display
+        }
+        return next
+      }
+
       if (typeof value === 'string' && value) next[field] = value
       else delete next[field]
       return next
@@ -953,6 +990,22 @@ export default class SimpleThermostatEditor extends LitElement {
                     @value-changed=${(ev: CustomEvent) =>
                       this._updateEntityRow(index, 'icon', ev.detail.value)}
                   ></ha-icon-picker>
+                  <ha-select
+                    label="Display"
+                    .value=${entity.display ?? ''}
+                    @selected=${(ev: CustomEvent) =>
+                      this._updateEntityRow(index, 'display', ev.detail.value)}
+                    @closed=${(ev: Event) => ev.stopPropagation()}
+                  >
+                    <mwc-list-item value="">Default</mwc-list-item>
+                    ${ENTITY_DISPLAY_OPTIONS.map(
+                      (option) => html`
+                        <mwc-list-item .value=${option.value}>
+                          ${option.label}
+                        </mwc-list-item>
+                      `
+                    )}
+                  </ha-select>
                   <ha-button @click=${() => this._removeEntityRow(index)}>
                     Remove
                   </ha-button>

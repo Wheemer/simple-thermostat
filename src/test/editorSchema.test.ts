@@ -356,6 +356,7 @@ test('extra entity row layout controls are prominent in their own section', () =
   expect(schemaNames([findSection(schema, 'Extra entity rows')])).toEqual(
     expect.arrayContaining([
       'layout.entities.type',
+      'layout.entities.display',
       'layout.entities.labels',
       'layout.entities.separator',
       'layout.entities.alignment',
@@ -445,12 +446,14 @@ test('extra entity row editor adds and updates common row fields', () => {
   editor._updateEntityRow(0, 'entity', 'sensor.living_room_humidity')
   editor._updateEntityRow(0, 'name', 'Humidity')
   editor._updateEntityRow(0, 'icon', 'mdi:water-percent')
+  editor._updateEntityRow(0, 'display', 'chip')
 
   expect(editor.config.entities).toEqual([
     {
       entity: 'sensor.living_room_humidity',
       name: 'Humidity',
       icon: 'mdi:water-percent',
+      display: 'chip',
     },
   ])
   expect(configChanged).toHaveBeenCalled()

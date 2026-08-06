@@ -99,7 +99,7 @@ The editor handles the common v4 setup:
 - Entity and current value selection.
 - Climate, fan, humidifier, and dehumidifier controls.
 - Header toggles and toggle icons.
-- Extra entity rows, names, icons, and row layout.
+- Extra entity rows, names, icons, row layout, and optional button/toggle/chip display.
 - Setpoint visibility, off-state display options, and v4 enhanced visuals.
 - Advanced labels, precision, action type, and mode display options.
 
@@ -157,7 +157,7 @@ YAML is still supported for advanced customization, migration, and manual dashbo
 Use the [YAML reference](YAML_REFERENCE.md) for:
 
 - advanced mode filtering,
-- extra entity attributes, units, decimals, timer countdowns, and relative time,
+- extra entity attributes, units, decimals, display modes, timer countdowns, and relative time,
 - manual setpoint definitions,
 - off-mode target step behavior,
 - display-only state row labels,
@@ -177,11 +177,15 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
   </thead>
   <tbody>
     <tr>
-      <td rowspan="3" nowrap><strong>v4.2.1</strong></td>
+      <td rowspan="7" nowrap><strong>v4.2.1</strong></td>
       <td>Keeps card-level active mode overrides working while preserving the semantic active colors introduced in v4.</td>
     </tr>
     <tr><td>Restores classic visuals automatically for imported <code>version: 3</code> cards unless <code>enhanced_visuals: true</code> is explicitly set.</td></tr>
     <tr><td>Includes the latest v4.2.0 layout, group-card, fan step, and mobile compatibility fixes.</td></tr>
+    <tr><td>Added optional extra entity display modes: <code>row</code>, <code>auto</code>, <code>button</code>, <code>toggle</code>, and <code>chip</code>.</td></tr>
+    <tr><td>Added a card-level <code>layout.entities.display</code> default and per-entity <code>entities[].display</code> overrides.</td></tr>
+    <tr><td>Made compact entity controls own their label so button, toggle, and chip displays do not duplicate labels or overlap table columns.</td></tr>
+    <tr><td>Kept existing extra entity rows as the default when no display mode is configured.</td></tr>
     <tr>
       <td rowspan="7" nowrap><strong>v4.2.0</strong></td>
       <td>Rolls the tested v4.1 prerelease fixes into the normal release channel.</td>

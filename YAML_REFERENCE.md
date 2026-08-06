@@ -302,6 +302,7 @@ Layout options:
 | `layout.mode.icons`      | boolean         | Show icons on mode buttons.                                                                                                                                                                                                             |
 | `layout.mode.headings`   | boolean         | Show mode row headings. Defaults to hidden.                                                                                                                                                                                             |
 | `layout.entities.type`   | `table`, `list` | Extra entity row layout.                                                                                                                                                                                                                |
+| `layout.entities.display` | `row`, `auto`, `button`, `toggle`, `chip` | Default display style for extra entities. Omit or use `row` for the classic label/value rows. Use `auto` for domain-aware controls.                                                                                                    |
 | `layout.entities.labels` | boolean         | Show labels for extra entity rows.                                                                                                                                                                                                      |
 | `layout.entities.separator` | boolean      | Show the `:` separator after text labels in entity rows. Set to `false` if you prefer labels without punctuation.                                                                                                                       |
 | `layout.entities.alignment` | `right`, `left` | Align entity row text labels. Defaults to `right`; set to `left` for a v3-style label/value table.                                                                                                                                      |
@@ -488,6 +489,37 @@ Supported toggle domains:
 - `light`
 - `switch`
 
+Extra entities can opt into compact control displays:
+
+```yaml
+entities:
+  - entity: switch.dehumidifier
+    name: Dehumidifier
+    display: toggle
+  - entity: script.boost_heat
+    name: Boost
+    display: button
+  - entity: sensor.outdoor_temperature
+    name: Outside
+    display: chip
+```
+
+You can also set a default for every extra entity:
+
+```yaml
+layout:
+  entities:
+    display: auto
+```
+
+Display modes:
+
+- `row`: classic label/value row. This is the default when no display is configured.
+- `auto`: domain-aware display. Toggle-capable entities become toggles, `button`/`input_button`/`script`/`scene` entities become buttons, and passive entities become chips.
+- `toggle`: compact stateful toggle button with label and state text.
+- `button`: compact action button with label only.
+- `chip`: compact status/action pill.
+
 Entity options:
 
 | Option      | Type   | Description                                  |
@@ -495,6 +527,7 @@ Entity options:
 | `entity`    | string | Entity id.                                   |
 | `name`      | string | Label override.                              |
 | `icon`      | string | Icon shown instead of a text label.          |
+| `display`   | string | Per-entity display style: `row`, `auto`, `button`, `toggle`, or `chip`. |
 | `attribute` | string | Read an attribute instead of state.          |
 | `unit`      | string | Unit suffix.                                 |
 | `decimals`  | number | Decimal places for numeric values.           |

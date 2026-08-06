@@ -15,6 +15,8 @@ const TOGGLE_DOMAINS = [
   'light',
   'switch',
 ]
+const BUTTON_DOMAINS = ['button', 'input_button', 'script', 'scene']
+const DISPLAY_VALUES = ['row', 'auto', 'button', 'toggle', 'chip']
 
 interface InfoItemDetails extends LooseObject {
   heading?: string | false
@@ -29,6 +31,7 @@ interface InfoItemDetails extends LooseObject {
   variables?: LooseObject
   config?: LooseObject
   separator?: boolean
+  display?: 'row' | 'auto' | 'button' | 'toggle' | 'chip'
 }
 
 interface InfoItemOptions {
@@ -54,6 +57,27 @@ function toggleEntity(hass, entityId: string, checked: boolean) {
 
 function safeClass(value: unknown) {
   return String(value ?? '').replace(/[^a-z0-9_-]/gi, '')
+}
+
+function callEntityAction(hass, entityId: string, domain: string) {
+  if (TOGGLE_DOMAINS.includes(domain)) {
+    const checked = hass.states?.[entityId]?.state !== 'on'
+    toggleEntity(hass, entityId, checked)
+    return
+  }
+
+  const service = domain === 'button' || domain === 'input_button'
+    ? 'press'
+    : 'turn_on'
+
+  if (typeof hass.performAction === 'function') {
+    hass.performAction({
+      action: `${domain}.${service}`,
+      data: { entity_id: entityId },
+    })
+  } else {
+    hass.callService(domain, service, { entity_id: entityId })
+  }
 }
 
 function renderIconTemplate({
@@ -130,6 +154,46 @@ function renderHeadingTemplate({
   }).trim()
 }
 
+function resolveDisplay(display: unknown, domain: string) {
+  if (typeof display !== 'string' || !DISPLAY_VALUES.includes(display)) {
+    return 'row'
+  }
+
+  if (display !== 'auto') return display
+
+  if (TOGGLE_DOMAINS.includes(domain)) return 'toggle'
+  if (BUTTON_DOMAINS.includes(domain)) return 'button'
+
+  return 'chip'
+}
+
+function getEntityDisplayValue({
+  state,
+  domain,
+  hass,
+  localize,
+}: {
+  state: any
+  domain: string
+  hass: any
+  localize?: (label: string, prefix?: string) => string
+}) {
+  if (domain === 'timer') {
+    return html`<simple-thermostat-timer-remaining
+      .stateObj=${state}
+      .hass=${hass}
+    ></simple-thermostat-timer-remaining>`
+  }
+
+  if (typeof hass.formatEntityState === 'function') {
+    return hass.formatEntityState(state)
+  }
+
+  return localize
+    ? localize(state.state, `component.${domain}.state._.`)
+    : String(state.state)
+}
+
 export default function renderInfoItem({
   hide = false,
   hass,
@@ -153,6 +217,7 @@ export default function renderInfoItem({
     variables,
     config,
     separator = true,
+    display,
   } = details
   const renderedIcon = renderIconTemplate({
     icon,
@@ -185,6 +250,7 @@ export default function renderInfoItem({
   let entityDomain = ''
   let entityState = ''
   let isToggleEntity = false
+  let usesCompactEntityDisplay = false
 
   let valueCell
   if (template && typeof state === 'object') {
@@ -215,10 +281,12 @@ export default function renderInfoItem({
     entityDomain = domain
     entityState = state.state
     isToggleEntity = TOGGLE_DOMAINS.includes(domain)
+    const displayMode = resolveDisplay(display, domain)
     const entityClasses = [
       isToggleEntity && 'toggle-entity',
       entityDomain && `domain-${safeClass(entityDomain)}`,
       entityState && `state-${safeClass(entityState)}`,
+      displayMode !== 'row' && `display-${displayMode}`,
       isToggleEntity &&
         getToggleKindClass(
           getToggleKind({
@@ -232,7 +300,49 @@ export default function renderInfoItem({
       .filter(Boolean)
       .join(' ')
 
-    if (domain === 'timer') {
+    if (displayMode !== 'row') {
+      usesCompactEntityDisplay = true
+      const supportsAction =
+        isToggleEntity || BUTTON_DOMAINS.includes(domain)
+      const active = state.state === 'on'
+      const actionLabel =
+        typeof heading === 'string'
+          ? heading
+          : state.attributes?.friendly_name || state.entity_id
+      const fallbackIcon =
+        renderedIcon || state.attributes?.icon || (isToggleEntity
+          ? 'mdi:toggle-switch'
+          : BUTTON_DOMAINS.includes(domain)
+            ? 'mdi:gesture-tap-button'
+            : undefined)
+      const displayValue = getEntityDisplayValue({
+        state,
+        domain,
+        hass,
+        localize,
+      })
+
+      valueCell = html`
+        <button
+          class="entity-action ${entityClasses} ${active ? 'active' : ''}"
+          type="button"
+          title=${entityTooltip}
+          aria-pressed=${isToggleEntity ? String(active) : nothing}
+          @click=${() =>
+            supportsAction
+              ? callEntityAction(hass, state.entity_id, domain)
+              : canOpenEntity
+                ? openEntityPopover(state.entity_id)
+                : undefined}
+        >
+          ${fallbackIcon ? html`<ha-icon .icon=${fallbackIcon}></ha-icon>` : ''}
+          <span class="entity-action__label">${actionLabel}</span>
+          ${displayMode === 'chip' || displayMode === 'toggle'
+            ? html`<span class="entity-action__state">${displayValue}</span>`
+            : ''}
+        </button>
+      `
+    } else if (domain === 'timer') {
       valueCell = html`
         <div
           class="entity-value ${canOpenEntity ? 'clickable' : ''}"
@@ -317,6 +427,10 @@ export default function renderInfoItem({
     >
       ${appendUnit(value, hasConfiguredUnit ? unit : false)}
     </div>`
+  }
+
+  if (usesCompactEntityDisplay) {
+    return valueCell
   }
 
   if (heading === false) {
