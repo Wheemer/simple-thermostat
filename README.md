@@ -179,6 +179,11 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.2.3</strong></td>
+      <td>Resolves dependency security alerts raised after the Dependabot merge.</td>
+    </tr>
+    <tr><td>Keeps the v4.2.2 editor dropdown fixes while shipping a clean dependency audit.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.2.2</strong></td>
       <td>Fixes the visual editor's extra entity display dropdowns so selections apply and the menu closes normally.</td>
     </tr>
