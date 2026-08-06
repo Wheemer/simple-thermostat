@@ -187,16 +187,14 @@ test('layout compatibility fixes do not retune semantic colors or icons', () => 
   )
 
   const baseCardRule = styles.match(/ha-card\s*\{[^}]*\}/)?.[0] ?? ''
-  expect(baseCardRule).toContain('--auto-color: green')
-  expect(baseCardRule).toContain('--heat_cool-color: springgreen')
-  expect(baseCardRule).toContain('--cool-color: #2b9af9')
-  expect(baseCardRule).toContain('--heat-color: #ff8100')
-  expect(baseCardRule).toContain('--dry-color: #efbd07')
-  expect(styles).not.toContain('--auto-color: #66bb6a')
-  expect(styles).not.toContain('--heat_cool-color: #4ade80')
-  expect(styles).not.toContain('--cool-color: #60a5fa')
-  expect(styles).not.toContain('--heat-color: #fb923c')
-  expect(styles).not.toContain('--dry-color: #facc15')
+  expect(baseCardRule).toContain('--auto-color: var(--state-climate-auto-color, green)')
+  expect(baseCardRule).toContain(
+    '--heat_cool-color: var(--state-climate-heat-cool-color, #efbd07)'
+  )
+  expect(baseCardRule).toContain('--cool-color: var(--state-climate-cool-color, #2b9af9)')
+  expect(baseCardRule).toContain('--heat-color: var(--state-climate-heat-color, #ff8100)')
+  expect(baseCardRule).toContain('--dry-color: var(--state-climate-dry-color, #efbd07)')
+  expect(styles).not.toContain('springgreen')
   expect(headerConfig).toContain("idle: 'mdi:air-conditioner'")
   expect(headerConfig).not.toContain("idle: 'mdi:thermostat'")
 })
@@ -239,7 +237,7 @@ test('enhanced sparse hvac controls can fit four buttons on one row', () => {
   expect(mobileSparseRule).toContain('min-width: 0')
 })
 
-test('mode colors keep the original simple-thermostat assignments', () => {
+test('mode colors follow Home Assistant climate theme variables', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
@@ -251,17 +249,17 @@ test('mode colors keep the original simple-thermostat assignments', () => {
   expect(hostRule).toContain('--fan_only-color: var(')
   expect(hostRule).toContain('--state-climate-fan-only-color')
   expect(hostRule).toContain('var(--fan-color)')
-  expect(baseCardRule).toContain('--auto-color: green')
-  expect(baseCardRule).toContain('--heat_cool-color: springgreen')
-  expect(baseCardRule).toContain('--cool-color: #2b9af9')
-  expect(baseCardRule).toContain('--heat-color: #ff8100')
+  expect(baseCardRule).toContain('--auto-color: var(--state-climate-auto-color, green)')
+  expect(baseCardRule).toContain(
+    '--heat_cool-color: var(--state-climate-heat-cool-color, #efbd07)'
+  )
+  expect(baseCardRule).toContain('--cool-color: var(--state-climate-cool-color, #2b9af9)')
+  expect(baseCardRule).toContain('--heat-color: var(--state-climate-heat-color, #ff8100)')
   expect(baseCardRule).toContain('--manual-color: #44739e')
-  expect(baseCardRule).toContain('--off-color: #8a8a8a')
+  expect(baseCardRule).toContain('--off-color: var(--state-inactive-color, #8a8a8a)')
   expect(baseCardRule).not.toContain('--fan_only-color')
-  expect(baseCardRule).toContain('--dry-color: #efbd07')
-  expect(baseCardRule).not.toContain('--state-climate-heat-color')
-  expect(baseCardRule).not.toContain('--state-climate-cool-color')
-  expect(baseCardRule).not.toContain('--state-climate-heat-cool-color')
+  expect(baseCardRule).toContain('--dry-color: var(--state-climate-dry-color, #efbd07)')
+  expect(styles).not.toContain('springgreen')
 })
 
 test('fan only mode uses the public fan_only color variable', () => {
@@ -432,17 +430,22 @@ test('sparse main controls keep baseline spacing while allowing four buttons', (
   expect(sparseControlsRule).toBe('')
 })
 
-test('sparse hvac labels stay inline without using the broad clipping rule', () => {
+test('sparse hvac labels keep nowrap only for inline labels', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),
     'utf8'
   )
-  const sparseLabelRule =
+  const sparseInlineLabelRule =
     styles.match(
-      /\.modes\.hvac\.sparse \.mode-label,\s*\.modes\.state\.sparse \.mode-label\s*\{[^}]*\}/
+      /\.modes\.hvac\.sparse \.mode-item:not\(\.label-stacked\):not\(\.label-column\) \.mode-label,\s*\.modes\.state\.sparse \.mode-item:not\(\.label-stacked\):not\(\.label-column\) \.mode-label\s*\{[^}]*\}/
+    )?.[0] ?? ''
+  const sparseStackedLabelRule =
+    styles.match(
+      /\.modes\.hvac\.sparse \.mode-item\.label-stacked \.mode-label,\s*\.modes\.state\.sparse \.mode-item\.label-stacked \.mode-label\s*\{[^}]*\}/
     )?.[0] ?? ''
 
-  expect(sparseLabelRule).toContain('white-space: nowrap')
+  expect(sparseInlineLabelRule).toContain('white-space: nowrap')
+  expect(sparseStackedLabelRule).toContain('white-space: normal')
   expect(styles).not.toMatch(
     /ha-card:not\(\.standard-visuals\) \.modes\.sparse \.mode-label/
   )

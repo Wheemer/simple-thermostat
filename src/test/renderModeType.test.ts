@@ -373,3 +373,84 @@ test('explicit disabled swing icons remain hidden', () => {
 
   expect(document.body.querySelector('ha-icon.mode-icon')).toBe(null)
 })
+
+test('sparse heat_cool labels stack beside the icon', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    mode: {
+      type: 'hvac',
+      mode: 'heat_cool',
+      list: [
+        { value: 'off', icon: 'mdi:power', name: 'Off' },
+        { value: 'heat', icon: 'mdi:fire', name: 'Heat' },
+        { value: 'cool', icon: 'mdi:snowflake', name: 'Cool' },
+        {
+          value: 'heat_cool',
+          icon: 'mdi:autorenew',
+          name: 'Heat/Cool',
+        },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const heatCool = document.body.querySelector('.mode-item.heat_cool')
+  expect(heatCool?.classList.contains('label-stacked')).toBe(true)
+  expect(heatCool?.querySelectorAll('.mode-label-line')).toHaveLength(2)
+  expect(
+    Array.from(heatCool?.querySelectorAll('.mode-label-line') ?? []).map(
+      (line) => line.textContent
+    )
+  ).toEqual(['Heat', 'Cool'])
+})
+
+test('sparse fan_only labels stack beside the icon', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    mode: {
+      type: 'hvac',
+      mode: 'fan_only',
+      list: [
+        { value: 'off', icon: 'mdi:power', name: 'Off' },
+        { value: 'heat', icon: 'mdi:fire', name: 'Heat' },
+        { value: 'cool', icon: 'mdi:snowflake', name: 'Cool' },
+        { value: 'fan_only', icon: 'mdi:fan', name: 'Fan only' },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const fanOnly = document.body.querySelector('.mode-item.fan_only')
+  expect(fanOnly?.classList.contains('label-stacked')).toBe(true)
+  expect(fanOnly?.querySelectorAll('.mode-label-line')).toHaveLength(2)
+})
+
+test('long localized sparse labels use column layout', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    mode: {
+      type: 'hvac',
+      mode: 'fan_only',
+      list: [
+        { value: 'off', icon: 'mdi:power', name: 'Off' },
+        { value: 'heat', icon: 'mdi:fire', name: 'Heat' },
+        { value: 'cool', icon: 'mdi:snowflake', name: 'Cool' },
+        {
+          value: 'fan_only',
+          icon: 'mdi:fan',
+          name: 'Ventilation seule',
+        },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const fanOnly = document.body.querySelector('.mode-item.fan_only')
+  expect(fanOnly?.classList.contains('label-column')).toBe(true)
+  expect(fanOnly?.querySelector('.mode-label')?.textContent).toBe(
+    'Ventilation seule'
+  )
+})

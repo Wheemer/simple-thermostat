@@ -45,14 +45,14 @@ ha-card {
 
   padding-bottom: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
 
-  --auto-color: green;
-  --heat_cool-color: springgreen;
-  --cool-color: #2b9af9;
-  --heat-color: #ff8100;
+  --auto-color: var(--state-climate-auto-color, green);
+  --heat_cool-color: var(--state-climate-heat-cool-color, #efbd07);
+  --cool-color: var(--state-climate-cool-color, #2b9af9);
+  --heat-color: var(--state-climate-heat-color, #ff8100);
   --manual-color: #44739e;
   --on-color: var(--primary-color);
-  --off-color: #8a8a8a;
-  --dry-color: #efbd07;
+  --off-color: var(--state-inactive-color, #8a8a8a);
+  --dry-color: var(--state-climate-dry-color, #efbd07);
   --st-mode-surface-background: color-mix(
     in srgb,
     var(--primary-text-color) 14%,
@@ -980,6 +980,10 @@ ha-card:not(.standard-visuals) .mode-item.active .mode-icon {
   line-height: 1;
 }
 
+.mode-label-line {
+  display: block;
+}
+
 ha-card:not(.standard-visuals) .header__toggle.on .toggle-label.clickable,
 ha-card:not(.standard-visuals) .entity-heading.toggle-entity.state-on ha-icon {
   color: var(--st-toggle-color, var(--primary-color));
@@ -1195,9 +1199,40 @@ ha-card.drying {
   padding-block: var(--st-spacing, var(--st-default-spacing));
 }
 
-.modes.hvac.sparse .mode-label,
-.modes.state.sparse .mode-label {
+.modes.hvac.sparse .mode-item:not(.label-stacked):not(.label-column) .mode-label,
+.modes.state.sparse .mode-item:not(.label-stacked):not(.label-column) .mode-label {
   white-space: nowrap;
+}
+
+.modes.hvac.sparse .mode-item.label-stacked,
+.modes.state.sparse .mode-item.label-stacked {
+  align-items: center;
+}
+
+.modes.hvac.sparse .mode-item.label-stacked .mode-label,
+.modes.state.sparse .mode-item.label-stacked .mode-label {
+  white-space: normal;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.modes.hvac.sparse .mode-item.label-stacked .mode-label-line + .mode-label-line,
+.modes.state.sparse .mode-item.label-stacked .mode-label-line + .mode-label-line {
+  margin-top: 1px;
+}
+
+.modes.hvac.sparse .mode-item.label-column,
+.modes.state.sparse .mode-item.label-column {
+  flex-direction: column;
+  gap: 4px;
+  min-height: calc(var(--st-control-icon-size) + 24px);
+}
+
+.modes.hvac.sparse .mode-item.label-column .mode-label,
+.modes.state.sparse .mode-item.label-column .mode-label {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.1;
 }
 
 @media (max-width: 560px) {
@@ -1213,6 +1248,12 @@ ha-card.drying {
     flex-direction: row;
     gap: var(--st-sparse-control-gap, 2px);
     min-width: 0;
+  }
+
+  ha-card:not(.standard-visuals) .modes.hvac.sparse .mode-item.label-column,
+  ha-card:not(.standard-visuals) .modes.state.sparse .mode-item.label-column {
+    flex-direction: column;
+    gap: 4px;
   }
 }
 .modes.dense {

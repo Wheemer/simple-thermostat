@@ -179,6 +179,12 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
   </thead>
   <tbody>
     <tr>
+      <td rowspan="3" nowrap><strong>v4.2.5</strong></td>
+      <td>Aligns HVAC mode colors with Home Assistant theme variables such as <code>--state-climate-heat-cool-color</code>, removing the unreadable <code>springgreen</code> default.</td>
+    </tr>
+    <tr><td>Stacks sparse <code>heat_cool</code> and <code>fan_only</code> labels beside their icons so long English labels no longer clip.</td></tr>
+    <tr><td>Falls back to a taller column button for long localized labels that cannot be split cleanly.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.2.4</strong></td>
       <td>Hardens template CSS sanitizing by blocking additional unsafe URL schemes.</td>
     </tr>

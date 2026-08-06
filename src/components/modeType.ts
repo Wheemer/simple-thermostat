@@ -1,6 +1,7 @@
 import { html, nothing } from 'lit'
 import { ControlMode, HVAC_MODES } from '../types'
 import { EntityAdapter } from '../adapters'
+import { getModeLabelPresentation } from '../modeLabelLayout'
 import { renderModeIcon } from './modeIcon'
 
 interface ModeTypeOptions {
@@ -188,6 +189,28 @@ export default function renderModeType({
   const safeClass = (value: unknown) =>
     String(value).replace(/[^a-z0-9_-]/gi, '')
 
+  const renderModeLabel = (
+    modeValue: string,
+    label: string | null | undefined
+  ) => {
+    if (!label) return null
+    const presentation = getModeLabelPresentation(
+      modeValue,
+      label,
+      sparseMainControls
+    )
+
+    if (presentation.layout === 'stacked') {
+      return html`<span class="mode-label">
+        ${presentation.lines.map(
+          (line) => html`<span class="mode-label-line">${line}</span>`
+        )}
+      </span>`
+    }
+
+    return html`<span class="mode-label">${presentation.lines[0] ?? label}</span>`
+  }
+
   return html`
     <div
       class="modes ${type} ${isFanPreset ? 'fan-preset' : ''} ${showHeading
@@ -204,10 +227,21 @@ export default function renderModeType({
 
         const modeClass = safeClass(value)
         const displayName = maybeRenderName(name, value)
+        const labelPresentation = getModeLabelPresentation(
+          String(value),
+          displayName,
+          sparseMainControls
+        )
+        const labelLayoutClass =
+          labelPresentation.layout === 'stacked'
+            ? 'label-stacked'
+            : labelPresentation.layout === 'column'
+              ? 'label-column'
+              : ''
         const tooltip = displayName ? nothing : controlTooltip || nothing
         return html`
           <div
-            class="mode-item ${modeClass} ${value === mode ? 'active' : ''}"
+            class="mode-item ${modeClass} ${labelLayoutClass} ${value === mode ? 'active' : ''}"
             role="button"
             tabindex="0"
             aria-pressed=${value === mode ? 'true' : 'false'}
@@ -222,9 +256,7 @@ export default function renderModeType({
             }}
           >
             ${maybeRenderIcon(icon, iconConfigured)}
-            ${displayName
-              ? html`<span class="mode-label">${displayName}</span>`
-              : null}
+            ${renderModeLabel(String(value), displayName)}
           </div>
         `
       })}
