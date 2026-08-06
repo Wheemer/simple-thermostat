@@ -186,10 +186,12 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
     <tr><td>Refreshes Babel, js-yaml, brace-expansion, nanoid, and svgo through the lockfile cleanup.</td></tr>
     <tr><td>Confirms the package audit is clean after the dependency updates.</td></tr>
     <tr>
-      <td rowspan="2" nowrap><strong>v4.2.2</strong></td>
+      <td rowspan="4" nowrap><strong>v4.2.2</strong></td>
       <td>Fixes the visual editor's extra entity display dropdowns so selections apply and the menu closes normally.</td>
     </tr>
     <tr><td>Allows extra entity display controls to return to the default row behavior from the editor.</td></tr>
+    <tr><td>Adds Dependabot configuration for grouped npm and GitHub Actions dependency updates.</td></tr>
+    <tr><td>Adds CodeQL scanning for JavaScript and TypeScript security analysis.</td></tr>
     <tr>
       <td rowspan="7" nowrap><strong>v4.2.1</strong></td>
       <td>Keeps card-level active mode overrides working while preserving the semantic active colors introduced in v4.</td>
