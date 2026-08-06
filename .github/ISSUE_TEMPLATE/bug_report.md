@@ -8,7 +8,8 @@ assignees: ''
 ---
 
 **What happened?**
-Describe the issue in your own words.
+<!-- Describe the issue in your own words. -->
+
 
 **Optional details**
-Add anything that helps explain it, such as YAML, screenshots, logs, versions, or browser/mobile app details.
+<!-- Add anything that helps explain it, such as YAML, screenshots, logs, versions, or browser/mobile app details. -->
