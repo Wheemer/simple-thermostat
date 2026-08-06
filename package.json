@@ -29,7 +29,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "marked": "^18.0.4",
-    "postcss": "^8.4.49",
+    "postcss": "^8.5.25",
     "postcss-preset-env": "^11.3.0",
     "prettier": "^3.4.2",
     "rollup": "^4.28.1",
@@ -57,5 +57,16 @@
     "semi": false,
     "singleQuote": true,
     "trailingComma": "es5"
+  },
+  "overrides": {
+    "@babel/core": "7.29.7",
+    "js-yaml": "3.15.1",
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.18"
+    },
+    "minimatch@9.0.9": {
+      "brace-expansion": "2.1.4"
+    },
+    "svgo": "2.8.3"
   }
 }
