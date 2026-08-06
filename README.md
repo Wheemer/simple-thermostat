@@ -179,6 +179,11 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.2.4</strong></td>
+      <td>Hardens template CSS sanitizing by blocking additional unsafe URL schemes.</td>
+    </tr>
+    <tr><td>Clears the CodeQL code scanning alerts introduced after security scanning was enabled.</td></tr>
+    <tr>
       <td rowspan="4" nowrap><strong>v4.2.3</strong></td>
       <td>Updates shell-quote through concurrently to resolve the Dependabot security alert.</td>
     </tr>
