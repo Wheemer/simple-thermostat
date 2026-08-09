@@ -2198,13 +2198,23 @@ test('dual setpoints with entity rows default to compact column steppers', async
   const wrappers = Array.from(
     card.shadowRoot?.querySelectorAll('.current-wrapper') ?? []
   )
+  const body = card.shadowRoot?.querySelector('.body')
   expect(wrappers).toHaveLength(2)
   expect(
-    wrappers.every((wrapper) => wrapper.classList.contains('row'))
+    wrappers.every((wrapper) => wrapper.classList.contains('column'))
   ).toBe(true)
+  expect(body?.classList.contains('step-column')).toBe(true)
+  expect(body?.classList.contains('setpoint-count-2')).toBe(true)
   expect(
     (card.shadowRoot?.querySelector('button.increase ha-icon') as any)?.icon
-  ).toBe('mdi:plus')
+  ).toBe('hass:chevron-up')
+  const children = Array.from(wrappers[0].children)
+  expect(children.map((child) => child.className)).toEqual([
+    expect.stringContaining('increase'),
+    expect.stringContaining('current--value'),
+    expect.stringContaining('decrease'),
+    'current--label',
+  ])
 })
 
 test('target labels can be hidden without changing setpoint controls', async () => {
