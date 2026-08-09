@@ -179,6 +179,11 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.2.6</strong></td>
+      <td>Restores compact vertical steppers for cards with extra entity rows and dual heat/cool setpoints when no step layout is configured.</td>
+    </tr>
+    <tr><td>Keeps explicit <code>layout.step: row</code> configurations respected for users who intentionally choose side-by-side steppers.</td></tr>
+    <tr>
       <td rowspan="3" nowrap><strong>v4.2.5</strong></td>
       <td>Aligns HVAC mode colors with Home Assistant theme variables such as <code>--state-climate-heat-cool-color</code>, removing the unreadable <code>springgreen</code> default.</td>
     </tr>
