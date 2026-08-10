@@ -1,5 +1,5 @@
 import { HeaderConfig } from './header'
-import { LooseObject, ConfigEntity } from '../types'
+import { LooseObject, ConfigEntity, FooterEntity } from '../types'
 import { Service } from './service'
 import { Setpoints } from './setpoints'
 
@@ -60,6 +60,7 @@ interface CardConfig {
   current_value_entity?: string
   header: false | HeaderConfig
   control?: false | ModeControl | string[]
+  footer?: false | Array<FooterEntity>
   entities?: false | Array<ConfigEntity>
   setpoints?: Setpoints
   decimals?: number

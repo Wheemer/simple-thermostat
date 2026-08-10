@@ -100,6 +100,7 @@ The editor handles the common v4 setup:
 - Climate, fan, humidifier, and dehumidifier controls.
 - Header toggles and toggle icons.
 - Extra entity rows, names, icons, row layout, and optional button/toggle/chip display.
+- Footer toggle controls for helper switches shown below the normal mode rows.
 - Setpoint visibility, off-state display options, and v4 enhanced visuals.
 - Advanced labels, precision, action type, and mode display options.
 
@@ -168,6 +169,15 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
 
 Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`. The existing row layout remains the default; use `display: row` explicitly when you want to force the classic label/value row style.
 
+Footer controls can show switch-style helper entities below the normal mode rows:
+
+```yaml
+footer:
+  - entity: switch.gree_ac_health
+    name: Health
+    icon: mdi:shield-check
+```
+
 ## Changelog
 
 <table border="1" cellspacing="0" cellpadding="6">
@@ -178,6 +188,12 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.2.7</strong></td>
+      <td>Added footer toggle controls for helper switches that should appear below the normal mode rows.</td>
+    </tr>
+    <tr><td>Added visual editor support for footer controls with entity, name, icon, add, and remove actions.</td></tr>
+    <tr><td>Documented the new <code>footer</code> YAML option and added regression coverage for rendering, toggling, hiding, sizing, and editor behavior.</td></tr>
     <tr>
       <td rowspan="2" nowrap><strong>v4.2.6</strong></td>
       <td>Restores compact vertical steppers for cards with extra entity rows and dual heat/cool setpoints when no step layout is configured.</td>

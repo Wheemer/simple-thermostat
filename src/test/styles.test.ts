@@ -532,11 +532,12 @@ test('standard visual mode rows keep visible options evenly sized', () => {
   )
   const standardModesRule =
     styles.match(
-      /ha-card\.standard-visuals \.modes,[\s\S]*?ha-card\.standard-visuals \.modes\.vane_vertical\s*\{[^}]*\}/
+      /ha-card\.standard-visuals \.modes,[\s\S]*?ha-card\.standard-visuals \.modes\.footer\s*\{[^}]*\}/
     )?.[0] ?? ''
 
   expect(standardModesRule).toContain('grid-template-columns: none')
   expect(standardModesRule).toContain('grid-auto-columns: minmax(0, 1fr)')
+  expect(standardModesRule).toContain('ha-card.standard-visuals .modes.footer')
   expect(standardModesRule).not.toContain('grid-template-columns: auto')
 })
 

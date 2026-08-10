@@ -20,6 +20,17 @@ export interface Entity extends ConfigEntity {
   state: any
 }
 
+export interface FooterEntity {
+  entity: string
+  name?: string | false
+  icon?: string | false
+  hide_when_off?: boolean
+}
+
+export interface FooterToggle extends FooterEntity {
+  state: any
+}
+
 export interface HASS {
   states?: Record<string, any>
   performAction?: (request: { action: string; data: object }) => void

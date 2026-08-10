@@ -269,6 +269,123 @@ test('card size ignores controls with no rendered options', async () => {
   expect(card.getCardSize()).toBe(4)
 })
 
+test('renders footer toggles as a control row and toggles the entity', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  const callService = jest.fn()
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    control: false,
+    hide_setpoint: true,
+    footer: [
+      {
+        entity: 'switch.gree_ac_health',
+        name: 'Health',
+        icon: 'mdi:shield-check',
+      },
+      {
+        entity: 'switch.gree_ac_sleep',
+        name: 'Sleep',
+        icon: 'mdi:sleep',
+      },
+    ],
+  } as any)
+  card.hass = {
+    callService,
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: {
+          current_temperature: 21,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+      'switch.gree_ac_health': {
+        entity_id: 'switch.gree_ac_health',
+        state: 'on',
+        attributes: { friendly_name: 'Health' },
+      },
+      'switch.gree_ac_sleep': {
+        entity_id: 'switch.gree_ac_sleep',
+        state: 'off',
+        attributes: { friendly_name: 'Sleep' },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  const footer = card.shadowRoot?.querySelector('.modes.footer')
+  const buttons = footer?.querySelectorAll('.footer-toggle') ?? []
+  expect(footer).not.toBe(null)
+  expect(buttons).toHaveLength(2)
+  expect(buttons[0].classList.contains('active')).toBe(true)
+  expect(buttons[0].textContent).toContain('Health')
+  ;(buttons[0] as HTMLElement).click()
+
+  expect(callService).toHaveBeenCalledWith('homeassistant', 'turn_off', {
+    entity_id: 'switch.gree_ac_health',
+  })
+})
+
+test('footer toggles can hide while the main entity is off', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    control: false,
+    hide_setpoint: true,
+    footer: [
+      {
+        entity: 'switch.gree_ac_health',
+        name: 'Health',
+        hide_when_off: true,
+      },
+    ],
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'off',
+        attributes: {
+          current_temperature: 21,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+      'switch.gree_ac_health': {
+        entity_id: 'switch.gree_ac_health',
+        state: 'on',
+        attributes: { friendly_name: 'Health' },
+      },
+    },
+    config: {
+      unit_system: {
+        temperature: '°C',
+      },
+    },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  expect(card.shadowRoot?.querySelector('.modes.footer')).toBe(null)
+  expect(card.getCardSize()).toBe(1)
+})
+
 test('does not apply card_mod ha-card surface declarations inline on normal cards', async () => {
   document.body.innerHTML = ''
   const card = createCard()

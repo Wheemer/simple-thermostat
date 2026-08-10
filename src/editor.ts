@@ -13,7 +13,7 @@ import {
 } from './config/card'
 import normalizeConfig from './config/normalize'
 import { HeaderConfig } from './config/header'
-import { ConfigEntity, HASS } from './types'
+import { ConfigEntity, FooterEntity, HASS } from './types'
 import { EntityAdapter, getAdapter } from './adapters'
 
 declare const process: { env: { BUILD_TIME: string } }
@@ -96,6 +96,9 @@ const LABELS: Record<string, string> = {
   'layout.entities.labels': 'Show entity row labels',
   'layout.entities.separator': 'Show entity label separator',
   'layout.entities.alignment': 'Entity label alignment',
+  'footer.entity': 'Footer toggle entity',
+  'footer.name': 'Footer toggle label',
+  'footer.icon': 'Footer toggle icon',
   enhanced_visuals: 'Enhanced visuals',
   'tap_action.action': 'Tap action',
   'hold_action.action': 'Hold action',
@@ -926,6 +929,10 @@ export default class SimpleThermostatEditor extends LitElement {
     return Array.isArray(this.config.entities) ? this.config.entities : []
   }
 
+  _getFooterRows() {
+    return Array.isArray(this.config.footer) ? this.config.footer : []
+  }
+
   _commitEntityRows(entities: Array<ConfigEntity>) {
     const copy = cloneDeep(this.config) as CardConfig
     if (entities.length > 0) copy.entities = entities
@@ -969,6 +976,39 @@ export default class SimpleThermostatEditor extends LitElement {
       return next
     })
     this._commitEntityRows(entities)
+  }
+
+  _commitFooterRows(footer: Array<FooterEntity>) {
+    const copy = cloneDeep(this.config) as CardConfig
+    if (footer.length > 0) copy.footer = footer
+    else delete copy.footer
+    this.config = copy
+    fireEvent(this, 'config-changed', { config: copy })
+  }
+
+  _addFooterRow() {
+    this._commitFooterRows([...this._getFooterRows(), { entity: '' }])
+  }
+
+  _removeFooterRow(index: number) {
+    this._commitFooterRows(
+      this._getFooterRows().filter((_, footerIndex) => footerIndex !== index)
+    )
+  }
+
+  _updateFooterRow(
+    index: number,
+    field: keyof Pick<FooterEntity, 'entity' | 'name' | 'icon'>,
+    value: unknown
+  ) {
+    const footer = this._getFooterRows().map((row, footerIndex) => {
+      if (footerIndex !== index) return row
+      const next = { ...row }
+      if (typeof value === 'string' && value) next[field] = value
+      else delete next[field]
+      return next
+    })
+    this._commitFooterRows(footer)
   }
 
   _renderExtraEntityRows() {
@@ -1056,6 +1096,59 @@ export default class SimpleThermostatEditor extends LitElement {
     `
   }
 
+  _renderFooterRows() {
+    const footer = this._getFooterRows()
+
+    return html`
+      <section class="editor-extra-entities">
+        <div class="editor-extra-entities__header">
+          <div>
+            <h3>Footer controls</h3>
+            <p>Add switch-style controls shown below the mode rows.</p>
+          </div>
+          <ha-button @click=${this._addFooterRow}>Add control</ha-button>
+        </div>
+
+        ${footer.length === 0
+          ? html`<p class="editor-extra-entities__empty">
+              No footer controls configured.
+            </p>`
+          : footer.map(
+              (row, index) => html`
+                <div class="editor-entity-row">
+                  <ha-entity-picker
+                    .hass=${this.hass}
+                    .value=${row.entity ?? ''}
+                    allow-custom-entity
+                    @value-changed=${(ev: CustomEvent) =>
+                      this._updateFooterRow(index, 'entity', ev.detail.value)}
+                  ></ha-entity-picker>
+                  <ha-textfield
+                    label="Name"
+                    .value=${row.name ?? ''}
+                    @input=${(ev: InputEvent) =>
+                      this._updateFooterRow(
+                        index,
+                        'name',
+                        (ev.target as HTMLInputElement).value
+                      )}
+                  ></ha-textfield>
+                  <ha-icon-picker
+                    .hass=${this.hass}
+                    .value=${row.icon ?? ''}
+                    @value-changed=${(ev: CustomEvent) =>
+                      this._updateFooterRow(index, 'icon', ev.detail.value)}
+                  ></ha-icon-picker>
+                  <ha-button @click=${() => this._removeFooterRow(index)}>
+                    Remove
+                  </ha-button>
+                </div>
+              `
+            )}
+      </section>
+    `
+  }
+
   _computeLabel = (schema: FormSchema) =>
     LABELS[String(schema.name)] ?? String(schema.name)
 
@@ -1073,6 +1166,7 @@ export default class SimpleThermostatEditor extends LitElement {
         ></ha-form>
 
         ${this._renderExtraEntityRows()}
+        ${this._renderFooterRows()}
 
         <div class="editor-footer">
           <ha-button @click=${this._openLink}>

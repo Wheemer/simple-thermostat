@@ -355,6 +355,7 @@ test('extra entity row layout controls are prominent in their own section', () =
   const schema = buildSchema({ entity: 'climate.living_room' } as any, hass)
 
   expect(sectionTitles(schema)).toContain('Extra entity rows')
+  expect(sectionTitles(schema)).not.toContain('Footer controls')
   expect(schemaNames([findSection(schema, 'Extra entity rows')])).toEqual(
     expect.arrayContaining([
       'layout.entities.type',
@@ -503,6 +504,51 @@ test('extra entity row editor removes the config when the last row is removed', 
   editor._removeEntityRow(0)
 
   expect(editor.config.entities).toBeUndefined()
+})
+
+test('footer control editor adds and updates toggle rows', () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  const editor = new SimpleThermostatEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+  editor.setConfig({ entity: 'climate.living_room' } as any)
+
+  editor._addFooterRow()
+  editor._updateFooterRow(0, 'entity', 'switch.gree_ac_health')
+  editor._updateFooterRow(0, 'name', 'Health')
+  editor._updateFooterRow(0, 'icon', 'mdi:shield-check')
+
+  expect(editor.config.footer).toEqual([
+    {
+      entity: 'switch.gree_ac_health',
+      name: 'Health',
+      icon: 'mdi:shield-check',
+    },
+  ])
+  expect(configChanged).toHaveBeenCalled()
+})
+
+test('footer control editor removes the config when the last row is removed', () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  const editor = new SimpleThermostatEditor()
+  editor.setConfig({
+    entity: 'climate.living_room',
+    footer: [{ entity: 'switch.gree_ac_health' }],
+  } as any)
+
+  editor._removeFooterRow(0)
+
+  expect(editor.config.footer).toBeUndefined()
 })
 
 test('editor updates its local form data when enhanced visuals changes', () => {

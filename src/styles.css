@@ -804,6 +804,9 @@ ha-card.cooling .header__icon-wrap::before {
 .modes.preset {
   flex-wrap: nowrap;
 }
+.modes.footer {
+  flex-wrap: nowrap;
+}
 .mode-title {
   padding: 0 16px;
   place-self: center;
@@ -1352,7 +1355,8 @@ ha-card.drying {
 .modes.swing_horizontal .mode-item,
 .modes.swing_vertical .mode-item,
 .modes.vane_horizontal .mode-item,
-.modes.vane_vertical .mode-item {
+.modes.vane_vertical .mode-item,
+.modes.footer .mode-item {
   --st-mode-min-width: 58px;
   flex-direction: row;
   align-items: center;
@@ -1528,7 +1532,8 @@ ha-card.standard-visuals .modes.swing,
 ha-card.standard-visuals .modes.swing_horizontal,
 ha-card.standard-visuals .modes.swing_vertical,
 ha-card.standard-visuals .modes.vane_horizontal,
-ha-card.standard-visuals .modes.vane_vertical {
+ha-card.standard-visuals .modes.vane_vertical,
+ha-card.standard-visuals .modes.footer {
   display: grid;
   grid-template-columns: none;
   grid-auto-columns: minmax(0, 1fr);
@@ -1549,7 +1554,8 @@ ha-card.standard-visuals .modes.swing .mode-item,
 ha-card.standard-visuals .modes.swing_horizontal .mode-item,
 ha-card.standard-visuals .modes.swing_vertical .mode-item,
 ha-card.standard-visuals .modes.vane_horizontal .mode-item,
-ha-card.standard-visuals .modes.vane_vertical .mode-item {
+ha-card.standard-visuals .modes.vane_vertical .mode-item,
+ha-card.standard-visuals .modes.footer .mode-item {
   display: flex;
   flex: initial;
   flex-direction: column;

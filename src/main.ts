@@ -14,6 +14,7 @@ import fireEvent from './fireEvent'
 import renderHeader from './components/header'
 import renderEntities from './components/entities'
 import renderModeType from './components/modeType'
+import renderFooter from './components/footer'
 import { getEntityAction } from './entityAction'
 import normalizeConfig from './config/normalize'
 
@@ -27,7 +28,14 @@ import parseService, { Service } from './config/service'
 
 import { CardConfig, ModeValue, ModeControlObject, MODES } from './config/card'
 
-import { ControlMode, LooseObject, Entity, HASS, HVAC_MODES } from './types'
+import {
+  ControlMode,
+  LooseObject,
+  Entity,
+  HASS,
+  HVAC_MODES,
+  FooterToggle,
+} from './types'
 
 const SETPOINT_DEBOUNCE_TIMEOUT = 500
 const STEP_SIZE = 0.5
@@ -65,6 +73,10 @@ const CONTROL_METADATA_KEYS = ['entity', 'hide_when_off', 'hide_off_when_off']
 
 function getConfiguredEntities(config: CardConfig) {
   return config.entities ?? []
+}
+
+function getConfiguredFooter(config: CardConfig) {
+  return Array.isArray(config.footer) ? config.footer : []
 }
 
 function shouldShowModeControl(
@@ -516,6 +528,8 @@ export default class SimpleThermostat extends LitElement {
   @property()
   entities: Array<Entity> = []
   @property()
+  footer: Array<FooterToggle> = []
+  @property()
   showEntities: boolean = true
   @property()
   name: string | false = ''
@@ -613,6 +627,7 @@ export default class SimpleThermostat extends LitElement {
       this._setpointDebounce = setpointDebounce
     }
     this.entities = []
+    this.footer = []
     this.showEntities = true
     this.toggleAttribute('embedded', this.config.embedded === true)
     if (this._hass?.states) {
@@ -776,6 +791,21 @@ export default class SimpleThermostat extends LitElement {
       this.showEntities = true
       this.entities = []
     }
+
+    this.footer = getConfiguredFooter(this.config)
+      .map(({ entity, name, icon, hide_when_off }) => {
+        const state = hass.states?.[entity]
+        if (!state) return null
+
+        return {
+          entity,
+          name,
+          icon,
+          hide_when_off,
+          state,
+        } as FooterToggle
+      })
+      .filter((toggle): toggle is FooterToggle => !!toggle)
   }
 
   localize = (label: string, prefix = '') => {
@@ -924,6 +954,12 @@ export default class SimpleThermostat extends LitElement {
               </section>
             `
           : nothing}
+        ${renderFooter({
+          toggles: this.footer,
+          mainState: entity.state,
+          toggleFooterEntity: this.toggleFooterEntity,
+          openEntityPopover: this.openEntityPopover,
+        })}
       </ha-card>
     `
   }
@@ -935,6 +971,13 @@ export default class SimpleThermostat extends LitElement {
     this._callAction(`homeassistant.turn_${el.checked ? 'on' : 'off'}`, {
       entity_id: entityId,
     })
+  }
+
+  toggleFooterEntity = (entityId: string, checked: boolean) => {
+    this._callAction(`homeassistant.turn_${checked ? 'on' : 'off'}`, {
+      entity_id: entityId,
+    })
+    fireEvent(this, 'haptic', 'light')
   }
 
   renderSetpoints({
@@ -1266,12 +1309,24 @@ export default class SimpleThermostat extends LitElement {
             !(hide_when_off === true && this.entity?.state === HVAC_MODES.OFF)
         )
       }).length ?? 0
+    const footerRows =
+      this.footer?.some(
+        ({ hide_when_off }) =>
+          !(hide_when_off === true && this.entity?.state === HVAC_MODES.OFF)
+      )
+        ? 1
+        : 0
     const warningRows =
       this.stepSize < 1 && this.config.decimals === 0 ? 1 : 0
 
     return Math.max(
       1,
-      headerRows + entityRows + setpointRows + modeRows + warningRows
+      headerRows +
+        entityRows +
+        setpointRows +
+        modeRows +
+        footerRows +
+        warningRows
     )
   }
 

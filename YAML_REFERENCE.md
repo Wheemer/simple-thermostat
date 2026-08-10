@@ -127,6 +127,7 @@ The group card renders one normal Simple Thermostat card at a time and adds a co
 | `layout`                           | object                 | Layout settings.                                                                                                                                                              |
 | `control`                          | array, object, `false` | Mode controls.                                                                                                                                                                |
 | `entities`                         | array, `false`         | Extra entity rows.                                                                                                                                                            |
+| `footer`                           | array, `false`         | Footer toggle controls shown below the mode rows.                                                                                                                             |
 | `setpoints`                        | object, `false`        | Manual setpoint configuration. Usually not needed.                                                                                                                            |
 | `service`                          | object                 | Override the action used to set the target value.                                                                                                                             |
 | `styles`                           | string                 | Inline CSS scoped to this card.                                                                                                                                               |
@@ -558,6 +559,37 @@ hide:
 ```
 
 The `temperature` key is kept for compatibility and means the built-in current value row.
+
+## Footer Controls
+
+Use `footer` for switch-style helpers that should look like the card's other control buttons instead of extra entity rows.
+
+```yaml
+footer:
+  - entity: switch.gree_ac_health
+    name: Health
+    icon: mdi:shield-check
+  - entity: switch.gree_ac_sleep
+    name: Sleep
+    icon: mdi:sleep
+  - entity: switch.gree_ac_x_fan
+    name: X-Fan
+    icon: mdi:fan
+  - entity: switch.gree_ac_8deg_mode
+    name: 8°C Mode
+    icon: mdi:thermometer
+```
+
+Footer options:
+
+| Option          | Type            | Description                                                   |
+| --------------- | --------------- | ------------------------------------------------------------- |
+| `entity`        | string          | Toggle-capable entity id.                                     |
+| `name`          | string, `false` | Label override, or `false` to show only the icon.             |
+| `icon`          | string, `false` | Icon override, or `false` to hide the icon.                   |
+| `hide_when_off` | boolean         | Hide this footer control while the main card entity is `off`. |
+
+Footer controls call `homeassistant.turn_on` and `homeassistant.turn_off` for the configured entity.
 
 ## Setpoints
 
