@@ -1124,7 +1124,7 @@ export default class SimpleThermostatEditor extends LitElement {
                       this._updateFooterRow(index, 'entity', ev.detail.value)}
                   ></ha-entity-picker>
                   <ha-textfield
-                    label="Name"
+                    label="Name override"
                     .value=${row.name ?? ''}
                     @input=${(ev: InputEvent) =>
                       this._updateFooterRow(

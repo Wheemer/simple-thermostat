@@ -533,6 +533,45 @@ test('footer control editor adds and updates toggle rows', () => {
   expect(configChanged).toHaveBeenCalled()
 })
 
+test('footer control editor renders the name override field', async () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  document.body.innerHTML = ''
+  const editor = new SimpleThermostatEditor()
+  editor.hass = {
+    performAction,
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: { hvac_modes: ['off', 'heat'], temperature: 20 },
+      },
+      'switch.gree_ac_health': {
+        entity_id: 'switch.gree_ac_health',
+        state: 'off',
+        attributes: { friendly_name: 'Health' },
+      },
+    },
+  } as any
+  editor.setConfig({
+    entity: 'climate.living_room',
+    footer: [{ entity: 'switch.gree_ac_health', name: 'Health' }],
+  } as any)
+  document.body.appendChild(editor)
+
+  await editor.updateComplete
+
+  const labels = Array.from(
+    editor.shadowRoot?.querySelectorAll('ha-textfield') ?? []
+  ).map((field) => field.getAttribute('label'))
+
+  expect(labels).toContain('Name override')
+})
+
 test('footer control editor removes the config when the last row is removed', () => {
   if (!customElements.get('simple-thermostat-editor-test')) {
     customElements.define(

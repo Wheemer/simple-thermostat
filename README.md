@@ -189,6 +189,11 @@ footer:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.2.8</strong></td>
+      <td>Clarified the footer control name override field in the visual editor.</td>
+    </tr>
+    <tr><td>Added editor coverage to ensure the footer name override is visible in the visual editor.</td></tr>
+    <tr>
       <td rowspan="3" nowrap><strong>v4.2.7</strong></td>
       <td>Added footer toggle controls for helper switches that should appear below the normal mode rows.</td>
     </tr>
