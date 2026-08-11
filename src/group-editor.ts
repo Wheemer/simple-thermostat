@@ -126,6 +126,25 @@ export default class SimpleThermostatGroupEditor extends LitElement {
         gap: 8px;
       }
 
+      .selector-style-row {
+        display: grid;
+        gap: 6px;
+      }
+
+      .selector-style-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .selector-style-actions ha-button {
+        width: 100%;
+      }
+
+      .selector-style-actions ha-button.selected {
+        --mdc-theme-primary: var(--primary-color);
+      }
+
       .option-row {
         display: flex;
         align-items: center;
@@ -266,6 +285,22 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     }
 
     this.commit({ ...this.config, selector })
+  }
+
+  private renderSelectorStyleOption(
+    label: string,
+    value: 'header' | 'tabs',
+    selected: boolean
+  ) {
+    return html`
+      <ha-button
+        class=${selected ? 'selected' : ''}
+        appearance=${selected ? 'filled' : 'outlined'}
+        @click=${() => this.updateSelectorStyle(value)}
+      >
+        ${label}
+      </ha-button>
+    `
   }
 
   private isAutoSelectEnabled() {
@@ -450,18 +485,27 @@ export default class SimpleThermostatGroupEditor extends LitElement {
           <p>Control how the group chooses and labels the active card.</p>
         </div>
         <div class="selector-options">
-          <ha-select
-            label="Selector style"
-            .value=${selector.style ?? DEFAULT_SELECTOR.style}
-            @selected=${(ev: CustomEvent) =>
-              this.updateSelectorStyle(ev.detail.value)}
-            @closed=${(ev: Event) => ev.stopPropagation()}
-            fixed-menu-position
-            natural-menu-width
-          >
-            <mwc-list-item value="header">Header navigation</mwc-list-item>
-            <mwc-list-item value="tabs">Tabbed buttons</mwc-list-item>
-          </ha-select>
+          <div class="selector-style-row">
+            <div class="option-text">
+              <span class="option-title">Selector style</span>
+              <span class="option-description"
+                >Choose the normal arrow/menu header or visible tab
+                buttons.</span
+              >
+            </div>
+            <div class="selector-style-actions">
+              ${this.renderSelectorStyleOption(
+                'Header navigation',
+                'header',
+                (selector.style ?? DEFAULT_SELECTOR.style) === 'header'
+              )}
+              ${this.renderSelectorStyleOption(
+                'Tabbed buttons',
+                'tabs',
+                selector.style === 'tabs'
+              )}
+            </div>
+          </div>
           ${this.renderOption(
             'Follow active device',
             'Switch to a card when its mode or on/off activity changes.',

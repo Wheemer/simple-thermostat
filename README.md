@@ -204,10 +204,15 @@ footer:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.2.10</strong></td>
+      <td>Made the Simple Thermostat Group selector style visible as a two-button choice in the visual editor.</td>
+    </tr>
+    <tr><td>Kept <code>selector.style: tabs</code> as the YAML value written by the editor's <strong>Tabbed buttons</strong> option.</td></tr>
+    <tr>
       <td rowspan="4" nowrap><strong>v4.2.9</strong></td>
       <td>Added an optional tabbed selector style for <code>custom:simple-thermostat-group</code>.</td>
     </tr>
-    <tr><td>Added a <strong>Selector style</strong> dropdown to the group card visual editor.</td></tr>
+    <tr><td>Added a <strong>Selector style</strong> control to the group card visual editor.</td></tr>
     <tr><td>Documented <code>selector.style: tabs</code> in the README and YAML reference.</td></tr>
     <tr><td>Kept the existing arrow/menu group selector as the default so current group cards do not change unless the new tabbed style is selected.</td></tr>
     <tr>

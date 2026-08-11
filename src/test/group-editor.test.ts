@@ -235,17 +235,13 @@ test('group editor writes optional tab selector style', async () => {
 
   await editor.updateComplete
 
-  const selectorStyle = editor.shadowRoot?.querySelector(
-    'ha-select[label="Selector style"]'
-  ) as HTMLElement
+  expect(editor.shadowRoot?.textContent).toContain('Selector style')
 
-  selectorStyle.dispatchEvent(
-    new CustomEvent('selected', {
-      detail: { value: 'tabs' },
-      bubbles: true,
-      composed: true,
-    })
-  )
+  const tabButton = Array.from(
+    editor.shadowRoot?.querySelectorAll('ha-button') ?? []
+  ).find((button) => button.textContent?.includes('Tabbed buttons')) as HTMLElement
+
+  tabButton.click()
 
   expect(configChanged).toHaveBeenLastCalledWith(
     expect.objectContaining({
