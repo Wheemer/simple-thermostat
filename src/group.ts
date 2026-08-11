@@ -8,6 +8,7 @@ import fireEvent from './fireEvent'
 import { HASS, LooseObject } from './types'
 
 type AutoSelectMode = 'off' | 'recent_activity'
+type SelectorStyle = 'header' | 'tabs'
 
 export type GroupTargetConfig =
   | string
@@ -33,6 +34,7 @@ export interface GroupConfig {
         manual_pause_ms?: number
       }
   selector?: {
+    style?: SelectorStyle
     icons?: boolean
     names?: boolean
     states?: boolean
@@ -79,6 +81,7 @@ declare global {
 }
 
 const DEFAULT_SELECTOR = {
+  style: 'header' as SelectorStyle,
   icons: true,
   names: true,
   states: false,
@@ -205,6 +208,171 @@ export default class SimpleThermostatGroup extends LitElement {
         min-width: 0;
         box-sizing: border-box;
         transform: translateY(var(--st-group-header-top-buffer, 2px));
+      }
+
+      .group-selector.tabs {
+        display: block;
+        padding: calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 3)
+          calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 3) 0;
+        height: auto;
+        transform: translateY(var(--st-group-header-top-buffer, 2px));
+      }
+
+      .group-tabs {
+        display: grid;
+        grid-template-columns: repeat(
+          auto-fit,
+          minmax(var(--st-group-tab-min-width, 120px), 1fr)
+        );
+        gap: calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 2);
+        min-width: 0;
+      }
+
+      .group-tab {
+        appearance: none;
+        border: 0;
+        border-radius: var(--st-group-tab-radius, 10px);
+        min-width: 0;
+        min-height: var(--st-group-tab-height, 46px);
+        padding: 7px 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--st-group-tab-color, var(--primary-text-color));
+        background: var(
+          --st-group-tab-background,
+          color-mix(in srgb, var(--primary-text-color) 12%, transparent)
+        );
+        font: inherit;
+        font-weight: 600;
+        line-height: 1.15;
+        cursor: pointer;
+        transition:
+          background 160ms var(--st-motion-ease, ease),
+          color 160ms var(--st-motion-ease, ease),
+          opacity 160ms var(--st-motion-ease, ease);
+      }
+
+      .group-tab:hover,
+      .group-tab:focus-visible {
+        background: var(
+          --st-group-tab-hover-background,
+          color-mix(in srgb, currentColor 22%, transparent)
+        );
+      }
+
+      .group-tab:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+      }
+
+      .group-tab.selected {
+        color: var(--st-group-tab-selected-color, #fff);
+        background: var(
+          --st-group-tab-selected-background,
+          var(--primary-color)
+        );
+      }
+
+      .group-tab ha-icon {
+        --mdc-icon-size: 21px;
+        --iron-icon-width: 21px;
+        --iron-icon-height: 21px;
+        flex: 0 0 auto;
+      }
+
+      .group-tab-labels {
+        display: grid;
+        min-width: 0;
+        gap: 1px;
+        text-align: center;
+      }
+
+      .group-tab-name,
+      .group-tab-state {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .group-tab-state {
+        color: currentColor;
+        opacity: 0.78;
+        font-size: var(--ha-font-size-xs, 11px);
+        font-weight: 500;
+      }
+
+      .group-tab.state-off {
+        --st-group-tab-background: color-mix(
+          in srgb,
+          var(--state-icon-color, var(--secondary-text-color)) 20%,
+          transparent
+        );
+        --st-group-tab-color: var(--secondary-text-color);
+      }
+
+      .group-tab.cooling,
+      .group-tab.state-cool {
+        --st-group-tab-background: color-mix(
+          in srgb,
+          var(--state-climate-cool-color, var(--cool-color, #2b9af9)) 22%,
+          transparent
+        );
+        --st-group-tab-color: var(
+          --state-climate-cool-color,
+          var(--cool-color, #2b9af9)
+        );
+        --st-group-tab-selected-background: var(
+          --state-climate-cool-color,
+          var(--cool-color, #2b9af9)
+        );
+      }
+
+      .group-tab.heating,
+      .group-tab.state-heat {
+        --st-group-tab-background: color-mix(
+          in srgb,
+          var(--state-climate-heat-color, var(--heat-color, #ff8100)) 22%,
+          transparent
+        );
+        --st-group-tab-color: var(
+          --state-climate-heat-color,
+          var(--heat-color, #ff8100)
+        );
+        --st-group-tab-selected-background: var(
+          --state-climate-heat-color,
+          var(--heat-color, #ff8100)
+        );
+      }
+
+      .group-tab.drying,
+      .group-tab.state-dry {
+        --st-group-tab-background: color-mix(
+          in srgb,
+          var(--state-climate-dry-color, var(--dry-color, #efbd07)) 24%,
+          transparent
+        );
+        --st-group-tab-color: var(
+          --state-climate-dry-color,
+          var(--dry-color, #efbd07)
+        );
+        --st-group-tab-selected-background: var(
+          --state-climate-dry-color,
+          var(--dry-color, #efbd07)
+        );
+      }
+
+      .group-tab.domain-fan:not(.state-off),
+      .group-tab.humidifying {
+        --st-group-tab-background: color-mix(
+          in srgb,
+          var(--primary-color) 22%,
+          transparent
+        );
+        --st-group-tab-color: var(--primary-color);
+        --st-group-tab-selected-background: var(--primary-color);
       }
 
       .group-title {
@@ -894,6 +1062,21 @@ export default class SimpleThermostatGroup extends LitElement {
     ].filter(Boolean)
 
     return classes.join(' ')
+  }
+
+  private getTargetClasses(target: GroupTarget) {
+    const state = this.hass?.states?.[target.entity]
+    if (!state) return ''
+
+    const domain = getDomain(state.entity_id)
+    const action = getEntityAction(state)
+    return [
+      `domain-${safeClass(domain)}`,
+      `state-${safeClass(state.state)}`,
+      safeClass(action),
+    ]
+      .filter(Boolean)
+      .join(' ')
   }
 
   private getGroupCardStyle() {
@@ -1712,7 +1895,72 @@ export default class SimpleThermostatGroup extends LitElement {
     `
   }
 
+  private getTargetStateLabel(target: GroupTarget) {
+    const state = this.hass?.states?.[target.entity]
+    if (!state) return ''
+
+    if (typeof this.hass?.formatEntityState === 'function') {
+      return this.hass.formatEntityState(state)
+    }
+
+    return String(state.state)
+  }
+
+  private renderTabSelector() {
+    const selector = this.config?.selector ?? DEFAULT_SELECTOR
+
+    return html`
+      <div class="group-selector tabs">
+        <div class="group-tabs" role="tablist">
+          ${this.targets.map((target) => {
+            const label = this.getTargetLabel(target)
+            const icon = this.getTargetIcon(target)
+            const selected = target.entity === this.selectedEntity
+            const stateLabel = selector.states
+              ? this.getTargetStateLabel(target)
+              : ''
+
+            return html`
+              <button
+                class=${[
+                  'group-tab',
+                  this.getTargetClasses(target),
+                  selected && 'selected',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                type="button"
+                role="tab"
+                aria-selected=${selected ? 'true' : 'false'}
+                title=${label}
+                @click=${() => this.selectEntity(target.entity)}
+              >
+                ${icon ? html`<ha-icon icon=${icon}></ha-icon>` : nothing}
+                ${selector.names !== false
+                  ? html`
+                      <span class="group-tab-labels">
+                        <span class="group-tab-name">${label}</span>
+                        ${stateLabel
+                          ? html`<span class="group-tab-state"
+                              >${stateLabel}</span
+                            >`
+                          : nothing}
+                      </span>
+                    `
+                  : nothing}
+              </button>
+            `
+          })}
+        </div>
+      </div>
+    `
+  }
+
   private renderSelector() {
+    if (this.config?.selector?.style === 'tabs') {
+      return this.renderTabSelector()
+    }
+
     const target = this.getSelectedTarget()
     const label = this.getTargetLabel(target)
 

@@ -456,6 +456,63 @@ test('opens the picker from the dots and selects a target directly', async () =>
   )
 })
 
+test('renders optional tab selector and switches targets directly', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    selector: { style: 'tabs' },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const tabs = Array.from(
+    group.shadowRoot?.querySelectorAll('.group-tab') ?? []
+  ) as HTMLButtonElement[]
+
+  expect(group.shadowRoot?.querySelector('.group-selector.tabs')).not.toBe(null)
+  expect(group.shadowRoot?.querySelector('[role="tablist"]')).not.toBe(null)
+  expect(group.shadowRoot?.querySelector('.group-nav-cluster')).toBe(null)
+  expect(tabs.map((tab) => tab.textContent?.trim())).toEqual([
+    'Living AC',
+    'Bedroom AC',
+  ])
+  expect(tabs[0].classList.contains('selected')).toBe(true)
+  expect(tabs[0].classList.contains('state-cool')).toBe(true)
+  expect(tabs[1].classList.contains('state-off')).toBe(true)
+
+  tabs[1].click()
+  await group.updateComplete
+
+  expect(
+    group.shadowRoot?.querySelector('.group-tab.selected')?.textContent
+  ).toContain('Bedroom AC')
+  expect(embeddedSetConfig).toHaveBeenLastCalledWith(
+    expect.objectContaining({ entity: 'climate.bedroom' })
+  )
+})
+
+test('tab selector can include state labels', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    selector: { style: 'tabs', states: true },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  expect(
+    group.shadowRoot?.querySelector('.group-tab-state')?.textContent
+  ).toBe('cool')
+})
+
 test('picker follows arrow order and closes when the current target is clicked', async () => {
   const group = createGroup()
 
@@ -527,6 +584,14 @@ test('keeps header controls in fixed columns so embedded content cannot nudge th
   expect(styles).toContain('background: transparent')
   expect(styles).toContain('.group-nav:hover:not(:disabled)')
   expect(styles).toContain('transform: translateY(-1px)')
+})
+
+test('includes styles for optional tabbed group selector', () => {
+  const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
+
+  expect(styles).toContain('.group-selector.tabs')
+  expect(styles).toContain('.group-tabs')
+  expect(styles).toContain('.group-tab.selected')
 })
 
 test('does not hide selected card current value or state rows', async () => {

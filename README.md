@@ -127,6 +127,21 @@ remember_selection: true
 storage_key: upstairs_ac_group
 ```
 
+For small groups, the selector can also be shown as visible tabs:
+
+```yaml
+type: custom:simple-thermostat-group
+selector:
+  style: tabs
+cards:
+  - entity: climate.living_room_ac
+    header:
+      name: Living Room AC
+  - entity: climate.bedroom_ac
+    header:
+      name: Bedroom AC
+```
+
 Group options:
 
 | Option               | Type                    | Description                                                                                                     |
@@ -136,7 +151,7 @@ Group options:
 | `auto_select`        | boolean, string, object | Set to `recent_activity` to switch to the most recently active device.                                         |
 | `remember_selection` | boolean                 | Remember the last selected card across dashboard reloads. Defaults to `true`.                                  |
 | `storage_key`        | string                  | Custom local storage key for remembered group selection and recent activity.                                   |
-| `selector`           | object                  | Show or hide selector `icons`, `names`, and `states`.                                                          |
+| `selector`           | object                  | Configure the group selector. Use `style: tabs` for visible tab buttons, or leave unset for the normal header navigation. Also supports `icons`, `names`, and `states`. |
 | `card`               | object                  | Shared Simple Thermostat config merged into every grouped card.                                                |
 
 ## Domain Defaults
@@ -188,6 +203,13 @@ footer:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.2.9</strong></td>
+      <td>Added an optional tabbed selector style for <code>custom:simple-thermostat-group</code>.</td>
+    </tr>
+    <tr><td>Added a <strong>Selector style</strong> dropdown to the group card visual editor.</td></tr>
+    <tr><td>Documented <code>selector.style: tabs</code> in the README and YAML reference.</td></tr>
+    <tr><td>Kept the existing arrow/menu group selector as the default so current group cards do not change unless the new tabbed style is selected.</td></tr>
     <tr>
       <td rowspan="2" nowrap><strong>v4.2.8</strong></td>
       <td>Clarified the footer control name override field in the visual editor.</td>

@@ -1,6 +1,6 @@
 {
   "name": "simple-thermostat",
-  "version": "4.2.8",
+  "version": "4.2.9",
   "description": "A different take on the thermostat card for Home Assistant Lovelace UI",
   "main": "simple-thermostat.js",
   "type": "module",

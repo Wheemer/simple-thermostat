@@ -14,6 +14,7 @@ type EditableTarget = Record<string, any> & {
 
 const SUPPORTED_DOMAINS = ['climate', 'fan', 'humidifier']
 const DEFAULT_SELECTOR = {
+  style: 'header',
   icons: true,
   names: true,
   states: false,
@@ -254,6 +255,19 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     this.commit({ ...this.config, selector })
   }
 
+  private updateSelectorStyle(value: unknown) {
+    const selector = { ...(this.config.selector ?? {}) }
+    const style = value === 'tabs' ? 'tabs' : 'header'
+
+    if (style === DEFAULT_SELECTOR.style) {
+      delete selector.style
+    } else {
+      selector.style = style
+    }
+
+    this.commit({ ...this.config, selector })
+  }
+
   private isAutoSelectEnabled() {
     const autoSelect = this.config.auto_select
     return (
@@ -436,6 +450,18 @@ export default class SimpleThermostatGroupEditor extends LitElement {
           <p>Control how the group chooses and labels the active card.</p>
         </div>
         <div class="selector-options">
+          <ha-select
+            label="Selector style"
+            .value=${selector.style ?? DEFAULT_SELECTOR.style}
+            @selected=${(ev: CustomEvent) =>
+              this.updateSelectorStyle(ev.detail.value)}
+            @closed=${(ev: Event) => ev.stopPropagation()}
+            fixed-menu-position
+            natural-menu-width
+          >
+            <mwc-list-item value="header">Header navigation</mwc-list-item>
+            <mwc-list-item value="tabs">Tabbed buttons</mwc-list-item>
+          </ha-select>
           ${this.renderOption(
             'Follow active device',
             'Switch to a card when its mode or on/off activity changes.',

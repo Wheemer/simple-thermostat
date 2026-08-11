@@ -102,6 +102,21 @@ storage_key: upstairs_ac_group
 
 The group card renders one normal Simple Thermostat card at a time and adds a compact selector header.
 
+Use `selector.style: tabs` when a small group should show every card as a visible tab button:
+
+```yaml
+type: custom:simple-thermostat-group
+selector:
+  style: tabs
+cards:
+  - entity: climate.living_room_ac
+    header:
+      name: Living Room AC
+  - entity: climate.bedroom_ac
+    header:
+      name: Bedroom AC
+```
+
 ## Configuration
 
 ### Main Options
@@ -144,7 +159,7 @@ The group card renders one normal Simple Thermostat card at a time and adds a co
 | `auto_select`        | boolean, string, object | Set to `recent_activity` to switch to the most recently active device.                                         |
 | `remember_selection` | boolean                 | Remember the last selected card across dashboard reloads. Defaults to `true`.                                  |
 | `storage_key`        | string                  | Custom local storage key for remembered group selection and recent activity.                                   |
-| `selector`           | object                  | Show or hide selector `icons`, `names`, and `states`.                                                          |
+| `selector`           | object                  | Configure the group selector. Use `style: tabs` for visible tab buttons, or leave unset for the normal header navigation. Also supports `icons`, `names`, and `states`. |
 | `card`               | object                  | Shared Simple Thermostat config merged into every grouped card.                                                |
 
 `auto_select` can be configured as a simple value:

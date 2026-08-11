@@ -224,6 +224,41 @@ test('group editor only writes selector options that differ from defaults', asyn
   )
 })
 
+test('group editor writes optional tab selector style', async () => {
+  const editor = createEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+
+  editor.setConfig({
+    cards: [{ entity: 'climate.living_room' }],
+  })
+
+  await editor.updateComplete
+
+  const selectorStyle = editor.shadowRoot?.querySelector(
+    'ha-select[label="Selector style"]'
+  ) as HTMLElement
+
+  selectorStyle.dispatchEvent(
+    new CustomEvent('selected', {
+      detail: { value: 'tabs' },
+      bubbles: true,
+      composed: true,
+    })
+  )
+
+  expect(configChanged).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      detail: expect.objectContaining({
+        config: {
+          cards: [{ entity: 'climate.living_room' }],
+          selector: { style: 'tabs' },
+        },
+      }),
+    })
+  )
+})
+
 test('group editor exposes remember selection and storage key', async () => {
   const editor = createEditor()
   const configChanged = jest.fn()
