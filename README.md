@@ -204,6 +204,11 @@ footer:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.2.11</strong></td>
+      <td>Kept the selected card header visible when using the group card's tabbed selector style.</td>
+    </tr>
+    <tr><td>Preserved selected card header titles, icons, more-info behavior, and header toggles above the tab row.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.2.10</strong></td>
       <td>Made the Simple Thermostat Group selector style visible as a two-button choice in the visual editor.</td>
     </tr>

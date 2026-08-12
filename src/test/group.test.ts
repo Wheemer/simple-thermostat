@@ -476,6 +476,9 @@ test('renders optional tab selector and switches targets directly', async () => 
   expect(group.shadowRoot?.querySelector('.group-selector.tabs')).not.toBe(null)
   expect(group.shadowRoot?.querySelector('[role="tablist"]')).not.toBe(null)
   expect(group.shadowRoot?.querySelector('.group-nav-cluster')).toBe(null)
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent?.trim()).toBe(
+    'Living AC'
+  )
   expect(tabs.map((tab) => tab.textContent?.trim())).toEqual([
     'Living AC',
     'Bedroom AC',
@@ -490,9 +493,45 @@ test('renders optional tab selector and switches targets directly', async () => 
   expect(
     group.shadowRoot?.querySelector('.group-tab.selected')?.textContent
   ).toContain('Bedroom AC')
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent?.trim()).toBe(
+    'Bedroom AC'
+  )
   expect(embeddedSetConfig).toHaveBeenLastCalledWith(
     expect.objectContaining({ entity: 'climate.bedroom' })
   )
+})
+
+test('tab selector keeps selected card header toggles', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    selector: { style: 'tabs' },
+    cards: [
+      {
+        entity: 'climate.living_room',
+        header: {
+          name: 'Living AC',
+          toggle: { entity: 'switch.living_room_ac_power', name: 'Power' },
+        },
+      },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'switch.living_room_ac_power': {
+        entity_id: 'switch.living_room_ac_power',
+        state: 'on',
+        attributes: { friendly_name: 'Power' },
+      },
+    },
+  } as any
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-toggles')).not.toBe(null)
+  expect(group.shadowRoot?.querySelector('.group-toggle')).not.toBe(null)
 })
 
 test('tab selector can include state labels', async () => {
