@@ -211,19 +211,11 @@ export default class SimpleThermostatGroup extends LitElement {
       }
 
       .group-selector.tabs {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: var(--st-group-header-control-height, 34px) auto;
+        display: block;
         padding: calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 3)
           calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 3) 0;
         height: auto;
-        gap: calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 2);
         transform: translateY(var(--st-group-header-top-buffer, 2px));
-      }
-
-      .group-selector.tabs .group-header-content {
-        grid-area: auto;
-        width: 100%;
       }
 
       .group-tabs {
@@ -1916,26 +1908,9 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private renderTabSelector() {
     const selector = this.config?.selector ?? DEFAULT_SELECTOR
-    const target = this.getSelectedTarget()
-    const selectedLabel = this.getTargetLabel(target)
 
     return html`
       <div class="group-selector tabs">
-        <div class="group-header-content">
-          <div
-            class="header__main clickable"
-            role="button"
-            tabindex="0"
-            @click=${() => this.openSelectedPopover()}
-            @keydown=${(ev: KeyboardEvent) => this.onSelectorHeaderKeyDown(ev)}
-          >
-            ${this.renderHeaderIcon(target)}
-            <div class="group-title header__title" title=${selectedLabel}>
-              ${selectedLabel}
-            </div>
-          </div>
-          ${this.renderHeaderToggles(target)}
-        </div>
         <div class="group-tabs" role="tablist">
           ${this.targets.map((target) => {
             const label = this.getTargetLabel(target)

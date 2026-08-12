@@ -204,6 +204,11 @@ footer:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.2.12</strong></td>
+      <td>Restores the tabbed Simple Thermostat Group layout to the confirmed v4.2.10 behavior.</td>
+    </tr>
+    <tr><td>Keeps the visual editor selector-style improvements while preventing the v4.2.11 tab overlay regression.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.2.11</strong></td>
       <td>Kept the selected card header visible when using the group card's tabbed selector style.</td>
     </tr>
