@@ -102,7 +102,7 @@ storage_key: upstairs_ac_group
 
 The group card renders one normal Simple Thermostat card at a time and adds a compact selector header.
 
-Use `selector.style: tabs` when a small group should show every card as a visible tab button:
+Use `selector.style: tabs` when a small group should show every card as a visible tab button. This option was inspired by @m1xminus's multi-AC selector idea in [#16](https://github.com/Wheemer/simple-thermostat/issues/16).
 
 ```yaml
 type: custom:simple-thermostat-group

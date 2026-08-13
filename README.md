@@ -127,7 +127,7 @@ remember_selection: true
 storage_key: upstairs_ac_group
 ```
 
-For small groups, the selector can also be shown as visible tabs:
+For small groups, the selector can also be shown as visible tabs. This option was inspired by @m1xminus's multi-AC selector idea in [#16](https://github.com/Wheemer/simple-thermostat/issues/16).
 
 ```yaml
 type: custom:simple-thermostat-group
@@ -205,7 +205,7 @@ footer:
   <tbody>
     <tr>
       <td rowspan="2" nowrap><strong>v4.2.12</strong></td>
-      <td>Restores the tabbed Simple Thermostat Group layout to the confirmed v4.2.10 behavior.</td>
+      <td>Restores the tabbed Simple Thermostat Group layout, inspired by @m1xminus's multi-AC selector idea in <a href="https://github.com/Wheemer/simple-thermostat/issues/16">#16</a>, to the confirmed v4.2.10 behavior.</td>
     </tr>
     <tr><td>Keeps the visual editor selector-style improvements while preventing the v4.2.11 tab overlay regression.</td></tr>
     <tr>
@@ -220,7 +220,7 @@ footer:
     <tr><td>Kept <code>selector.style: tabs</code> as the YAML value written by the editor's <strong>Tabbed buttons</strong> option.</td></tr>
     <tr>
       <td rowspan="4" nowrap><strong>v4.2.9</strong></td>
-      <td>Added an optional tabbed selector style for <code>custom:simple-thermostat-group</code>.</td>
+      <td>Added an optional tabbed selector style for <code>custom:simple-thermostat-group</code>, inspired by @m1xminus's multi-AC selector idea in <a href="https://github.com/Wheemer/simple-thermostat/issues/16">#16</a>.</td>
     </tr>
     <tr><td>Added a <strong>Selector style</strong> control to the group card visual editor.</td></tr>
     <tr><td>Documented <code>selector.style: tabs</code> in the README and YAML reference.</td></tr>
