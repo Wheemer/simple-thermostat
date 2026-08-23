@@ -204,6 +204,17 @@ footer:
   </thead>
   <tbody>
     <tr>
+      <td rowspan="8" nowrap><strong>v4.3.0</strong></td>
+      <td>Rolls the tested v4.2 prerelease line into the normal release channel.</td>
+    </tr>
+    <tr><td>Adds optional extra entity display modes: <code>row</code>, <code>auto</code>, <code>button</code>, <code>toggle</code>, and <code>chip</code>, with editor support.</td></tr>
+    <tr><td>Adds footer toggle controls for helper switches that should appear below the normal mode rows.</td></tr>
+    <tr><td>Adds an optional tabbed selector style for <code>custom:simple-thermostat-group</code>, inspired by @m1xminus's multi-AC selector idea in <a href="https://github.com/Wheemer/simple-thermostat/issues/16">#16</a>.</td></tr>
+    <tr><td>Improves group-card selector editing, tab behavior, remembered selection, and embedded-card layout stability.</td></tr>
+    <tr><td>Improves sparse HVAC/fan label layout, compact dual-setpoint cards, active mode colors, and card-level color overrides.</td></tr>
+    <tr><td>Adds Dependabot and CodeQL coverage, plus dependency/security cleanup from the v4.2 prerelease cycle.</td></tr>
+    <tr><td>Refreshes the issue templates to make bug reports and feature requests easier to open.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.2.12</strong></td>
       <td>Restores the tabbed Simple Thermostat Group layout, inspired by @m1xminus's multi-AC selector idea in <a href="https://github.com/Wheemer/simple-thermostat/issues/16">#16</a>, to the confirmed v4.2.10 behavior.</td>
     </tr>
