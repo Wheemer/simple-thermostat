@@ -10,6 +10,7 @@ dist/*.debug.js
 
 # Test coverage
 coverage
+test-results/
 
 # Logs
 *.log

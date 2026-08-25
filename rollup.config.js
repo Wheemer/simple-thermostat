@@ -7,8 +7,22 @@ import postCSS from 'rollup-plugin-postcss'
 import postCSSLit from 'rollup-plugin-postcss-lit'
 import postCSSPresetEnv from 'postcss-preset-env'
 import inject from 'rollup-plugin-inject-process-env'
+import { execFileSync } from 'node:child_process'
 
 const BUILD_TARGET = process.env.BUILD_TARGET
+const BUILD_TIME = (() => {
+  if (process.env.SOURCE_DATE_EPOCH) {
+    return new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString()
+  }
+
+  try {
+    return execFileSync('git', ['log', '-1', '--format=%cI'], {
+      encoding: 'utf8',
+    }).trim()
+  } catch {
+    return 'unknown-source-time'
+  }
+})()
 
 const shared = (DEBUG) => [
   resolve({
@@ -19,13 +33,7 @@ const shared = (DEBUG) => [
   inject(
     {
       DEBUG,
-      BUILD_TIME: new Date().toLocaleString('en-CA', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      BUILD_TIME,
     },
     { exclude: '**/*.css' }
   ),

@@ -122,6 +122,90 @@ test('group editor preserves detailed card config from the nested editor', async
   )
 })
 
+test('nested editor receives shared card settings and target overrides', async () => {
+  const editor = createEditor()
+  editor.setConfig({
+    card: {
+      enhanced_visuals: false,
+      hide: { state: true },
+      layout: { step: 'column' },
+    } as any,
+    cards: [
+      {
+        entity: 'climate.living_room',
+        layout: { step: 'row' },
+      },
+    ],
+  })
+
+  await editor.updateComplete
+  const configureButton = Array.from(
+    editor.shadowRoot?.querySelectorAll('ha-button') ?? []
+  ).find((button) => button.textContent?.includes('Configure')) as HTMLElement
+  configureButton.click()
+  await editor.updateComplete
+
+  const nested = editor.shadowRoot?.querySelector(
+    innerEditorTag
+  ) as TestSimpleThermostatEditor
+  expect(nested.config).toMatchObject({
+    entity: 'climate.living_room',
+    enhanced_visuals: false,
+    hide: { state: true },
+    layout: { step: 'row' },
+  })
+})
+
+test('nested editor saves only values that differ from shared card settings', async () => {
+  const editor = createEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+  editor.setConfig({
+    card: {
+      enhanced_visuals: false,
+      hide: { state: true },
+    },
+    cards: [{ entity: 'climate.living_room' }],
+  })
+
+  await editor.updateComplete
+  const configureButton = Array.from(
+    editor.shadowRoot?.querySelectorAll('ha-button') ?? []
+  ).find((button) => button.textContent?.includes('Configure')) as HTMLElement
+  configureButton.click()
+  await editor.updateComplete
+
+  const nested = editor.shadowRoot?.querySelector(
+    innerEditorTag
+  ) as TestSimpleThermostatEditor
+  nested.dispatchEvent(
+    new CustomEvent('config-changed', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        config: {
+          type: 'custom:simple-thermostat',
+          entity: 'climate.living_room',
+          enhanced_visuals: false,
+          hide: { state: true },
+          decimals: 0,
+        },
+      },
+    })
+  )
+
+  const emitted = configChanged.mock.calls.at(-1)?.[0].detail.config
+  expect(emitted.card).toEqual({
+    enhanced_visuals: false,
+    hide: { state: true },
+  })
+  expect(emitted.cards[0]).toEqual({
+    type: 'custom:simple-thermostat',
+    entity: 'climate.living_room',
+    decimals: 0,
+  })
+})
+
 test('group editor toggles recent activity auto-select', async () => {
   const editor = createEditor()
   const configChanged = jest.fn()
@@ -239,7 +323,9 @@ test('group editor writes optional tab selector style', async () => {
 
   const tabButton = Array.from(
     editor.shadowRoot?.querySelectorAll('ha-button') ?? []
-  ).find((button) => button.textContent?.includes('Tabbed buttons')) as HTMLElement
+  ).find((button) =>
+    button.textContent?.includes('Tabbed buttons')
+  ) as HTMLElement
 
   tabButton.click()
 

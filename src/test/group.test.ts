@@ -402,9 +402,7 @@ test('uses the same resolved header icon as the embedded stock card', async () =
   } as any
   await group.updateComplete
 
-  const icon = group.shadowRoot?.querySelector(
-    '.header__icon'
-  ) as HTMLElement
+  const icon = group.shadowRoot?.querySelector('.header__icon') as HTMLElement
 
   expect((icon as any).icon).toBe('mdi:snowflake')
   expect(icon.classList.contains('cooling')).toBe(true)
@@ -435,7 +433,8 @@ test('opens the picker from the dots and selects a target directly', async () =>
 
   expect(group.shadowRoot?.querySelector('.group-picker')).not.toBe(null)
   expect(
-    group.shadowRoot?.querySelector('.group-picker button.selected')?.textContent
+    group.shadowRoot?.querySelector('.group-picker button.selected')
+      ?.textContent
   ).toContain('Living AC')
   expect(
     group.shadowRoot?.querySelector('.group-picker .selected-indicator')
@@ -443,7 +442,9 @@ test('opens the picker from the dots and selects a target directly', async () =>
 
   const bedroomButton = Array.from(
     group.shadowRoot?.querySelectorAll('.group-picker button') ?? []
-  ).find((button) => button.textContent?.includes('Bedroom AC')) as HTMLButtonElement
+  ).find((button) =>
+    button.textContent?.includes('Bedroom AC')
+  ) as HTMLButtonElement
   bedroomButton.click()
   await group.updateComplete
 
@@ -508,9 +509,9 @@ test('tab selector can include state labels', async () => {
   group.hass = hass as any
   await group.updateComplete
 
-  expect(
-    group.shadowRoot?.querySelector('.group-tab-state')?.textContent
-  ).toBe('cool')
+  expect(group.shadowRoot?.querySelector('.group-tab-state')?.textContent).toBe(
+    'cool'
+  )
 })
 
 test('picker follows arrow order and closes when the current target is clicked', async () => {
@@ -570,9 +571,7 @@ test('keeps the picker scrollable instead of clipping long target lists', async 
 test('keeps header controls in fixed columns so embedded content cannot nudge them', () => {
   const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
 
-  expect(styles).toContain(
-    'grid-template-columns: minmax(0, 1fr) 96px'
-  )
+  expect(styles).toContain('grid-template-columns: minmax(0, 1fr) 96px')
   expect(styles).toContain("grid-template-areas: 'content nav'")
   expect(styles).toContain('grid-area: content')
   expect(styles).toContain('grid-area: nav')
@@ -625,7 +624,9 @@ test('uses normal clickable header affordance for the group title', () => {
   expect(styles).toContain('.header__main.clickable')
   expect(styles).toContain('cursor: pointer')
   expect(styles).toContain('.header__main.clickable:hover .header__title')
-  expect(styles).toContain('.header__main.clickable:focus-visible .header__title')
+  expect(styles).toContain(
+    '.header__main.clickable:focus-visible .header__title'
+  )
   expect(styles).toContain(
     'color: var(--st-interactive-tint, var(--primary-color))'
   )
@@ -697,9 +698,9 @@ test('remembers the selected embedded card when enabled', async () => {
   secondGroup.hass = hass as any
   await secondGroup.updateComplete
 
-  expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
-    'Bedroom'
-  )
+  expect(
+    secondGroup.shadowRoot?.querySelector('.group-title')?.textContent
+  ).toBe('Bedroom')
   expect(embeddedSetConfig).toHaveBeenLastCalledWith(
     expect.objectContaining({ entity: 'climate.bedroom' })
   )
@@ -912,7 +913,7 @@ test('passes the source card_mod when the selected target config is lightweight'
   expect(group.shadowRoot?.querySelector('ha-card.group-card')).toBe(null)
 })
 
-test('uses a sibling card_mod for lightweight targets without their own card_mod', async () => {
+test('does not inherit card_mod from a styled sibling target', async () => {
   const group = createGroup()
 
   group.setConfig({
@@ -942,13 +943,9 @@ test('uses a sibling card_mod for lightweight targets without their own card_mod
   const embeddedConfig = embeddedSetConfig.mock.calls.at(-1)?.[0]
 
   expect(embeddedConfig).toEqual(
-    expect.objectContaining({
-      entity: 'climate.bedroom',
-      card_mod: {
-        style: 'ha-card { background: linear-gradient(red, blue); }',
-      },
-    })
+    expect.objectContaining({ entity: 'climate.bedroom' })
   )
+  expect(embeddedConfig.card_mod).toBeUndefined()
   expect(group.shadowRoot?.querySelector('ha-card.group-card')).toBe(null)
 })
 
@@ -1121,9 +1118,9 @@ test('uses persisted recent activity when the group reloads', async () => {
   await secondGroup.updateComplete
   await secondGroup.updateComplete
 
-  expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
-    'Bedroom AC'
-  )
+  expect(
+    secondGroup.shadowRoot?.querySelector('.group-title')?.textContent
+  ).toBe('Bedroom AC')
 })
 
 test('seeds recent activity from active devices before inactive timestamp noise', async () => {
@@ -1217,9 +1214,9 @@ test('keeps persisted active activity ahead of newer inactive state timestamps',
   await secondGroup.updateComplete
   await secondGroup.updateComplete
 
-  expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
-    'Bedroom AC'
-  )
+  expect(
+    secondGroup.shadowRoot?.querySelector('.group-title')?.textContent
+  ).toBe('Bedroom AC')
 })
 
 test('prefers newer active climate activity over stale persisted humidifier selection', async () => {
@@ -1283,9 +1280,9 @@ test('prefers newer active climate activity over stale persisted humidifier sele
   await firstGroup.updateComplete
   await firstGroup.updateComplete
 
-  expect(firstGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
-    'Basement Dehumidifiers'
-  )
+  expect(
+    firstGroup.shadowRoot?.querySelector('.group-title')?.textContent
+  ).toBe('Basement Dehumidifiers')
 
   const secondGroup = createGroup()
   secondGroup.setConfig(config)
@@ -1293,9 +1290,9 @@ test('prefers newer active climate activity over stale persisted humidifier sele
   await secondGroup.updateComplete
   await secondGroup.updateComplete
 
-  expect(secondGroup.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
-    'Living AC'
-  )
+  expect(
+    secondGroup.shadowRoot?.querySelector('.group-title')?.textContent
+  ).toBe('Living AC')
 })
 
 test('does not auto-select for current temperature updates', async () => {
@@ -1321,6 +1318,43 @@ test('does not auto-select for current temperature updates', async () => {
         attributes: {
           ...hass.states['climate.bedroom'].attributes,
           current_temperature: 21.5,
+        },
+      },
+    },
+  } as any
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Living AC'
+  )
+})
+
+test('does not auto-select for target or control-setting updates', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    auto_select: { mode: 'recent_activity', cooldown_ms: 0 },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        last_updated: '2026-07-05T12:00:00.000Z',
+        attributes: {
+          ...hass.states['climate.bedroom'].attributes,
+          temperature: 24,
+          preset_mode: 'eco',
+          fan_mode: 'high',
+          swing_mode: 'on',
         },
       },
     },
@@ -1574,4 +1608,12 @@ test('group card reports a masonry size from the selected embedded card', async 
   await group.updateComplete
 
   expect(group.getCardSize()).toBe(6)
+})
+
+test('uses the rendered child card size when it is available', () => {
+  const group = createGroup()
+  group.setConfig({ cards: [{ entity: 'climate.living_room' }] })
+  ;(group as any).embeddedCard = { getCardSize: () => 9 }
+
+  expect(group.getCardSize()).toBe(9)
 })

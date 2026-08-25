@@ -68,6 +68,7 @@ type LovelaceCardElement = HTMLElement & {
   hass?: HASS
   setConfig?: (config: LooseObject) => void
   updateComplete?: Promise<unknown>
+  getCardSize?: () => number | Promise<number>
 }
 
 interface LovelaceCardHelpers {
@@ -171,7 +172,7 @@ export default class SimpleThermostatGroup extends LitElement {
   private lastManualSelectionAt = 0
   private autoSelectResumeTimer?: number
 
-  static get styles() {
+  static override get styles() {
     return css`
       :host {
         display: block;
@@ -657,7 +658,9 @@ export default class SimpleThermostatGroup extends LitElement {
         justify-content: center;
         width: var(--st-control-icon-size, 32px);
         height: var(--st-control-icon-size, 32px);
-        margin-right: calc(var(--st-spacing, var(--st-default-spacing, 4px)) * 2);
+        margin-right: calc(
+          var(--st-spacing, var(--st-default-spacing, 4px)) * 2
+        );
         color: var(--state-icon-color, var(--secondary-text-color));
         isolation: isolate;
         flex: 0 0 auto;
@@ -854,7 +857,7 @@ export default class SimpleThermostatGroup extends LitElement {
     this.persistedActivityApplied = false
   }
 
-  protected updated() {
+  protected override updated() {
     this.syncAutoSelectRecentActivity()
     this.syncEmbeddedCard()
     this.syncOutsideClickListener()
@@ -863,6 +866,11 @@ export default class SimpleThermostatGroup extends LitElement {
 
   getCardSize() {
     if (!this.config || !this.targets.length) return 1
+
+    const embeddedSize = this.embeddedCard?.getCardSize?.()
+    if (typeof embeddedSize === 'number' && Number.isFinite(embeddedSize)) {
+      return Math.max(1, embeddedSize)
+    }
 
     const target = this.getSelectedTarget()
     const cardConfig = this.getTargetCardConfig(target)
@@ -876,7 +884,7 @@ export default class SimpleThermostatGroup extends LitElement {
     return Math.max(2, 1 + entityRows + setpointRows + modeRows)
   }
 
-  disconnectedCallback() {
+  override disconnectedCallback() {
     this.clearOutsideClickListener()
     this.clearAutoSelectResumeTimer()
     super.disconnectedCallback()
@@ -901,7 +909,9 @@ export default class SimpleThermostatGroup extends LitElement {
     return this.readStoredSelectionRecord(config)?.entity ?? ''
   }
 
-  private readStoredSelectionRecord(config: GroupConfig): StoredSelection | undefined {
+  private readStoredSelectionRecord(
+    config: GroupConfig
+  ): StoredSelection | undefined {
     try {
       const value = window.localStorage?.getItem(this.getStorageKey(config))
       if (!value) return undefined
@@ -947,7 +957,9 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private readStoredActivity(config: GroupConfig): ActivityRecord | undefined {
     try {
-      const value = window.localStorage?.getItem(this.getActivityStorageKey(config))
+      const value = window.localStorage?.getItem(
+        this.getActivityStorageKey(config)
+      )
       if (!value) return undefined
 
       const parsed = JSON.parse(value) as Partial<ActivityRecord>
@@ -1137,33 +1149,8 @@ export default class SimpleThermostatGroup extends LitElement {
     if (!state) return ''
 
     const domain = getDomain(target.entity)
-    const attributes = state.attributes ?? {}
     const action = getEntityAction(state) ?? ''
-    const keys =
-      domain === 'climate'
-        ? [
-            'hvac_action',
-            'temperature',
-            'target_temp_low',
-            'target_temp_high',
-            'preset_mode',
-            'fan_mode',
-            'swing_mode',
-            'swing_horizontal_mode',
-            'swing_vertical_mode',
-          ]
-        : domain === 'fan'
-          ? ['percentage', 'preset_mode', 'direction', 'oscillating']
-          : domain === 'humidifier'
-            ? ['action', 'humidity', 'mode']
-            : []
-
-    const parts = [`state:${state.state}`, `action:${action}`]
-    keys.forEach((key) => {
-      parts.push(`${key}:${JSON.stringify(attributes[key] ?? null)}`)
-    })
-
-    return parts.join('|')
+    return `domain:${domain}|state:${state.state}|action:${action}`
   }
 
   private getActivityTimestamp(target: GroupTarget) {
@@ -1171,8 +1158,8 @@ export default class SimpleThermostatGroup extends LitElement {
     const activeRank = this.getActivityActiveRank(target)
     const value =
       activeRank > 1
-        ? state?.last_updated ?? state?.last_changed
-        : state?.last_changed ?? state?.last_updated
+        ? (state?.last_updated ?? state?.last_changed)
+        : (state?.last_changed ?? state?.last_updated)
     const timestamp = typeof value === 'string' ? Date.parse(value) : NaN
     return Number.isFinite(timestamp) ? timestamp : 0
   }
@@ -1251,7 +1238,11 @@ export default class SimpleThermostatGroup extends LitElement {
       (target) => target.entity === stored.entity
     )
     const currentSignature = nextSignatures.get(stored.entity)
-    if (storedTarget && currentSignature && currentSignature === stored.signature) {
+    if (
+      storedTarget &&
+      currentSignature &&
+      currentSignature === stored.signature
+    ) {
       const storedCandidate = this.getActivityCandidate(
         storedTarget,
         stored.timestamp
@@ -1268,9 +1259,7 @@ export default class SimpleThermostatGroup extends LitElement {
     this.selectMostRecentStateActivity(nextSignatures)
   }
 
-  private selectMostRecentStateActivity(
-    nextSignatures?: Map<string, string>
-  ) {
+  private selectMostRecentStateActivity(nextSignatures?: Map<string, string>) {
     const latest = this.getMostRecentStateActivityCandidate()
 
     if (latest && latest.target.entity !== this.selectedEntity) {
@@ -1362,7 +1351,8 @@ export default class SimpleThermostatGroup extends LitElement {
       !changedTargets.length ||
       !this.isRecentActivityAutoSelectEnabled() ||
       this.menuOpen ||
-      Date.now() - this.lastManualSelectionAt < this.getAutoSelectManualPauseMs()
+      Date.now() - this.lastManualSelectionAt <
+        this.getAutoSelectManualPauseMs()
     ) {
       return
     }
@@ -1474,11 +1464,6 @@ export default class SimpleThermostatGroup extends LitElement {
       ...targetConfig,
     }
 
-    if (!mergedConfig.card_mod) {
-      const fallbackCardMod = this.getFallbackCardMod()
-      if (fallbackCardMod) mergedConfig.card_mod = fallbackCardMod
-    }
-
     return {
       ...mergedConfig,
       embedded: true,
@@ -1499,18 +1484,6 @@ export default class SimpleThermostatGroup extends LitElement {
     return source && typeof source === 'object' ? (source as LooseObject) : {}
   }
 
-  private getFallbackCardMod() {
-    const commonCardMod = ((this.config?.card ?? {}) as LooseObject).card_mod
-    if (commonCardMod) return commonCardMod
-
-    const sourceTargets = this.config?.cards ?? this.config?.entities ?? []
-    const styledTarget = sourceTargets.find(
-      (item) => !!item && typeof item === 'object' && !!(item as LooseObject).card_mod
-    ) as LooseObject | undefined
-
-    return styledTarget?.card_mod
-  }
-
   private getCardHelpers() {
     if (!this.cardHelpersPromise) {
       this.cardHelpersPromise =
@@ -1523,7 +1496,9 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private createFallbackEmbeddedCardElement(config: LooseObject) {
-    const element = window.document.createElement(CARD_NAME) as LovelaceCardElement
+    const element = window.document.createElement(
+      CARD_NAME
+    ) as LovelaceCardElement
     if (typeof element.setConfig === 'function') {
       element.setConfig(config)
       return element
@@ -1543,7 +1518,10 @@ export default class SimpleThermostatGroup extends LitElement {
       this.embeddedCardPendingSignature = ''
       return
     }
-    if (this.getEmbeddedConfigSignature(this.getEmbeddedConfig()) !== configSignature) {
+    if (
+      this.getEmbeddedConfigSignature(this.getEmbeddedConfig()) !==
+      configSignature
+    ) {
       return
     }
 
@@ -1621,8 +1599,7 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private syncEmbeddedPresentation() {
     const embedded = this.embeddedCard as
-      | (HTMLElement & { updateComplete?: Promise<unknown> })
-      | undefined
+      (HTMLElement & { updateComplete?: Promise<unknown> }) | undefined
     const updateComplete = embedded?.updateComplete ?? Promise.resolve()
 
     updateComplete
@@ -1725,9 +1702,13 @@ export default class SimpleThermostatGroup extends LitElement {
   private toggleHeaderEntity(ev: Event, entityId: string) {
     ev.stopPropagation()
     const checked = Boolean((ev.target as HTMLInputElement).checked)
-    this.hass?.callService?.('homeassistant', `turn_${checked ? 'on' : 'off'}`, {
-      entity_id: entityId,
-    })
+    this.hass?.callService?.(
+      'homeassistant',
+      `turn_${checked ? 'on' : 'off'}`,
+      {
+        entity_id: entityId,
+      }
+    )
   }
 
   private renderHeaderToggles(target: GroupTarget) {
@@ -1753,19 +1734,23 @@ export default class SimpleThermostatGroup extends LitElement {
                 @change=${(ev: Event) =>
                   this.toggleHeaderEntity(ev, toggle.entity)}
               ></ha-switch>
-              ${icon
-                ? html`<ha-icon
-                    title=${label || toggle.entity}
-                    icon=${icon}
-                  ></ha-icon>`
-                : label
-                  ? html`<span class="group-toggle-label">${label}</span>`
-                  : nothing}
-              ${label && icon
-                ? html`<span class="group-toggle-label" title=${label}
-                    >${label}</span
-                  >`
-                : nothing}
+              ${
+                icon
+                  ? html`<ha-icon
+                      title=${label || toggle.entity}
+                      icon=${icon}
+                    ></ha-icon>`
+                  : label
+                    ? html`<span class="group-toggle-label">${label}</span>`
+                    : nothing
+              }
+              ${
+                label && icon
+                  ? html`<span class="group-toggle-label" title=${label}
+                      >${label}</span
+                    >`
+                  : nothing
+              }
             </div>
           `
         })}
@@ -1854,9 +1839,11 @@ export default class SimpleThermostatGroup extends LitElement {
               class=${selected ? 'selected' : ''}
               @click=${() => this.selectEntity(target.entity)}
             >
-              ${icon
-                ? html`<ha-icon icon=${icon}></ha-icon>`
-                : html`<span class="icon-placeholder"></span>`}
+              ${
+                icon
+                  ? html`<ha-icon icon=${icon}></ha-icon>`
+                  : html`<span class="icon-placeholder"></span>`
+              }
               <span>${label}</span>
             </button>
           `
@@ -1873,7 +1860,7 @@ export default class SimpleThermostatGroup extends LitElement {
     const action = getEntityAction(state) || String(state.state)
     const icon =
       typeof header.icon === 'object'
-        ? header.icon?.[action] ?? false
+        ? (header.icon?.[action] ?? false)
         : header.icon
     if (!icon) return nothing
 
@@ -1883,9 +1870,9 @@ export default class SimpleThermostatGroup extends LitElement {
 
     return html`
       <span
-        class="header__icon-wrap ${stateClass}${actionClass} ${header.slashOffIcon
-          ? 'slash-off'
-          : ''}"
+        class="header__icon-wrap ${stateClass}${actionClass} ${
+          header.slashOffIcon ? 'slash-off' : ''
+        }"
       >
         <ha-icon
           class="header__icon ${stateClass}${actionClass}"
@@ -1936,18 +1923,22 @@ export default class SimpleThermostatGroup extends LitElement {
                 @click=${() => this.selectEntity(target.entity)}
               >
                 ${icon ? html`<ha-icon icon=${icon}></ha-icon>` : nothing}
-                ${selector.names !== false
-                  ? html`
-                      <span class="group-tab-labels">
-                        <span class="group-tab-name">${label}</span>
-                        ${stateLabel
-                          ? html`<span class="group-tab-state"
-                              >${stateLabel}</span
-                            >`
-                          : nothing}
-                      </span>
-                    `
-                  : nothing}
+                ${
+                  selector.names !== false
+                    ? html`
+                        <span class="group-tab-labels">
+                          <span class="group-tab-name">${label}</span>
+                          ${
+                            stateLabel
+                              ? html`<span class="group-tab-state"
+                                  >${stateLabel}</span
+                                >`
+                              : nothing
+                          }
+                        </span>
+                      `
+                    : nothing
+                }
               </button>
             `
           })}
@@ -2015,7 +2006,7 @@ export default class SimpleThermostatGroup extends LitElement {
     `
   }
 
-  render() {
+  override render() {
     if (!this.config) return html`<ha-card></ha-card>`
 
     return html`

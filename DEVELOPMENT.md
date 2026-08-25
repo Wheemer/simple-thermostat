@@ -10,15 +10,13 @@ npm ci
 
 ## Local Checks
 
-Run the main checks before publishing or opening a pull request:
+Run the complete verification suite before publishing or opening a pull request:
 
 ```bash
-npm run typecheck
-npm test
-npm run build:prod
+npm run verify
 ```
 
-`npm run build:prod` creates `simple-thermostat.js` in the repository root, the file used by HACS and GitHub release assets.
+This runs the Jest suite, TypeScript checks, both release builds, and real Chromium layout smoke tests at desktop and 334px mobile widths. The screenshots are written to `test-results/visual/` for inspection.
 
 ## Testing In Home Assistant
 
@@ -42,21 +40,20 @@ This watches source files and rebuilds the debug bundle. Copy the rebuilt file t
 
 1. Edit TypeScript files in `src/`.
 2. Build output is generated locally and should not be committed from `dist/`.
-3. Run `npm run typecheck`.
-4. Run `npm test`.
-5. Run `npm run build:prod`.
-6. Test the built card in Home Assistant.
+3. Run `npm run verify`.
+4. Test the built card in Home Assistant.
 
 ## Creating A Release
 
 1. Update the version in `package.json`.
 2. Update README/changelog notes for the release.
-3. Run `npm run typecheck`, `npm test`, and `npm run build:prod`.
+3. Run `npm run verify`.
 4. Commit source, lockfile, and docs. Do not commit generated release bundles.
 5. Push to `master`.
-6. Confirm HACS and test workflows pass.
-7. Draft and publish a GitHub release with tag `vX.X.X` and manual release notes.
-8. The Release workflow builds again and attaches `simple-thermostat.js` and `simple-thermostat.debug.js` to the published release.
+6. Confirm HACS and test workflows pass. The test workflow must validate both release bundles before the GitHub release is published.
+7. Create a draft GitHub release with tag `vX.X.X` and the approved manual release notes. Keep it as a draft.
+8. Run the `Release` workflow with that tag. It checks the package/tag version, reruns the complete verification suite, and attaches both bundles to the draft.
+9. Inspect the successful workflow and attached assets, then publish the draft release.
 
 ## File Structure
 

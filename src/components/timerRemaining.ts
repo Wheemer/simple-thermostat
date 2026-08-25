@@ -26,21 +26,21 @@ class SimpleThermostatTimerRemaining extends LitElement {
 
   private tick?: number
 
-  createRenderRoot() {
+  override createRenderRoot() {
     return this
   }
 
-  connectedCallback() {
+  override connectedCallback() {
     super.connectedCallback()
     this.syncTicker()
   }
 
-  disconnectedCallback() {
+  override disconnectedCallback() {
     this.clearTicker()
     super.disconnectedCallback()
   }
 
-  updated() {
+  override updated() {
     this.syncTicker()
   }
 
@@ -95,7 +95,7 @@ class SimpleThermostatTimerRemaining extends LitElement {
     return state.state
   }
 
-  render() {
+  override render() {
     return html`${this.getValue()}`
   }
 }

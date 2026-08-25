@@ -255,8 +255,7 @@ function getSelectValue(ev: Event) {
     }
   }
   const detail = (ev as CustomEvent).detail as
-    | { value?: string; item?: { value?: string } }
-    | undefined
+    { value?: string; item?: { value?: string } } | undefined
 
   return (
     detail?.value ??
@@ -735,7 +734,7 @@ export default class SimpleThermostatEditor extends LitElement {
   @state() config!: CardConfig
   @property({ attribute: false }) hass?: HASS
 
-  static get styles() {
+  static override get styles() {
     return styles
   }
 
@@ -1024,74 +1023,76 @@ export default class SimpleThermostatEditor extends LitElement {
           <ha-button @click=${this._addEntityRow}>Add row</ha-button>
         </div>
 
-        ${entities.length === 0
-          ? html`<p class="editor-extra-entities__empty">
-              No extra rows configured.
-            </p>`
-          : entities.map(
-              (entity, index) => html`
-                <div class="editor-entity-row">
-                  <ha-entity-picker
-                    .hass=${this.hass}
-                    .value=${entity.entity ?? ''}
-                    allow-custom-entity
-                    @value-changed=${(ev: CustomEvent) =>
-                      this._updateEntityRow(index, 'entity', ev.detail.value)}
-                  ></ha-entity-picker>
-                  <ha-textfield
-                    label="Name"
-                    .value=${entity.name ?? ''}
-                    @input=${(ev: InputEvent) =>
-                      this._updateEntityRow(
-                        index,
-                        'name',
-                        (ev.target as HTMLInputElement).value
+        ${
+          entities.length === 0
+            ? html`<p class="editor-extra-entities__empty">
+                No extra rows configured.
+              </p>`
+            : entities.map(
+                (entity, index) => html`
+                  <div class="editor-entity-row">
+                    <ha-entity-picker
+                      .hass=${this.hass}
+                      .value=${entity.entity ?? ''}
+                      allow-custom-entity
+                      @value-changed=${(ev: CustomEvent) =>
+                        this._updateEntityRow(index, 'entity', ev.detail.value)}
+                    ></ha-entity-picker>
+                    <ha-textfield
+                      label="Name"
+                      .value=${entity.name ?? ''}
+                      @input=${(ev: InputEvent) =>
+                        this._updateEntityRow(
+                          index,
+                          'name',
+                          (ev.target as HTMLInputElement).value
+                        )}
+                    ></ha-textfield>
+                    <ha-icon-picker
+                      .hass=${this.hass}
+                      .value=${entity.icon ?? ''}
+                      @value-changed=${(ev: CustomEvent) =>
+                        this._updateEntityRow(index, 'icon', ev.detail.value)}
+                    ></ha-icon-picker>
+                    <ha-select
+                      label="Display"
+                      clearable
+                      .value=${entity.display ?? ''}
+                      @value-changed=${(ev: Event) =>
+                        this._updateEntityRow(
+                          index,
+                          'display',
+                          getSelectValue(ev)
+                        )}
+                      @selected=${(ev: Event) =>
+                        this._updateEntityRow(
+                          index,
+                          'display',
+                          getSelectValue(ev)
+                        )}
+                      @change=${(ev: Event) =>
+                        this._updateEntityRow(
+                          index,
+                          'display',
+                          getSelectValue(ev)
+                        )}
+                    >
+                      <mwc-list-item value="">Default</mwc-list-item>
+                      ${ENTITY_DISPLAY_OPTIONS.map(
+                        (option) => html`
+                          <mwc-list-item value=${option.value}>
+                            ${option.label}
+                          </mwc-list-item>
+                        `
                       )}
-                  ></ha-textfield>
-                  <ha-icon-picker
-                    .hass=${this.hass}
-                    .value=${entity.icon ?? ''}
-                    @value-changed=${(ev: CustomEvent) =>
-                      this._updateEntityRow(index, 'icon', ev.detail.value)}
-                  ></ha-icon-picker>
-                  <ha-select
-                    label="Display"
-                    clearable
-                    .value=${entity.display ?? ''}
-                    @value-changed=${(ev: Event) =>
-                      this._updateEntityRow(
-                        index,
-                        'display',
-                        getSelectValue(ev)
-                      )}
-                    @selected=${(ev: Event) =>
-                      this._updateEntityRow(
-                        index,
-                        'display',
-                        getSelectValue(ev)
-                      )}
-                    @change=${(ev: Event) =>
-                      this._updateEntityRow(
-                        index,
-                        'display',
-                        getSelectValue(ev)
-                      )}
-                  >
-                    <mwc-list-item value="">Default</mwc-list-item>
-                    ${ENTITY_DISPLAY_OPTIONS.map(
-                      (option) => html`
-                        <mwc-list-item value=${option.value}>
-                          ${option.label}
-                        </mwc-list-item>
-                      `
-                    )}
-                  </ha-select>
-                  <ha-button @click=${() => this._removeEntityRow(index)}>
-                    Remove
-                  </ha-button>
-                </div>
-              `
-            )}
+                    </ha-select>
+                    <ha-button @click=${() => this._removeEntityRow(index)}>
+                      Remove
+                    </ha-button>
+                  </div>
+                `
+              )
+        }
       </section>
     `
   }
@@ -1109,42 +1110,44 @@ export default class SimpleThermostatEditor extends LitElement {
           <ha-button @click=${this._addFooterRow}>Add control</ha-button>
         </div>
 
-        ${footer.length === 0
-          ? html`<p class="editor-extra-entities__empty">
-              No footer controls configured.
-            </p>`
-          : footer.map(
-              (row, index) => html`
-                <div class="editor-entity-row">
-                  <ha-entity-picker
-                    .hass=${this.hass}
-                    .value=${row.entity ?? ''}
-                    allow-custom-entity
-                    @value-changed=${(ev: CustomEvent) =>
-                      this._updateFooterRow(index, 'entity', ev.detail.value)}
-                  ></ha-entity-picker>
-                  <ha-textfield
-                    label="Name override"
-                    .value=${row.name ?? ''}
-                    @input=${(ev: InputEvent) =>
-                      this._updateFooterRow(
-                        index,
-                        'name',
-                        (ev.target as HTMLInputElement).value
-                      )}
-                  ></ha-textfield>
-                  <ha-icon-picker
-                    .hass=${this.hass}
-                    .value=${row.icon ?? ''}
-                    @value-changed=${(ev: CustomEvent) =>
-                      this._updateFooterRow(index, 'icon', ev.detail.value)}
-                  ></ha-icon-picker>
-                  <ha-button @click=${() => this._removeFooterRow(index)}>
-                    Remove
-                  </ha-button>
-                </div>
-              `
-            )}
+        ${
+          footer.length === 0
+            ? html`<p class="editor-extra-entities__empty">
+                No footer controls configured.
+              </p>`
+            : footer.map(
+                (row, index) => html`
+                  <div class="editor-entity-row">
+                    <ha-entity-picker
+                      .hass=${this.hass}
+                      .value=${row.entity ?? ''}
+                      allow-custom-entity
+                      @value-changed=${(ev: CustomEvent) =>
+                        this._updateFooterRow(index, 'entity', ev.detail.value)}
+                    ></ha-entity-picker>
+                    <ha-textfield
+                      label="Name override"
+                      .value=${row.name ?? ''}
+                      @input=${(ev: InputEvent) =>
+                        this._updateFooterRow(
+                          index,
+                          'name',
+                          (ev.target as HTMLInputElement).value
+                        )}
+                    ></ha-textfield>
+                    <ha-icon-picker
+                      .hass=${this.hass}
+                      .value=${row.icon ?? ''}
+                      @value-changed=${(ev: CustomEvent) =>
+                        this._updateFooterRow(index, 'icon', ev.detail.value)}
+                    ></ha-icon-picker>
+                    <ha-button @click=${() => this._removeFooterRow(index)}>
+                      Remove
+                    </ha-button>
+                  </div>
+                `
+              )
+        }
       </section>
     `
   }
@@ -1152,7 +1155,7 @@ export default class SimpleThermostatEditor extends LitElement {
   _computeLabel = (schema: FormSchema) =>
     LABELS[String(schema.name)] ?? String(schema.name)
 
-  render() {
+  override render() {
     if (!this.hass || !this.config) return html``
 
     return html`
@@ -1165,8 +1168,7 @@ export default class SimpleThermostatEditor extends LitElement {
           @value-changed=${this._valueChanged}
         ></ha-form>
 
-        ${this._renderExtraEntityRows()}
-        ${this._renderFooterRows()}
+        ${this._renderExtraEntityRows()} ${this._renderFooterRows()}
 
         <div class="editor-footer">
           <ha-button @click=${this._openLink}>

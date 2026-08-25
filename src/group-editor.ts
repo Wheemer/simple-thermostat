@@ -38,6 +38,34 @@ function normalizeTargets(config: GroupConfig): Array<EditableTarget> {
   return targets.length ? targets : [{ entity: '' }, { entity: '' }]
 }
 
+function valuesEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => valuesEqual(value, right[index]))
+    )
+  }
+  if (
+    !left ||
+    !right ||
+    typeof left !== 'object' ||
+    typeof right !== 'object'
+  ) {
+    return false
+  }
+
+  const leftObject = left as Record<string, unknown>
+  const rightObject = right as Record<string, unknown>
+  const keys = Object.keys(leftObject)
+  return (
+    keys.length === Object.keys(rightObject).length &&
+    keys.every((key) => valuesEqual(leftObject[key], rightObject[key]))
+  )
+}
+
 export default class SimpleThermostatGroupEditor extends LitElement {
   @property({ attribute: false }) hass?: HASS
   @state() private config: GroupConfig = { entities: [] }
@@ -45,7 +73,7 @@ export default class SimpleThermostatGroupEditor extends LitElement {
 
   private editorConfigKeys = new WeakMap<Element, string>()
 
-  static get styles() {
+  static override get styles() {
     return css`
       :host {
         display: block;
@@ -308,8 +336,7 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     return (
       autoSelect === true ||
       autoSelect === 'recent_activity' ||
-      (typeof autoSelect === 'object' &&
-        autoSelect?.mode === 'recent_activity')
+      (typeof autoSelect === 'object' && autoSelect?.mode === 'recent_activity')
     )
   }
 
@@ -339,7 +366,11 @@ export default class SimpleThermostatGroupEditor extends LitElement {
   }
 
   private getTargetCardConfig(target: EditableTarget) {
-    const { name, icon, ...config } = target
+    const { name, icon, ...targetConfig } = target
+    const config = {
+      ...((this.config.card ?? {}) as Record<string, unknown>),
+      ...targetConfig,
+    } as EditableTarget
     const header =
       config.header && typeof config.header === 'object'
         ? { ...config.header }
@@ -383,13 +414,20 @@ export default class SimpleThermostatGroupEditor extends LitElement {
   private updateTargetCardConfig(index: number, ev: CustomEvent) {
     ev.stopPropagation()
     const targets = this.getTargets()
-    targets[index] = toEditableTarget(ev.detail.config)
+    const updated = { ...(ev.detail.config ?? {}) } as Record<string, unknown>
+    const common = (this.config.card ?? {}) as Record<string, unknown>
+    Object.keys(common).forEach((key) => {
+      if (key !== 'entity' && valuesEqual(updated[key], common[key])) {
+        delete updated[key]
+      }
+    })
+    delete updated.embedded
+    targets[index] = toEditableTarget(updated as GroupTargetConfig)
     this.commitTargets(targets)
   }
 
   private toggleTargetEditor(index: number) {
-    this.expandedTargetIndex =
-      this.expandedTargetIndex === index ? null : index
+    this.expandedTargetIndex = this.expandedTargetIndex === index ? null : index
   }
 
   private renderEntityPicker(target: EditableTarget, index: number) {
@@ -435,35 +473,39 @@ export default class SimpleThermostatGroupEditor extends LitElement {
           <ha-button size="s" @click=${() => this.toggleTargetEditor(index)}>
             ${expanded ? 'Close' : 'Configure'}
           </ha-button>
-          ${this.getTargets().length > 1
-            ? html`
-                <ha-icon-button
-                  label="Remove"
-                  .path=${'M19,13H5V11H19V13Z'}
-                  @click=${() => this.removeTarget(index)}
-                ></ha-icon-button>
-              `
-            : nothing}
+          ${
+            this.getTargets().length > 1
+              ? html`
+                  <ha-icon-button
+                    label="Remove"
+                    .path=${'M19,13H5V11H19V13Z'}
+                    @click=${() => this.removeTarget(index)}
+                  ></ha-icon-button>
+                `
+              : nothing
+          }
         </div>
-        ${expanded
-          ? html`
-              <div class="target-editor">
-                <simple-thermostat-editor
-                  .hass=${this.hass}
-                  ${ref((element) =>
-                    this.configureNestedEditor(element, target)
-                  )}
-                  @config-changed=${(ev: CustomEvent) =>
-                    this.updateTargetCardConfig(index, ev)}
-                ></simple-thermostat-editor>
-              </div>
-            `
-          : nothing}
+        ${
+          expanded
+            ? html`
+                <div class="target-editor">
+                  <simple-thermostat-editor
+                    .hass=${this.hass}
+                    ${ref((element) =>
+                      this.configureNestedEditor(element, target)
+                    )}
+                    @config-changed=${(ev: CustomEvent) =>
+                      this.updateTargetCardConfig(index, ev)}
+                  ></simple-thermostat-editor>
+                </div>
+              `
+            : nothing
+        }
       </div>
     `
   }
 
-  render() {
+  override render() {
     const selector = this.config.selector ?? {}
     const targets = this.getTargets()
 

@@ -1,6 +1,6 @@
 {
   "name": "simple-thermostat",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "description": "A different take on the thermostat card for Home Assistant Lovelace UI",
   "main": "simple-thermostat.js",
   "type": "module",
@@ -29,7 +29,8 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "marked": "^18.0.4",
-    "postcss": "^8.5.25",
+    "playwright": "^1.62.1",
+    "postcss": "^8.5.26",
     "postcss-preset-env": "^11.3.0",
     "prettier": "^3.4.2",
     "rollup": "^4.28.1",
@@ -42,6 +43,8 @@
   },
   "scripts": {
     "test": "jest",
+    "test:visual": "node scripts/visual-smoke.mjs",
+    "verify": "npm test -- --runInBand && npm run typecheck && npm run build && npm run test:visual",
     "build": "cross-env NODE_ENV=production rollup -c",
     "build:prod": "cross-env NODE_ENV=production BUILD_TARGET=prod rollup -c",
     "build:debug": "cross-env BUILD_TARGET=debug rollup -c",

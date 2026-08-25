@@ -1,9 +1,0 @@
-{
-  "simple-thermostat": {
-    "version": "4.1.6",
-    "updated_at": "2026-07-20",
-    "visit_repo": "https://github.com/Wheemer/simple-thermostat",
-    "remote_location": "https://github.com/Wheemer/simple-thermostat/releases/download/v4.1.6/simple-thermostat.js",
-    "changelog": "https://github.com/Wheemer/simple-thermostat/releases/tag/v4.1.6"
-  }
-}

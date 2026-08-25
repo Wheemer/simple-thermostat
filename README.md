@@ -144,15 +144,15 @@ cards:
 
 Group options:
 
-| Option               | Type                    | Description                                                                                                     |
-| -------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `cards` / `entities` | array                   | Cards shown inside the group. Each entry can be an entity id string or a normal Simple Thermostat card config. |
-| `selected`           | string                  | Entity id to show first when no remembered selection is available.                                             |
-| `auto_select`        | boolean, string, object | Set to `recent_activity` to switch to the most recently active device.                                         |
-| `remember_selection` | boolean                 | Remember the last selected card across dashboard reloads. Defaults to `true`.                                  |
-| `storage_key`        | string                  | Custom local storage key for remembered group selection and recent activity.                                   |
+| Option               | Type                    | Description                                                                                                                                                             |
+| -------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cards` / `entities` | array                   | Cards shown inside the group. Each entry can be an entity id string or a normal Simple Thermostat card config.                                                          |
+| `selected`           | string                  | Entity id to show first when no remembered selection is available.                                                                                                      |
+| `auto_select`        | boolean, string, object | Set to `recent_activity` to switch to the most recently active device.                                                                                                  |
+| `remember_selection` | boolean                 | Remember the last selected card across dashboard reloads. Defaults to `true`.                                                                                           |
+| `storage_key`        | string                  | Custom local storage key for remembered group selection and recent activity.                                                                                            |
 | `selector`           | object                  | Configure the group selector. Use `style: tabs` for visible tab buttons, or leave unset for the normal header navigation. Also supports `icons`, `names`, and `states`. |
-| `card`               | object                  | Shared Simple Thermostat config merged into every grouped card.                                                |
+| `card`               | object                  | Shared Simple Thermostat config merged into every grouped card.                                                                                                         |
 
 ## Domain Defaults
 
@@ -203,6 +203,14 @@ footer:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="5" nowrap><strong>v4.3.1</strong></td>
+      <td>Improves setpoint reliability when a card is reconfigured or removed while an update is pending.</td>
+    </tr>
+    <tr><td>Keeps each group target's styling isolated and prevents settings changes from being mistaken for new device activity.</td></tr>
+    <tr><td>Improves shared and per-target settings in the group card editor.</td></tr>
+    <tr><td>Improves unavailable-entity handling and embedded group-card sizing.</td></tr>
+    <tr><td>Adds desktop and narrow-mobile browser checks to guard against layout regressions.</td></tr>
     <tr>
       <td rowspan="8" nowrap><strong>v4.3.0</strong></td>
       <td>Rolls the tested v4.2 prerelease line into the normal release channel.</td>

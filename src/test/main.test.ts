@@ -177,15 +177,22 @@ test('resets derived entity state when config changes on a reused card', async (
   expect(card.config.layout?.step).toBe('row')
 })
 
-test('cleans pending timers and setpoint updates on disconnect', () => {
+test('flushes pending setpoint updates to their original entity on disconnect', () => {
   jest.useFakeTimers()
   const card = createCard()
+  const sendSetpointValues = jest
+    .spyOn(card as any, '_sendSetpointValues')
+    .mockImplementation(() => undefined)
 
   card._updatingValuesTimeout = setTimeout(() => undefined, 1000)
   card._holdTimer = setTimeout(() => undefined, 1000)
   card._clickTimer = setTimeout(() => undefined, 1000)
   ;(card as any)._setpointUpdateTimer = setTimeout(() => undefined, 1000)
-  ;(card as any)._pendingSetpointValues = { temperature: 22 }
+  ;(card as any)._pendingSetpointUpdate = {
+    entity: 'climate.living_room',
+    service: { domain: 'climate', service: 'set_temperature' },
+    values: { temperature: 22 },
+  }
 
   card.disconnectedCallback()
 
@@ -193,7 +200,12 @@ test('cleans pending timers and setpoint updates on disconnect', () => {
   expect(card._holdTimer).toBe(null)
   expect(card._clickTimer).toBe(null)
   expect((card as any)._setpointUpdateTimer).toBe(null)
-  expect((card as any)._pendingSetpointValues).toBe(null)
+  expect((card as any)._pendingSetpointUpdate).toBe(null)
+  expect(sendSetpointValues).toHaveBeenCalledWith({
+    entity: 'climate.living_room',
+    service: { domain: 'climate', service: 'set_temperature' },
+    values: { temperature: 22 },
+  })
 
   jest.useRealTimers()
 })
@@ -222,7 +234,43 @@ test('allows immediate setpoint updates when debounce is zero', () => {
   ;(card as any)._scheduleSetpointValues({ temperature: 22 })
 
   expect((card as any)._setpointDebounce).toBe(0)
-  expect(sendSetpointValues).toHaveBeenCalledWith({ temperature: 22 })
+  expect(sendSetpointValues).toHaveBeenCalledWith({
+    entity: 'climate.living_room',
+    service: undefined,
+    values: { temperature: 22 },
+  })
+})
+
+test('rejects a card config without an entity', () => {
+  const card = createCard()
+  expect(() => card.setConfig({} as any)).toThrow(
+    'Simple Thermostat requires an entity'
+  )
+})
+
+test('flushes a pending setpoint to the old entity before reconfiguration', () => {
+  jest.useFakeTimers()
+  const card = createCard()
+  const sendSetpointValues = jest
+    .spyOn(card as any, '_sendSetpointValues')
+    .mockImplementation(() => undefined)
+
+  card.setConfig({ entity: 'climate.living_room' } as any)
+  ;(card as any).service = {
+    domain: 'climate',
+    service: 'set_temperature',
+  }
+  ;(card as any)._scheduleSetpointValues({ temperature: 22 })
+  card.setConfig({ entity: 'climate.bedroom' } as any)
+
+  expect(sendSetpointValues).toHaveBeenCalledTimes(1)
+  expect(sendSetpointValues).toHaveBeenCalledWith({
+    entity: 'climate.living_room',
+    service: { domain: 'climate', service: 'set_temperature' },
+    values: { temperature: 22 },
+  })
+
+  jest.useRealTimers()
 })
 
 test('estimates card size from visible sections', async () => {
@@ -471,6 +519,35 @@ test('applies card_mod ha-card surface declarations inline only for embedded car
   expect(surface.getAttribute('style')).toContain('border-radius: 8px')
 })
 
+test('parses embedded card_mod declarations containing quoted braces', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.living_room',
+    embedded: true,
+    card_mod: {
+      style: 'ha-card { --st-test-content: "}"; background: rgb(12, 34, 56); }',
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: { temperature: 20, current_temperature: 19 },
+      },
+    },
+    config: { unit_system: { temperature: '°C' } },
+    localize: (key: string) => key,
+  }
+  await card.updateComplete
+
+  const surface = card.shadowRoot?.querySelector('ha-card') as HTMLElement
+  expect(surface.getAttribute('style')).toContain('--st-test-content: "}"')
+  expect(surface.getAttribute('style')).toContain('background: rgb(12, 34, 56)')
+})
+
 test('keeps last rendered entity during transient missing hass updates', async () => {
   document.body.innerHTML = ''
   const card = createCard()
@@ -519,6 +596,43 @@ test('keeps last rendered entity during transient missing hass updates', async (
   expect(card.entity).toBe(previousEntity)
   expect(card.shadowRoot?.textContent).not.toContain('Entity not available')
   expect(card.shadowRoot?.textContent).toContain('19.0')
+})
+
+test('shows a missing entity after the transient update grace period', async () => {
+  jest.useFakeTimers()
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: { temperature: 20, current_temperature: 19 },
+      },
+    },
+    config: { unit_system: { temperature: '°C' } },
+    localize: (key: string) => key,
+  }
+  await card.updateComplete
+
+  card.hass = {
+    states: {},
+    config: { unit_system: { temperature: '°C' } },
+    localize: (key: string) => key,
+  }
+  jest.advanceTimersByTime(5000)
+  await card.updateComplete
+
+  expect(card.shadowRoot?.textContent).toContain(
+    'Entity not available: climate.living_room'
+  )
+  jest.useRealTimers()
 })
 
 test('renders the main dashboard thermostat config through detach and reattach', async () => {
@@ -1132,15 +1246,15 @@ test('climate control options preserve explicit YAML order', () => {
     },
   }
 
-  expect(card.modes.find(({ type }) => type === 'fan')?.list.map(({ value }) => value)).toEqual([
-    'quiet',
-    'low',
-    'medium',
-    'high',
-    'auto',
-  ])
   expect(
-    card.modes.find(({ type }) => type === 'preset')?.list.map(({ value }) => value)
+    card.modes
+      .find(({ type }) => type === 'fan')
+      ?.list.map(({ value }) => value)
+  ).toEqual(['quiet', 'low', 'medium', 'high', 'auto'])
+  expect(
+    card.modes
+      .find(({ type }) => type === 'preset')
+      ?.list.map(({ value }) => value)
   ).toEqual(['none', 'sleep', 'boost'])
 })
 
@@ -1491,9 +1605,7 @@ test('swing controls can use an explicitly configured select entity', async () =
     'down',
     'swing',
   ])
-  expect(horizontal?.entity).toBe(
-    'select.hus_varmepumpe_horizontal_swing_mode'
-  )
+  expect(horizontal?.entity).toBe('select.hus_varmepumpe_horizontal_swing_mode')
   expect(horizontal?.mode).toBe('left')
   expect(horizontal?.list.map(({ value }) => value)).toEqual([
     'auto',
@@ -1623,10 +1735,12 @@ test('mode options can hide when the entity is off from card config', async () =
 
   await card.updateComplete
 
-  expect(card.modes[0].list.map(({ value, hide_when_off }) => ({
-    value,
-    hide_when_off,
-  }))).toEqual([
+  expect(
+    card.modes[0].list.map(({ value, hide_when_off }) => ({
+      value,
+      hide_when_off,
+    }))
+  ).toEqual([
     { value: 'off', hide_when_off: true },
     { value: 'heat', hide_when_off: undefined },
     { value: 'cool', hide_when_off: undefined },
@@ -1695,10 +1809,12 @@ test('hvac off option can hide while off with shortcut config', async () => {
     card.shadowRoot?.querySelectorAll('.hvac .mode-item') ?? []
   )
 
-  expect(card.modes[0].list.map(({ value, hide_when_off }) => ({
-    value,
-    hide_when_off,
-  }))).toEqual([
+  expect(
+    card.modes[0].list.map(({ value, hide_when_off }) => ({
+      value,
+      hide_when_off,
+    }))
+  ).toEqual([
     { value: 'off', hide_when_off: true },
     { value: 'heat', hide_when_off: undefined },
     { value: 'cool', hide_when_off: undefined },

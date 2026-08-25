@@ -41,6 +41,13 @@ const SETPOINT_DEBOUNCE_TIMEOUT = 500
 const STEP_SIZE = 0.5
 const DECIMALS = 1
 const UPDATING_TIMEOUT = 10000
+const MISSING_ENTITY_GRACE_MS = 5000
+
+type PendingSetpointUpdate = {
+  entity: string
+  service: Service
+  values: object
+}
 
 const MODE_TYPES: Array<string> = Object.values(MODES)
 
@@ -288,6 +295,56 @@ function getCardStyle(entityDomain: string, attributes: LooseObject) {
   return `--st-fan-spin-duration: ${fanSpinDuration.toFixed(2)}s;`
 }
 
+function extractCardRuleDeclarations(style: string) {
+  const selector = /ha-card\s*\{/g
+  const match = selector.exec(style)
+  if (!match) return ''
+
+  const start = match.index + match[0].length
+  let depth = 1
+  let quote = ''
+  let inComment = false
+
+  for (let index = start; index < style.length; index += 1) {
+    const character = style[index]
+    const next = style[index + 1]
+
+    if (inComment) {
+      if (character === '*' && next === '/') {
+        inComment = false
+        index += 1
+      }
+      continue
+    }
+
+    if (!quote && character === '/' && next === '*') {
+      inComment = true
+      index += 1
+      continue
+    }
+
+    if (quote) {
+      if (character === '\\') {
+        index += 1
+      } else if (character === quote) {
+        quote = ''
+      }
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character
+    } else if (character === '{') {
+      depth += 1
+    } else if (character === '}') {
+      depth -= 1
+      if (depth === 0) return style.slice(start, index).trim()
+    }
+  }
+
+  return ''
+}
+
 function getCardModSurfaceDeclarations(cardMod: unknown) {
   const style = (cardMod as LooseObject | undefined)?.style
   if (typeof style === 'object' && style) {
@@ -296,15 +353,13 @@ function getCardModSurfaceDeclarations(cardMod: unknown) {
 
     const rootStyle = (style as LooseObject)['.']
     if (typeof rootStyle === 'string') {
-      const rootMatch = rootStyle.match(/ha-card\s*\{([\s\S]*?)\}/)
-      return (rootMatch?.[1] ?? '').trim()
+      return extractCardRuleDeclarations(rootStyle)
     }
   }
 
   if (typeof style !== 'string') return ''
 
-  const match = style.match(/ha-card\s*\{([\s\S]*?)\}/)
-  return (match?.[1] ?? '').trim()
+  return extractCardRuleDeclarations(style)
 }
 
 function getInlineCardStyle(
@@ -510,7 +565,7 @@ interface SetpointRenderOptions {
 }
 
 export default class SimpleThermostat extends LitElement {
-  static get styles() {
+  static override get styles() {
     return styles
   }
 
@@ -548,40 +603,58 @@ export default class SimpleThermostat extends LitElement {
   _clickCount = 0
   _clickTimer: ReturnType<typeof setTimeout> | null = null
   _setpointUpdateTimer: ReturnType<typeof setTimeout> | null = null
-  _pendingSetpointValues: object | null = null
+  _pendingSetpointUpdate: PendingSetpointUpdate | null = null
+  _missingEntityTimer: ReturnType<typeof setTimeout> | null = null
   static HOLD_MS = 500
   static DOUBLE_TAP_MS = 250
 
   _setpointDebounce = SETPOINT_DEBOUNCE_TIMEOUT
 
-  _sendSetpointValues(values: object) {
-    const { domain, service, data = {} } = this.service
+  _sendSetpointValues(update: PendingSetpointUpdate) {
+    const { domain, service, data = {} } = update.service
     this._callAction(`${domain}.${service}`, {
-      entity_id: this.config.entity,
+      entity_id: update.entity,
       ...data,
-      ...values,
+      ...update.values,
     })
+  }
+
+  _flushPendingSetpointValues() {
+    if (this._setpointUpdateTimer) {
+      clearTimeout(this._setpointUpdateTimer)
+      this._setpointUpdateTimer = null
+    }
+
+    const pendingUpdate = this._pendingSetpointUpdate
+    this._pendingSetpointUpdate = null
+    if (pendingUpdate) this._sendSetpointValues(pendingUpdate)
   }
 
   _scheduleSetpointValues(values: object) {
     const wait = this._setpointDebounce
 
     if (wait <= 0) {
-      this._sendSetpointValues(values)
+      this._sendSetpointValues({
+        entity: this.config.entity,
+        service: this.service,
+        values: { ...values },
+      })
       return
     }
 
-    this._pendingSetpointValues = { ...values }
+    this._pendingSetpointUpdate = {
+      entity: this.config.entity,
+      service: this.service,
+      values: { ...values },
+    }
     if (this._setpointUpdateTimer) {
       clearTimeout(this._setpointUpdateTimer)
     }
     this._setpointUpdateTimer = setTimeout(() => {
-      const pendingValues = this._pendingSetpointValues
+      const pendingUpdate = this._pendingSetpointUpdate
       this._setpointUpdateTimer = null
-      this._pendingSetpointValues = null
-      if (pendingValues) {
-        this._sendSetpointValues(pendingValues)
-      }
+      this._pendingSetpointUpdate = null
+      if (pendingUpdate) this._sendSetpointValues(pendingUpdate)
     }, wait)
   }
 
@@ -618,6 +691,12 @@ export default class SimpleThermostat extends LitElement {
   }
 
   setConfig(config: CardConfig) {
+    if (!config?.entity || typeof config.entity !== 'string') {
+      throw new Error('Simple Thermostat requires an entity')
+    }
+
+    this._flushPendingSetpointValues()
+    this._clearMissingEntityTimer()
     this.config = normalizeConfig({
       decimals: DECIMALS,
       ...config,
@@ -630,9 +709,25 @@ export default class SimpleThermostat extends LitElement {
     this.footer = []
     this.showEntities = true
     this.toggleAttribute('embedded', this.config.embedded === true)
-    if (this._hass?.states) {
+    if (this._hass?.states?.[this.config.entity]) {
       this.updateFromHass(this._hass)
+    } else if (this._hass?.states) {
+      this.entity = undefined
     }
+  }
+
+  _clearMissingEntityTimer() {
+    if (!this._missingEntityTimer) return
+    clearTimeout(this._missingEntityTimer)
+    this._missingEntityTimer = null
+  }
+
+  _scheduleMissingEntity() {
+    if (this._missingEntityTimer) return
+    this._missingEntityTimer = setTimeout(() => {
+      this._missingEntityTimer = null
+      this.entity = undefined
+    }, MISSING_ENTITY_GRACE_MS)
   }
 
   set hass(hass: HASS) {
@@ -650,13 +745,15 @@ export default class SimpleThermostat extends LitElement {
 
     const entity = hass.states[this.config.entity]
     if (!entity) {
+      this._scheduleMissingEntity()
       return
     }
 
+    this._clearMissingEntityTimer()
     this.updateFromHass(hass)
   }
 
-  disconnectedCallback() {
+  override disconnectedCallback() {
     if (this._updatingValuesTimeout) {
       clearTimeout(this._updatingValuesTimeout)
       this._updatingValuesTimeout = null
@@ -672,11 +769,8 @@ export default class SimpleThermostat extends LitElement {
       this._clickTimer = null
     }
 
-    if (this._setpointUpdateTimer) {
-      clearTimeout(this._setpointUpdateTimer)
-      this._setpointUpdateTimer = null
-    }
-    this._pendingSetpointValues = null
+    this._clearMissingEntityTimer()
+    this._flushPendingSetpointValues()
     super.disconnectedCallback()
   }
 
@@ -813,7 +907,7 @@ export default class SimpleThermostat extends LitElement {
     return this._hass.localize?.(key) || label
   }
 
-  render({ _hide, _values, _updatingValues, config, entity } = this) {
+  override render({ _hide, _values, _updatingValues, config, entity } = this) {
     if (!config) {
       return html`<ha-card class="loading"></ha-card>`
     }
@@ -831,18 +925,18 @@ export default class SimpleThermostat extends LitElement {
 
     if (!entity && !this._hass?.states) {
       return html`<ha-card
-        class="loading ${config.enhanced_visuals === false
-          ? 'standard-visuals'
-          : ''}"
+        class="loading ${
+          config.enhanced_visuals === false ? 'standard-visuals' : ''
+        }"
       ></ha-card>`
     }
 
     if (!entity) {
       return html`
         <ha-card
-          class="missing-entity ${config.enhanced_visuals === false
-            ? 'standard-visuals'
-            : ''}"
+          class="missing-entity ${
+            config.enhanced_visuals === false ? 'standard-visuals' : ''
+          }"
         >
           <ha-alert alert-type="error">
             Entity not available: ${config.entity}
@@ -912,13 +1006,14 @@ export default class SimpleThermostat extends LitElement {
         })
     return html`
       <ha-card class="${classes.join(' ')}" style=${cardStyle}>
-        ${config.styles
-          ? html`<style>
-              ${config.styles}
-            </style>`
-          : nothing}
-        ${warnings}
-        ${headerHtml}
+        ${
+          config.styles
+            ? html`<style>
+                ${config.styles}
+              </style>`
+            : nothing
+        }
+        ${warnings} ${headerHtml}
         <section class="${bodyClasses.join(' ')}">
           ${entitiesHtml}
           ${this.renderSetpoints({
@@ -936,24 +1031,26 @@ export default class SimpleThermostat extends LitElement {
           })}
         </section>
 
-        ${this.modes.length
-          ? html`
-              <section class="controls">
-                ${this.modes.map((mode) =>
-                  renderModeType({
-                    state: entity.state,
-                    entity,
-                    hass: this._hass,
-                    mode,
-                    adapter,
-                    localize: this.localize,
-                    modeOptions: this.config?.layout?.mode ?? {},
-                    setMode: this.setMode,
-                  })
-                )}
-              </section>
-            `
-          : nothing}
+        ${
+          this.modes.length
+            ? html`
+                <section class="controls">
+                  ${this.modes.map((mode) =>
+                    renderModeType({
+                      state: entity.state,
+                      entity,
+                      hass: this._hass,
+                      mode,
+                      adapter,
+                      localize: this.localize,
+                      modeOptions: this.config?.layout?.mode ?? {},
+                      setMode: this.setMode,
+                    })
+                  )}
+                </section>
+              `
+            : nothing
+        }
         ${renderFooter({
           toggles: this.footer,
           mainState: entity.state,
@@ -1031,9 +1128,11 @@ export default class SimpleThermostat extends LitElement {
 
     return html`
       <div class="current-wrapper ${stepLayout}">
-        ${row
-          ? html`${decreaseButton}${valueButton}${increaseButton}`
-          : html`${increaseButton}${valueButton}${decreaseButton}`}
+        ${
+          row
+            ? html`${decreaseButton}${valueButton}${increaseButton}`
+            : html`${increaseButton}${valueButton}${decreaseButton}`
+        }
         ${label}
       </div>
     `
@@ -1145,9 +1244,13 @@ export default class SimpleThermostat extends LitElement {
           .filter(Boolean)
           .join(' ')}
       >
-        ${valueText}${unitText
-          ? html`${unitSeparator}<span class="current--unit">${unitText}</span>`
-          : nothing}
+        ${valueText}${
+          unitText
+            ? html`${unitSeparator}<span class="current--unit"
+                  >${unitText}</span
+                >`
+            : nothing
+        }
       </h3>
     `
   }
@@ -1301,7 +1404,10 @@ export default class SimpleThermostat extends LitElement {
         : 1
     const modeRows =
       this.modes?.filter((mode) => {
-        if (mode.hide_when_off === true && this.entity?.state === HVAC_MODES.OFF) {
+        if (
+          mode.hide_when_off === true &&
+          this.entity?.state === HVAC_MODES.OFF
+        ) {
           return false
         }
         return (mode.list ?? []).some(
@@ -1309,15 +1415,13 @@ export default class SimpleThermostat extends LitElement {
             !(hide_when_off === true && this.entity?.state === HVAC_MODES.OFF)
         )
       }).length ?? 0
-    const footerRows =
-      this.footer?.some(
-        ({ hide_when_off }) =>
-          !(hide_when_off === true && this.entity?.state === HVAC_MODES.OFF)
-      )
-        ? 1
-        : 0
-    const warningRows =
-      this.stepSize < 1 && this.config.decimals === 0 ? 1 : 0
+    const footerRows = this.footer?.some(
+      ({ hide_when_off }) =>
+        !(hide_when_off === true && this.entity?.state === HVAC_MODES.OFF)
+    )
+      ? 1
+      : 0
+    const warningRows = this.stepSize < 1 && this.config.decimals === 0 ? 1 : 0
 
     return Math.max(
       1,
