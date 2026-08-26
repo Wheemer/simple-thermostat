@@ -214,15 +214,14 @@ footer:
   </thead>
   <tbody>
     <tr>
-      <td rowspan="7" nowrap><strong>v4.3.2</strong></td>
-      <td>Prevents dual heat/cool targets from being stepped past each other.</td>
+      <td rowspan="6" nowrap><strong>v4.3.2</strong></td>
+      <td>Prevents dual heat/cool targets from being stepped past each other, adapted from work by <a href="https://github.com/duczz/ha-simple-thermostat/commit/4371180cb499ba292f44260aa19a842f33a7f68b">Martin Müller (@duczz)</a>.</td>
     </tr>
-    <tr><td>Keeps pending and optimistic target changes attached to the entity where they began.</td></tr>
-    <tr><td>Reports rejected Home Assistant actions in the browser console with the action name.</td></tr>
-    <tr><td>Adds optional target locking while keeping the target value visible.</td></tr>
-    <tr><td>Adds optional press-and-hold repetition for target step buttons.</td></tr>
-    <tr><td>Adds editor suggestions for available entities registered to the same Home Assistant device.</td></tr>
-    <tr><td>Credits the upstream authors and repositories whose work inspired these additions.</td></tr>
+    <tr><td>Keeps pending and optimistic target changes attached to the entity where they began, adapted from work by <a href="https://github.com/duczz/ha-simple-thermostat/commit/d8561a0ecee90351050ac3dc37ed997862351fe9">Martin Müller (@duczz)</a>.</td></tr>
+    <tr><td>Reports rejected Home Assistant actions in the browser console with the action name, implemented by the <a href="https://github.com/Wheemer/simple-thermostat">Simple Thermostat maintainers</a>.</td></tr>
+    <tr><td>Adds optional target locking while keeping the target value visible, inspired by <a href="https://github.com/nervetattoo/simple-thermostat/pull/423">@temuccio's proposal</a>.</td></tr>
+    <tr><td>Adds optional press-and-hold repetition for target step buttons, inspired by pointer interaction work from <a href="https://github.com/Ava-AgentOne/simple-thermostat-card/commit/3ab89cae5a4b7ebed8bb62b2c0a512ba203b296b">Esam / @Ava-AgentOne</a>.</td></tr>
+    <tr><td>Adds editor suggestions for available entities registered to the same Home Assistant device, inspired by <a href="https://github.com/priyam13coding/simple-compact-thermostat-card/commit/a7da7839d9304982f24a364dc3face66f6554492">@priyam13coding's editor discovery work</a>.</td></tr>
     <tr>
       <td rowspan="5" nowrap><strong>v4.3.1</strong></td>
       <td>Improves setpoint reliability when a card is reconfigured or removed while an update is pending.</td>
