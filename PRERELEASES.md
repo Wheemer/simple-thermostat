@@ -1,4 +1,4 @@
-# Trying Prereleases With HACS
+# Trying prereleases with HACS
 
 Prereleases are test builds for users who want to help verify fixes before they are promoted to the normal release channel.
 
@@ -6,7 +6,7 @@ If you only want the regular stable version, you do not need to do anything here
 
 ## Enable Prerelease Updates
 
-HACS creates a switch entity for each tracked repository. That switch controls whether Home Assistant should include prereleases when checking for updates.
+HACS creates a disabled switch entity for each tracked repository. That switch controls whether Home Assistant should include prereleases when checking for updates. This is the standard HACS prerelease mechanism described in the [HACS switch entity documentation](https://www.hacs.xyz/docs/use/entities/switch/).
 
 1. Open **Settings** in Home Assistant.
 2. Go to **Devices & services**.
@@ -15,11 +15,12 @@ HACS creates a switch entity for each tracked repository. That switch controls w
 5. Find the disabled HACS switch for **Simple Thermostat**.
 6. Open the entity and enable it.
 7. Turn the switch on.
-8. Go back to **HACS**, open **Simple Thermostat**, and check for updates.
+8. Go back to **HACS**, open the menu for **Simple Thermostat**, and choose **Update information**.
+9. Install the offered prerelease update, or use the steps below to select a specific version.
 
 When the switch is on, HACS can offer prerelease versions newer than the latest stable release. When the switch is off, HACS stays on the normal release channel.
 
-## Install A Specific Prerelease
+## Install a Specific Prerelease
 
 If HACS does not immediately offer the prerelease:
 
@@ -33,7 +34,7 @@ If HACS does not immediately offer the prerelease:
 
 After installing or changing versions, refresh the dashboard. If the old card is still loaded, clear the browser cache or restart the Home Assistant frontend session.
 
-## Go Back To Stable
+## Go back to stable
 
 1. Turn the Simple Thermostat HACS prerelease switch off.
 2. Open **HACS**.

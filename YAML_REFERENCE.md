@@ -102,7 +102,7 @@ storage_key: upstairs_ac_group
 
 The group card renders one normal Simple Thermostat card at a time and adds a compact selector header.
 
-Use `selector.style: tabs` when a small group should show every card as a visible tab button. This option was inspired by @m1xminus's multi-AC selector idea in [#16](https://github.com/Wheemer/simple-thermostat/issues/16).
+Use `selector.style: tabs` when a small group should show every card as a visible tab button.
 
 ```yaml
 type: custom:simple-thermostat-group
@@ -130,6 +130,7 @@ cards:
 | `step_size`                        | number                 | Amount changed by the target controls.                                                                                                                                        |
 | `setpoint_debounce_ms`             | number                 | Delay in milliseconds before sending target changes. Rapid clicks are collapsed into one service call. Defaults to `500`; set `0` to send immediately.                         |
 | `setpoint_hold_repeat`             | boolean                | Repeat target changes while a step button is held. Defaults to `false`.                                                                                                       |
+| `variables`                        | object                 | Custom values exposed to frontend templates through the `v` object.                                                                                                           |
 | `hide_setpoint`                    | boolean                | Hide target value and setpoint controls.                                                                                                                                      |
 | `disable_setpoint_change`          | boolean                | Keep target values visible but disable all target step buttons. Defaults to `false`.                                                                                           |
 | `disable_setpoint_change_when_off` | boolean                | Disable climate target step buttons while the climate entity is `off`, useful for TRV-style entities that reject off-mode target changes. Defaults to `false`.                 |
@@ -151,6 +152,25 @@ cards:
 | `tap_action`                       | object                 | Action fired from the target value.                                                                                                                                           |
 | `hold_action`                      | object                 | Hold action fired from the target value.                                                                                                                                      |
 | `double_tap_action`                | object                 | Double tap action fired from the target value.                                                                                                                                |
+
+Nested `hide` options:
+
+| Option                       | Description                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `temperature`                | Hide the built-in current value row.                                        |
+| `state`                      | Hide the built-in state row.                                                |
+| `setpoint_label`             | Hide the target label while keeping the target value and controls.          |
+| `current_value_when_off`     | Legacy nested form of `hide_current_value_when_off`.                        |
+| `temperature_when_off`       | Legacy alias for `hide.current_value_when_off`.                             |
+| `setpoint_when_off`          | Legacy nested form of `hide_setpoint_when_off`.                             |
+
+Nested `label` options:
+
+| Option        | Description                         |
+| ------------- | ----------------------------------- |
+| `temperature` | Built-in current value row label.   |
+| `state`       | Built-in state row label.           |
+| `setpoint`    | Target/setpoint label.              |
 
 ### Group Card Options
 
@@ -178,6 +198,17 @@ auto_select:
   cooldown_ms: 0
   manual_pause_ms: 30000
 ```
+
+Recent activity means meaningful operating changes such as on/off, HVAC action, fan activity, or humidifier activity. Temperature-only and other passive value updates do not move the selector. Manual navigation pauses automatic selection for `manual_pause_ms`; `cooldown_ms` remains accepted as its legacy alias.
+
+Selector options:
+
+| Option   | Type             | Default  | Description                                |
+| -------- | ---------------- | -------- | ------------------------------------------ |
+| `style`  | `header`, `tabs` | `header` | Header arrows/menu or visible tab buttons. |
+| `icons`  | boolean          | `true`   | Show entity icons in the selector.         |
+| `names`  | boolean          | `true`   | Show entity names in the selector.         |
+| `states` | boolean          | `false`  | Show current entity states in the selector. |
 
 ### Off-state visibility
 
@@ -223,6 +254,12 @@ state_labels:
 ```
 
 Aliases are display-only. Controls, service calls, and Home Assistant state values still use the real entity state.
+
+### Language and localization
+
+Standard states, mode names, attributes, dates, relative times, and numbers follow the active Home Assistant language and locale. Custom values such as `header.name`, `label`, entity `name`, mode `name`, and `state_labels` are displayed exactly as written.
+
+Frontend templates can use Home Assistant translations through the `translate` filter. If an integration or Home Assistant does not provide a translation for a value, the card falls back to the raw value. See [Extra entity template examples](examples/sensors.md) for details.
 
 ### Domain Defaults
 
@@ -406,7 +443,8 @@ Per-row options:
 | `_hide_when_off`      | Legacy alias for `hide_when_off`.                                                                                           |
 | `_icons`              | Set to `false` to hide icons for this row.                                                                                  |
 | `_order`              | Explicit option order. Useful for numeric modes such as `"1"` through `"5"`, where JavaScript object key ordering cannot preserve YAML order. |
-| `hide_off_when_off`  | Hide the Off option when the main entity is off.                                                                              |
+| `hide_off_when_off`   | Hide the Off option when the main entity is off.                                                                             |
+| `entity`              | Use the options and selected value from a `select.*` helper for this control row.                                             |
 
 Per-mode options:
 
@@ -426,6 +464,16 @@ control:
 ```
 
 Put `hide_when_off: true` directly under `hvac` to hide the whole HVAC row while off. For unusual per-option behavior, a specific mode option can also set `hide_when_off: true`.
+
+Use a Home Assistant `select.*` helper as the option source for a control row:
+
+```yaml
+control:
+  fan:
+    entity: select.living_room_fan_speed
+```
+
+The helper's options become the row buttons, and selecting a button calls `select.select_option`. Scripts or automations can react to that helper without making external entities look like controls belonging to the main device.
 
 Explicit per-mode `icon:` overrides are honored wherever they are set. For swing and vane rows, default icons still require `_icons: true`, but icons you set directly on a mode render without that extra flag.
 
@@ -534,28 +582,31 @@ Display modes:
 
 - `row`: classic label/value row. This is the default when no display is configured.
 - `auto`: domain-aware display. Toggle-capable entities become toggles, `button`/`input_button`/`script`/`scene` entities become buttons, and passive entities become chips.
-
-When Home Assistant exposes entity-registry data to the visual editor, the
-editor also offers available entities registered to the same device as the
-main card entity. Suggestions are never added automatically.
 - `toggle`: compact stateful toggle button with label and state text.
 - `button`: compact action button with label only.
 - `chip`: compact status/action pill.
 
+When Home Assistant exposes entity-registry data to the visual editor, the editor also offers available entities registered to the same device as the main card entity. Suggestions are never added automatically.
+
 Entity options:
 
-| Option      | Type   | Description                                  |
-| ----------- | ------ | -------------------------------------------- |
-| `entity`    | string | Entity id.                                   |
-| `name`      | string | Label override.                              |
-| `icon`      | string | Icon shown instead of a text label.          |
-| `display`   | string | Per-entity display style: `row`, `auto`, `button`, `toggle`, or `chip`. |
-| `attribute` | string | Read an attribute instead of state.          |
-| `unit`      | string | Unit suffix.                                 |
-| `decimals`  | number | Decimal places for numeric values.           |
-| `type`      | string | Use `relativetime` for relative time output. |
+| Option          | Type            | Description                                                                           |
+| --------------- | --------------- | ------------------------------------------------------------------------------------- |
+| `entity`        | string          | Entity id.                                                                            |
+| `name`          | string, `false` | Label override, or `false` to hide the row label.                                     |
+| `icon`          | string          | Icon override. Frontend templates are supported.                                      |
+| `display`       | string          | Per-entity display style: `row`, `auto`, `button`, `toggle`, or `chip`.               |
+| `attribute`     | string          | Read an attribute instead of state.                                                   |
+| `unit`          | string          | Unit suffix.                                                                          |
+| `decimals`      | number          | Decimal places for numeric values.                                                    |
+| `template`      | string          | Frontend template used to render the value.                                           |
+| `type`          | string          | Use `relativetime` for relative time output.                                          |
+| `show`          | boolean         | Set to `false` to hide the row. Legacy sensor imports continue to support this field. |
+| `hide_when_off` | boolean         | Hide the row while the main card entity is off.                                       |
 
 Extra entity values, labels, and icons support the card's frontend template engine. This is the same style used by v3 legacy sensor rows, not Home Assistant backend Jinja.
+
+See [Extra entity template examples](examples/sensors.md) for available values, helpers, filters, localization, and migration examples.
 
 ```yaml
 entities:
@@ -638,6 +689,13 @@ setpoint_hold_repeat: true
 
 Override setpoints only when needed.
 
+Per-setpoint options:
+
+| Option      | Type          | Description                                                  |
+| ----------- | ------------- | ------------------------------------------------------------ |
+| `hide`      | boolean       | Always hide this setpoint.                                   |
+| `hide_when` | string, array | Hide this setpoint while the entity is in matching HVAC modes. |
+
 Single setpoint:
 
 ```yaml
@@ -704,6 +762,31 @@ double_tap_action:
 
 Supported action handling follows the same shape used by Home Assistant dashboard cards.
 
+| Action         | Additional option | Description                                  |
+| -------------- | ----------------- | -------------------------------------------- |
+| `more-info`    | none              | Open the main entity's more-info dialog.     |
+| `none`         | none              | Do nothing.                                  |
+| `toggle`       | none              | Toggle the configured card entity.           |
+| `navigate`     | `navigation_path` | Navigate to another Home Assistant view.     |
+| `url`          | `url_path`        | Open a URL.                                  |
+| `call-service` | `service`, `service_data` | Call a Home Assistant service/action. |
+
+## Inline CSS
+
+Use `styles` for CSS scoped to this card's shadow root:
+
+```yaml
+type: custom:simple-thermostat
+entity: climate.my_room
+styles: |
+  ha-card {
+    --st-spacing: 2px;
+    --st-mode-active-background: var(--primary-color);
+  }
+```
+
+Prefer the documented custom properties below. Internal selectors can change between releases.
+
 ## CSS Variables
 
 | Variable                             | Default                                                                                       | Description                                                                     |
@@ -713,10 +796,14 @@ Supported action handling follows the same shape used by Home Assistant dashboar
 | `--st-font-size-l`                   | `22px`                                                                                        | Target value on narrow screens.                                                 |
 | `--st-font-size-m`                   | `var(--ha-font-size-xl, 20px)`                                                                | Target unit size.                                                               |
 | `--st-font-size-title`               | `var(--ha-card-header-font-size, 24px)`                                                       | Header title size.                                                              |
+| `--st-header-icon-size`              | `var(--st-font-size-header-icon, 26px)`                                                       | Header icon size.                                                               |
 | `--st-font-size-entities`            | `var(--ha-font-size-l, 16px)`                                                                 | Extra entity and mode label text.                                               |
+| `--st-entity-action-icon-size`       | `20px`                                                                                        | Icon size for extra entities displayed as buttons, toggles, or chips.           |
 | `--st-entity-column-min-width`       | `160px`                                                                                       | Minimum extra-entity column width when dual setpoints use vertical step buttons. |
 | `--st-font-size-toggle-label`        | `var(--ha-font-size-l, 16px)`                                                                 | Header toggle label.                                                            |
-| `--st-control-icon-size`             | `var(--st-font-size-xl, 32px)`                                                                | Header, state, and HVAC control icon size.                                      |
+| `--st-control-icon-size`             | `var(--st-font-size-xl, 32px)`                                                                | State and HVAC control icon size.                                               |
+| `--st-font-size-setpoint-label`      | `var(--ha-font-size-s, 12px)`                                                                 | Target/setpoint label size.                                                      |
+| `--st-font-size-preset`              | `var(--ha-font-size-s, 12px)`                                                                 | Preset, swing, vane, and footer control label size.                             |
 | `--st-font-size-preset-icon`         | `var(--ha-font-size-xl, 20px)`                                                                | Preset mode icon size.                                                          |
 | `--st-font-size-compact-mode`        | `var(--ha-font-size-m, 14px)`                                                                 | Text size for compact horizontal preset and fan speed buttons.                  |
 | `--st-font-size-compact-mode-icon`   | `20px`                                                                                        | Icon size for compact horizontal preset and fan speed buttons.                  |
@@ -727,9 +814,13 @@ Supported action handling follows the same shape used by Home Assistant dashboar
 | `--st-mode-hover-color`              | `var(--primary-text-color)`                                                                   | Inactive mode hover text.                                                       |
 | `--st-mode-active-accent-color`      | mixed from the active mode color                                                              | Active button underline color, scoped per button.                               |
 | `--st-mode-active-accent-opacity`    | `0.64`                                                                                        | Active button underline opacity. Set to `0` to hide the line.                   |
+| `--st-mode-min-width`               | `72px`                                                                                        | General minimum width used by mode buttons before responsive wrapping.          |
+| `--st-hvac-mode-min-width`          | `120px`                                                                                       | Minimum width used by full HVAC/state control buttons.                          |
+| `--st-sparse-control-gap`           | `2px`                                                                                         | Icon-to-label gap in sparse HVAC/state rows.                                    |
 | `--st-mode-border-radius`            | `var(--ha-card-border-radius, 4px)`                                                           | Mode button corner radius.                                                      |
 | `--st-mode-transition`               | `200ms ease`                                                                                  | Mode button color transition.                                                   |
 | `--st-active-icon-glow-duration`     | `4s`                                                                                          | Active heating, cooling, humidifying, dehumidifying, and fan header icon glow cycle. |
+| `--st-active-icon-glow-color`        | current state color                                                                           | Active header icon glow color.                                                  |
 | `--st-active-icon-glow-min-size`     | `1px`                                                                                         | Faintest active header icon glow radius.                                        |
 | `--st-active-icon-glow-mid-size`     | `4px`                                                                                         | Midpoint active header icon glow radius.                                        |
 | `--st-active-icon-glow-max-size`     | `6px`                                                                                         | Strongest active header icon glow radius.                                       |
@@ -741,12 +832,22 @@ Supported action handling follows the same shape used by Home Assistant dashboar
 | `--cool-color`                       | `var(--state-climate-cool-color, #2b9af9)`                                                    | Active cool mode.                                                               |
 | `--heat-color`                       | `var(--state-climate-heat-color, #ff8100)`                                                    | Active heat mode.                                                               |
 | `--off-color`                        | `var(--state-inactive-color, #8a8a8a)`                                                        | Active off mode.                                                                |
+| `--on-color`                         | `var(--primary-color)`                                                                        | Active on state for fan and humidifier controls.                                |
 | `--fan-color`                        | `#4f7f8d`                                                                                     | Active fan speed controls.                                                      |
 | `--fan_only-color`                   | `var(--state-climate-fan-only-color, var(--fan-color))`                                       | Active fan-only mode.                                                           |
 | `--dry-color`                        | `var(--state-climate-dry-color, #efbd07)`                                                     | Active dry mode.                                                                |
 | `--st-toggle-label-color`            | `var(--primary-text-color)`                                                                   | Header toggle label color.                                                      |
 | `--st-fault-inactive-color`          | `var(--secondary-background-color)`                                                           | Inactive fault icon.                                                            |
 | `--st-fault-active-color`            | `var(--accent-color)`                                                                         | Active fault icon.                                                              |
+| `--st-group-tab-min-width`           | `120px`                                                                                       | Minimum width of a group selector tab.                                          |
+| `--st-group-tab-height`              | `46px`                                                                                        | Minimum height of a group selector tab.                                         |
+| `--st-group-tab-radius`              | `10px`                                                                                        | Group selector tab corner radius.                                               |
+| `--st-group-tab-background`          | state-aware translucent color                                                                 | Unselected group tab background.                                                |
+| `--st-group-tab-color`               | state-aware text color                                                                        | Unselected group tab text and icon color.                                       |
+| `--st-group-tab-selected-background` | state-aware active color                                                                      | Selected group tab background.                                                  |
+| `--st-group-tab-selected-color`      | `#fff`                                                                                        | Selected group tab text and icon color.                                         |
+| `--st-group-tab-hover-background`    | mixed from current tab color                                                                  | Group tab hover and keyboard-focus background.                                  |
+| `--st-group-title-font-size`         | derived from `--st-font-size-title`                                                           | Group header title size before automatic fitting.                               |
 
 Per-card override with [card-mod](https://github.com/thomasloven/lovelace-card-mod):
 

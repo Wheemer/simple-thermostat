@@ -84,7 +84,7 @@ If you are not upgrading to v4, keep using the [v3 documentation](https://github
        type: module
    ```
 
-## Add A Card
+## Add a Card
 
 Use the Home Assistant visual editor for normal setup. In v4, the card reads the selected entity and shows the options that apply to that device, so most cards can be configured without opening YAML.
 
@@ -148,7 +148,7 @@ Group options:
 | -------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cards` / `entities` | array                   | Cards shown inside the group. Each entry can be an entity id string or a normal Simple Thermostat card config.                                                          |
 | `selected`           | string                  | Entity id to show first when no remembered selection is available.                                                                                                      |
-| `auto_select`        | boolean, string, object | Set to `recent_activity` to switch to the most recently active device.                                                                                                  |
+| `auto_select`        | boolean, string, object | Set to `recent_activity` to follow meaningful device activity such as on/off and active-mode transitions. Temperature-only updates do not change the selected card.      |
 | `remember_selection` | boolean                 | Remember the last selected card across dashboard reloads. Defaults to `true`.                                                                                           |
 | `storage_key`        | string                  | Custom local storage key for remembered group selection and recent activity.                                                                                            |
 | `selector`           | object                  | Configure the group selector. Use `style: tabs` for visible tab buttons, or leave unset for the normal header navigation. Also supports `icons`, `names`, and `states`. |
@@ -166,6 +166,12 @@ The card chooses sensible defaults from the selected entity:
 
 Dehumidifiers use the Home Assistant `humidifier` domain.
 
+## Language and Localization
+
+Simple Thermostat follows the language and number format selected in Home Assistant. Standard entity states, mode names, attribute values, dates, relative times, and numeric values use Home Assistant's localization APIs when translations are available.
+
+Custom names, labels, and `state_labels` are displayed exactly as configured. This makes it possible to override integration terms that Home Assistant does not translate or to use shorter wording for a dashboard. The visual editor's configuration labels are currently shown in English; the rendered card itself continues to follow the active Home Assistant language.
+
 ## Advanced YAML
 
 YAML is still supported for advanced customization, migration, and manual dashboard editing, but it is no longer the recommended starting point for v4.
@@ -180,6 +186,7 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
 - service overrides,
 - target value tap, hold, and double tap actions,
 - scoped custom CSS,
+- [frontend template examples](examples/sensors.md),
 - the full option reference.
 
 Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`. The existing row layout remains the default; use `display: row` explicitly when you want to force the classic label/value row style.

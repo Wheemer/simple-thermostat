@@ -1,152 +1,140 @@
-# Different example usage of sensors with templating support (2.4 release)
+# Extra Entity Templates
 
-You must set `version: 3` on the card to enable these features.
+Simple Thermostat supports frontend templates for extra entity values, labels, and icons. These templates are rendered in the browser by the card; they are not Home Assistant backend Jinja templates.
 
-### Render a state value from a different entity:
+Use the current `entities` configuration for new cards. Existing v3 `sensors` configurations are imported automatically for compatibility.
 
-This is the basic, most used case. Just render the state of a different sensor.
-All that happens when you don't pass a template is that a default template is used for label + value.
-The two following sensors are thus equal
+## Render an Entity State
+
+Without a template, the card uses Home Assistant's formatted entity state. A template gives you direct control over the displayed value:
 
 ```yaml
-type: 'custom:simple-thermostat'
+type: custom:simple-thermostat
 entity: climate.living_room
-version: 3
-sensors:
+entities:
   - entity: sensor.living_room_humidity
-
+    name: Humidity
   - entity: sensor.living_room_humidity
-    template: '{{state.text}}'
-    label: '{{friendly_name}}'
+    name: Raw humidity
+    template: '{{state.raw}}'
 ```
 
-### Override default state/temperature sensors
+`state.raw` is the entity's raw state. `state.text` is Home Assistant's localized, formatted state.
 
-By default you get two sensors that are built-in, which you can override by including a sensor with an `id` set to one of the following.
-Note that this shows the default configurations, so doing this means you get the built-in result, you just moved the definition away from the defaults logic to your own config.
-But you can use this to tweak it.
+## Render an Attribute
+
+Use `attribute` when the value is already exposed as an entity attribute:
 
 ```yaml
-type: 'custom:simple-thermostat'
-entity: climate.living_room
-version: 3
-sensors:
-  - id: state
-    label: '{{ui.operation}}'
-    template: '{{state.text}}'
-  - id: temperature
-    label: '{{ui.currently}}'
-    template: '{{current_temperature|formatNumber}}'
+entities:
+  - entity: weather.home
+    name: Outside
+    attribute: temperature
+    decimals: 1
 ```
 
-You need to filter current_temperature through `formatNumber` to get a number that respects your config for `decimals`. In the same way, you can use `formatNumber` on any numeric value to show it using the desired decimals.
-
-The `ui.operation` value looks strange, but we'll get back to what the `ui` variable represents in the translations section.
-
-### Render attributes from the main climate entity with templates
-
-> You can use `state` + all attributes from the entity in your template.
+When a template is also present, the template receives the full entity and the selected attribute becomes `state.raw`:
 
 ```yaml
-type: 'custom:simple-thermostat'
-entity: climate.living_room
-version: 3
-sensors:
-  - label: Min/max temp
+entities:
+  - entity: weather.home
+    name: Outside
+    attribute: temperature
+    template: '{{state.raw|formatNumber({ decimals: 1 })}}'
+```
+
+## Render Attributes From the Main Entity
+
+Omit `entity` and provide an attribute from the main climate, fan, or humidifier entity:
+
+```yaml
+entities:
+  - attribute: min_temp
+    name: Range
     template: '{{min_temp}} / {{max_temp}}'
 ```
 
-Templating with lists of values, use `filters` to prepare it to a string:
+Lists can be joined into readable text:
 
 ```yaml
-type: 'custom:simple-thermostat'
-entity: climate.living_room
-version: 3
-sensors:
-  - label: Supported HVAC modes
+entities:
+  - attribute: hvac_modes
+    name: Supported HVAC modes
     template: "{{hvac_modes|join(', ')}}"
 ```
 
-### Use a different entity as context
+## Use Another Entity as Context
 
-All the attributes from the entity referenced can be reached as variables in the template.
+The selected entity's attributes are exposed directly to the template:
 
 ```yaml
-type: 'custom:simple-thermostat'
-entity: climate.living_room
-version: 3
-sensors:
-  - label: Temperature
-    entity: sensor.multisensor_living_room
-    template: '{{temperature}} {{unit_of_measurement}}'
+entities:
+  - entity: sensor.multisensor_living_room
+    name: Temperature
+    template: '{{state.raw}} {{unit_of_measurement}}'
 ```
 
-### Pass custom variables
-
-You can also pass an object with variables so you don't have to keep long strings in templates.
-This also showcases how you can render a dynamic icon based on a value.
-Lets replace the built-in `State` with an icon
+Use `state_attr(entity_id, attribute)` to read an attribute from another entity:
 
 ```yaml
-type: 'custom:simple-thermostat'
+entities:
+  - entity: sensor.status_fenster_sz
+    name: Window
+    icon: "{{ state_attr('sensor.status_fenster_sz', 'icon') }}"
+```
+
+## Pass Custom Variables
+
+The card-level `variables` object is available as `v` in every frontend template:
+
+```yaml
+type: custom:simple-thermostat
 entity: climate.living_room
-version: 3
 variables:
   icons:
-    idle: 'mdi:sleep'
-    heat: 'mdi:radiator'
-sensors:
-  - label: State
-    id: state
-    template: '{{v.icons[state.raw]|icon}}'
+    idle: mdi:sleep
+    heating: mdi:radiator
+entities:
+  - entity: sensor.heating_action
+    name: Action
+    icon: '{{v.icons[state.raw]}}'
 ```
 
-Wows, now that seems awfully complex.
-To break it down. You can render an icon with `{{"mdi:sleep"|icon}}`, and the `variables` config is made accessible under `v`. So we look up the icon matching `state.raw`, then finally we pass it to a _filter_ named `icon`. The `icon` filter will make sure the passed value is shown as an icon. You can pass `mdi:<name>` and `hass:<name>` to it.
+## Available Helpers and Filters
 
-### Available filters
+| Name | Description | Example |
+| --- | --- | --- |
+| `state.raw` | Raw state or selected attribute value. | `{{state.raw}}` |
+| `state.text` | Home Assistant-formatted and localized state. | `{{state.text}}` |
+| `state_attr()` | Read an attribute from another entity. | `{{state_attr('sensor.room', 'icon')}}` |
+| `v` | Card-level custom variables. | `{{v.labels[state.raw]}}` |
+| `icon` | Render a value as an icon in a value template. | `{{'mdi:sleep'\|icon}}` |
+| `join` | Join a list into text. | `{{hvac_modes\|join(', ')}}` |
+| `translate` | Resolve a Home Assistant translation. | `{{'on'\|translate('state.default.')}}` |
+| `formatNumber` | Format a number with the card's locale and precision. | `{{state.raw\|formatNumber({ decimals: 1 })}}` |
+| `relativetime` | Render a timestamp as a live relative time. | `{{state.raw\|relativetime}}` |
+| `css` | Wrap text with sanitized inline CSS properties. | `{{state.text\|css({ color: 'red' })}}` |
+| `debug` | Render a value as JSON for troubleshooting. | `{{state\|debug}}` |
 
-| Name         | Description                                     | Example        |
-| ------------ | ----------------------------------------------- | ----------------------------------------------------------- |
-| icon         | Render as icon                                  | `{{"mdi:sleep"\|icon}}`                                       |
-| translate    | Use HA translation string                       | `{{"on"\| translate("state.default.")}}`                |
-| formatNumber | Format a number with x decimals                 | `{{3\|formatNumber({ decimals: 3 }) }}`             |
-| css          | (For the crazy ones). Set custom css properties | `{{state.text\| css({ 'font-size': '3em', color: 'red' }) }}` |
-| debug        | Print a structure as a JSON string              | `{{state\| debug}}`                                      |
+## Language and Translations
 
+Templates use the language and number format selected in Home Assistant:
 
-### Translations
+- `state.text` uses Home Assistant's formatted entity state when available.
+- `formatNumber` follows the Home Assistant number locale.
+- `translate` reads Home Assistant's translation resources.
+- `ui.<key>` exposes the native climate-card translation keys that Home Assistant currently provides.
 
-You can look up translated strings from all the UI translation strings HA uses. Its over a thousand strings so we will not list them all, but if you know about your string you can reach it like this in your template:
+For example:
 
-`{{"on"|translate("state.default.")}}`
+```yaml
+template: "{{'on'|translate('state.default.')}}"
+```
 
-This will match the `on` string under the prefix `state.default.`, so resulting in a translation string with the key `state.default.on`.
-The reason its split in a string + a prefix is that while this string were typed out you often have a dynamic string under a fixed prefix.
+Translation availability is controlled by Home Assistant and the entity's integration. If no translation exists, the card falls back to the raw value.
 
-**The ui object**
+## Legacy v3 Sensor Configurations
 
-You can reach all the translations for the HA native climate card under `ui.<key>` as a shorthand.
-The full list of available translations as of writing this are:
+Version 4 imports `sensors` as `entities`, `current_temperature_entity` as `current_value_entity`, and `layout.sensors` as `layout.entities`. Existing `version: 3` cards continue to use classic visual defaults unless `enhanced_visuals: true` is explicitly configured.
 
-| Key                            | Value                              |
-| ------------------------------ | ---------------------------------- |
-| `ui.currently`                 | `Currently`                        |
-| `ui.on_off`                    | `On / off`                         |
-| `ui.target_temperature`        | `Target temperature`               |
-| `ui.target_temperature_entity` | `{name} target temperature`        |
-| `ui.target_temperature_mode`   | `{name} target temperature {mode}` |
-| `ui.current_temperature`       | `{name} current temperature`       |
-| `ui.heating`                   | `{name} heating`                   |
-| `ui.cooling`                   | `{name} cooling`                   |
-| `ui.high`                      | `high`                             |
-| `ui.low`                       | `low`                              |
-| `ui.target_humidity`           | `Target humidity`                  |
-| `ui.operation`                 | `Operation`                        |
-| `ui.fan_mode`                  | `Fan mode`                         |
-| `ui.swing_mode`                | `Swing mode`                       |
-| `ui.preset_mode`               | `Preset`                           |
-| `ui.away_mode`                 | `Away mode`                        |
-| `ui.aux_heat`                  | `Aux heat`                         |
-
-At the moment the {name} and {mode} in some strings are not interpolated
+Use the [v3 documentation](https://github.com/Wheemer/simple-thermostat/tree/v3) when maintaining a dashboard that intentionally remains on version 3.
