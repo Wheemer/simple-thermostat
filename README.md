@@ -127,7 +127,7 @@ remember_selection: true
 storage_key: upstairs_ac_group
 ```
 
-For small groups, the selector can also be shown as visible tabs. This option was inspired by @m1xminus's multi-AC selector idea in [#16](https://github.com/Wheemer/simple-thermostat/issues/16).
+For small groups, the selector can also be shown as visible tabs.
 
 ```yaml
 type: custom:simple-thermostat-group
