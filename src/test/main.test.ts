@@ -2106,6 +2106,202 @@ test('off climate setpoint disables steppers when configured', async () => {
   expect(callService).not.toHaveBeenCalled()
 })
 
+test('setpoint changes can be disabled while values remain visible', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+    disable_setpoint_change: true,
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: {
+          temperature: 20,
+          current_temperature: 19,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: { unit_system: { temperature: '°C' } },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  expect(card.shadowRoot?.querySelector('.current--value')).not.toBe(null)
+  expect(
+    Array.from(
+      card.shadowRoot?.querySelectorAll<HTMLButtonElement>(
+        '.thermostat-trigger'
+      ) ?? []
+    ).every((button) => button.disabled)
+  ).toBe(true)
+})
+
+test('dual heat-cool setpoints cannot be stepped past each other', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.dual',
+    header: false,
+    control: false,
+  } as any)
+  card.hass = {
+    states: {
+      'climate.dual': {
+        entity_id: 'climate.dual',
+        state: 'heat_cool',
+        attributes: {
+          target_temp_low: 24,
+          target_temp_high: 24,
+          current_temperature: 22,
+          min_temp: 7,
+          max_temp: 35,
+        },
+      },
+    },
+    config: { unit_system: { temperature: '°C' } },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  const wrappers = card.shadowRoot?.querySelectorAll('.current-wrapper') ?? []
+  const lowIncrease = wrappers[0]?.querySelector(
+    '.increase'
+  ) as HTMLButtonElement
+  const lowDecrease = wrappers[0]?.querySelector(
+    '.decrease'
+  ) as HTMLButtonElement
+  const highIncrease = wrappers[1]?.querySelector(
+    '.increase'
+  ) as HTMLButtonElement
+  const highDecrease = wrappers[1]?.querySelector(
+    '.decrease'
+  ) as HTMLButtonElement
+
+  expect(lowIncrease?.disabled).toBe(true)
+  expect(highDecrease?.disabled).toBe(true)
+  expect(lowDecrease?.disabled).toBe(false)
+  expect(highIncrease?.disabled).toBe(false)
+  expect(card._stepSetpoint('target_temp_low', 1, 7, 35)).toBe(false)
+  expect(card._stepSetpoint('target_temp_high', -1, 7, 35)).toBe(false)
+})
+
+test('dual heat-cool setpoints can meet without crossing', () => {
+  const card = createCard()
+  card.setConfig({ entity: 'climate.dual' } as any)
+  card.stepSize = 1
+  card._values = {
+    target_temp_low: 23.5,
+    target_temp_high: 24,
+  }
+  jest.spyOn(card as any, '_scheduleSetpointValues').mockImplementation()
+
+  expect(card._stepSetpoint('target_temp_low', 1, 7, 35)).toBe(true)
+  expect(card._values.target_temp_low).toBe(24)
+  card._clearOptimisticSetpointState()
+})
+
+test('switching entity clears optimistic setpoint state', () => {
+  jest.useFakeTimers()
+  const card = createCard()
+  card.hass = {
+    states: {
+      'climate.first': {
+        entity_id: 'climate.first',
+        state: 'heat',
+        attributes: { temperature: 20, min_temp: 7, max_temp: 30 },
+      },
+      'climate.second': {
+        entity_id: 'climate.second',
+        state: 'heat',
+        attributes: { temperature: 25, min_temp: 7, max_temp: 30 },
+      },
+    },
+    config: { unit_system: { temperature: '°C' } },
+    localize: (key: string) => key,
+  }
+  card.setConfig({ entity: 'climate.first' } as any)
+  card._updatingValues = true
+  card._values = { temperature: 21 }
+  card._updatingValuesTimeout = setTimeout(() => undefined, 1000)
+
+  card.setConfig({ entity: 'climate.second' } as any)
+
+  expect(card._updatingValues).toBe(false)
+  expect(card._updatingValuesTimeout).toBe(null)
+  expect(card._values.temperature).toBe(25)
+  jest.useRealTimers()
+})
+
+test('modern performAction is preferred when both Home Assistant APIs exist', () => {
+  const card = createCard()
+  const performAction = jest.fn()
+  const callService = jest.fn()
+  ;(card as any)._hass = { performAction, callService }
+
+  card._callAction('climate.set_temperature', { entity_id: 'climate.test' })
+
+  expect(performAction).toHaveBeenCalledWith({
+    action: 'climate.set_temperature',
+    data: { entity_id: 'climate.test' },
+  })
+  expect(callService).not.toHaveBeenCalled()
+})
+
+test('rejected Home Assistant actions are reported with their action name', async () => {
+  const card = createCard()
+  const error = new Error('service rejected')
+  const consoleError = jest.spyOn(console, 'error').mockImplementation()
+  ;(card as any)._hass = {
+    performAction: jest.fn().mockRejectedValue(error),
+  }
+
+  card._callAction('climate.set_temperature', { entity_id: 'climate.test' })
+  await Promise.resolve()
+
+  expect(consoleError).toHaveBeenCalledWith(
+    'simple-thermostat: climate.set_temperature failed',
+    error
+  )
+  consoleError.mockRestore()
+})
+
+test('optional hold repeat keeps stepping until release', () => {
+  jest.useFakeTimers()
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    setpoint_hold_repeat: true,
+  } as any)
+  card._values = { temperature: 20 }
+  const step = jest.spyOn(card, '_stepSetpoint').mockReturnValue(true)
+
+  card._startSetpointRepeat(
+    { pointerType: 'mouse', button: 0 } as PointerEvent,
+    'temperature',
+    1,
+    7,
+    30
+  )
+  jest.advanceTimersByTime(1000)
+  card._stopSetpointRepeat()
+
+  expect(step).toHaveBeenCalledTimes(3)
+  jest.advanceTimersByTime(1000)
+  expect(step).toHaveBeenCalledTimes(3)
+  jest.useRealTimers()
+})
+
 test('off climate setpoint can be hidden without disabling control by default', async () => {
   document.body.innerHTML = ''
   const card = createCard()

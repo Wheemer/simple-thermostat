@@ -1712,6 +1712,19 @@ ha-card.standard-visuals .thermostat-trigger:active {
   border-radius: var(--st-mode-radius, 8px);
 }
 
+.editor-entity-suggestions {
+  display: grid;
+  gap: var(--st-spacing, var(--st-default-spacing));
+  margin-bottom: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
+  color: var(--secondary-text-color);
+}
+
+.editor-entity-suggestions__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--st-spacing, var(--st-default-spacing));
+}
+
 .editor-entity-row {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(120px, 0.7fr) auto auto;

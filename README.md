@@ -24,6 +24,14 @@ A community maintained fork of [simple-thermostat](https://github.com/nervetatto
 
 A compact Lovelace card for Home Assistant climate, fan, humidifier, and dehumidifier entities. It keeps the original small-card style while adding domain-aware setpoints, current values, action handling, richer mode controls, and enhanced visuals.
 
+### Feature acknowledgements
+
+- Dual-target bounds and entity-safe queued actions were adapted from work by [Martin Müller (@duczz)](https://github.com/duczz/ha-simple-thermostat) in [4371180](https://github.com/duczz/ha-simple-thermostat/commit/4371180cb499ba292f44260aa19a842f33a7f68b) and [d8561a0](https://github.com/duczz/ha-simple-thermostat/commit/d8561a0ecee90351050ac3dc37ed997862351fe9).
+- The read-only setpoint option was inspired by [@temuccio's proposal](https://github.com/nervetattoo/simple-thermostat/pull/423).
+- Optional hold-repeat behavior was inspired by pointer interaction work from [Esam / @Ava-AgentOne](https://github.com/Ava-AgentOne/simple-thermostat-card/commit/3ab89cae5a4b7ebed8bb62b2c0a512ba203b296b).
+- Same-device editor suggestions were inspired by [@priyam13coding's editor discovery work](https://github.com/priyam13coding/simple-compact-thermostat-card/commit/a7da7839d9304982f24a364dc3face66f6554492).
+- The tabbed group selector was inspired by [@m1xminus's multi-AC selector idea](https://github.com/Wheemer/simple-thermostat/issues/16).
+
 <div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
   <strong style="color: #41bdf5;">New in v4:</strong> Fan, humidifier, and dehumidifier support, domain-aware controls, modern Home Assistant actions, richer mode buttons, and enhanced visuals.
 </div>
@@ -175,7 +183,7 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
 - advanced mode filtering,
 - extra entity attributes, units, decimals, display modes, timer countdowns, and relative time,
 - manual setpoint definitions,
-- off-mode target step behavior,
+- target locking, hold-repeat, and off-mode target step behavior,
 - display-only state row labels,
 - service overrides,
 - target value tap, hold, and double tap actions,
@@ -183,6 +191,8 @@ Use the [YAML reference](YAML_REFERENCE.md) for:
 - the full option reference.
 
 Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`. The existing row layout remains the default; use `display: row` explicitly when you want to force the classic label/value row style.
+
+The visual editor can suggest available entities registered to the same Home Assistant device. Suggestions are only added when selected and never change a card automatically.
 
 Footer controls can show switch-style helper entities below the normal mode rows:
 
@@ -203,6 +213,16 @@ footer:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="7" nowrap><strong>v4.3.2</strong></td>
+      <td>Prevents dual heat/cool targets from being stepped past each other.</td>
+    </tr>
+    <tr><td>Keeps pending and optimistic target changes attached to the entity where they began.</td></tr>
+    <tr><td>Reports rejected Home Assistant actions in the browser console with the action name.</td></tr>
+    <tr><td>Adds optional target locking while keeping the target value visible.</td></tr>
+    <tr><td>Adds optional press-and-hold repetition for target step buttons.</td></tr>
+    <tr><td>Adds editor suggestions for available entities registered to the same Home Assistant device.</td></tr>
+    <tr><td>Credits the upstream authors and repositories whose work inspired these additions.</td></tr>
     <tr>
       <td rowspan="5" nowrap><strong>v4.3.1</strong></td>
       <td>Improves setpoint reliability when a card is reconfigured or removed while an update is pending.</td>

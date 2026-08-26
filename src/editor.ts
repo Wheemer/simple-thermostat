@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit'
+import { LitElement, html, nothing } from 'lit'
 import { property, state } from 'lit/decorators.js'
 import { mdiBookOpenVariant } from '@mdi/js'
 import styles from './styles.css'
@@ -80,6 +80,7 @@ const LABELS: Record<string, string> = {
   'layout.step': 'Step layout',
   step_size: 'Step size',
   setpoint_debounce_ms: 'Target debounce',
+  setpoint_hold_repeat: 'Repeat target changes while held',
   fallback: 'Fallback text',
   'hide.temperature': 'Hide current value',
   hide_current_value_when_off: 'Hide current value while off',
@@ -87,6 +88,7 @@ const LABELS: Record<string, string> = {
   'hide.setpoint_label': 'Hide target label',
   hide_setpoint_when_off: 'Hide target controls while off',
   hide_setpoint: 'Hide target controls',
+  disable_setpoint_change: 'Disable target changes',
   disable_setpoint_change_when_off: 'Disable target changes while off',
   'label.temperature': 'Current value label',
   'label.state': 'State label',
@@ -180,12 +182,14 @@ const DIRECT_FORM_PATHS = [
   'layout.entities.separator',
   'layout.entities.alignment',
   'setpoint_debounce_ms',
+  'setpoint_hold_repeat',
   'hide.temperature',
   'hide_current_value_when_off',
   'hide.state',
   'hide.setpoint_label',
   'hide_setpoint_when_off',
   'hide_setpoint',
+  'disable_setpoint_change',
   'disable_setpoint_change_when_off',
   'label.temperature',
   'label.state',
@@ -583,12 +587,20 @@ export function buildSchema(config: CardConfig, hass?: HASS) {
                 schema: [
                   { name: 'hide_setpoint', selector: { boolean: {} } },
                   {
+                    name: 'disable_setpoint_change',
+                    selector: { boolean: {} },
+                  },
+                  {
                     name: 'hide_setpoint_when_off',
                     selector: { boolean: {} },
                   },
                   { name: 'hide.setpoint_label', selector: { boolean: {} } },
                   {
                     name: 'disable_setpoint_change_when_off',
+                    selector: { boolean: {} },
+                  },
+                  {
+                    name: 'setpoint_hold_repeat',
                     selector: { boolean: {} },
                   },
                 ],
@@ -783,6 +795,7 @@ export default class SimpleThermostatEditor extends LitElement {
         this.config.step_size != null ? String(this.config.step_size) : 'auto',
       fallback: this.config.fallback ?? '',
       setpoint_debounce_ms: this.config.setpoint_debounce_ms ?? '',
+      setpoint_hold_repeat: this.config.setpoint_hold_repeat === true,
       'hide.temperature': this.config.hide?.temperature === true,
       hide_current_value_when_off:
         this.config.hide_current_value_when_off === true ||
@@ -790,6 +803,7 @@ export default class SimpleThermostatEditor extends LitElement {
         this.config.hide?.temperature_when_off === true,
       'hide.state': this.config.hide?.state === true,
       hide_setpoint: this.config.hide_setpoint === true,
+      disable_setpoint_change: this.config.disable_setpoint_change === true,
       disable_setpoint_change_when_off:
         this.config.disable_setpoint_change_when_off === true,
       'hide.setpoint_label': this.config.hide?.setpoint_label === true,
@@ -944,6 +958,48 @@ export default class SimpleThermostatEditor extends LitElement {
     this._commitEntityRows([...this._getExtraEntities(), { entity: '' }])
   }
 
+  _addSuggestedEntity(entityId: string) {
+    this._commitEntityRows([...this._getExtraEntities(), { entity: entityId }])
+  }
+
+  _getRelatedEntitySuggestions() {
+    const registry = this.hass?.entities
+    const sourceDeviceId = registry?.[this.config.entity]?.device_id
+    if (!sourceDeviceId) return []
+
+    const configured = new Set([
+      this.config.entity,
+      this.config.current_value_entity,
+      ...this._getExtraEntities().map((entity) => entity.entity),
+      ...this._getFooterRows().map((entity) => entity.entity),
+    ])
+
+    return Object.entries(registry)
+      .filter(
+        ([entityId, entry]: [string, any]) =>
+          entry?.device_id === sourceDeviceId &&
+          !entry?.disabled_by &&
+          !entry?.hidden_by &&
+          !configured.has(entityId) &&
+          this.hass?.states?.[entityId]
+      )
+      .map(([entityId]) => entityId)
+      .sort((left, right) =>
+        this._getEntitySuggestionLabel(left).localeCompare(
+          this._getEntitySuggestionLabel(right)
+        )
+      )
+  }
+
+  _getEntitySuggestionLabel(entityId: string) {
+    const stateObj = this.hass?.states?.[entityId]
+    return (
+      stateObj?.attributes?.friendly_name ??
+      entityId.split('.').pop()?.replace(/_/g, ' ') ??
+      entityId
+    )
+  }
+
   _removeEntityRow(index: number) {
     this._commitEntityRows(
       this._getExtraEntities().filter((_, entityIndex) => entityIndex !== index)
@@ -1012,6 +1068,7 @@ export default class SimpleThermostatEditor extends LitElement {
 
   _renderExtraEntityRows() {
     const entities = this._getExtraEntities()
+    const suggestions = this._getRelatedEntitySuggestions()
 
     return html`
       <section class="editor-extra-entities">
@@ -1023,6 +1080,27 @@ export default class SimpleThermostatEditor extends LitElement {
           <ha-button @click=${this._addEntityRow}>Add row</ha-button>
         </div>
 
+        ${
+          suggestions.length
+            ? html`
+                <div class="editor-entity-suggestions">
+                  <span>Suggested from this device</span>
+                  <div class="editor-entity-suggestions__items">
+                    ${suggestions.map(
+                      (entityId) => html`
+                        <ha-button
+                          @click=${() => this._addSuggestedEntity(entityId)}
+                          title=${entityId}
+                        >
+                          Add ${this._getEntitySuggestionLabel(entityId)}
+                        </ha-button>
+                      `
+                    )}
+                  </div>
+                </div>
+              `
+            : nothing
+        }
         ${
           entities.length === 0
             ? html`<p class="editor-extra-entities__empty">

@@ -66,6 +66,7 @@ interface CardConfig {
   decimals?: number
   step_size?: number
   setpoint_debounce_ms?: number
+  setpoint_hold_repeat?: boolean
   variables?: LooseObject
   state_labels?: Record<string, string>
   layout?: {
@@ -92,6 +93,7 @@ interface CardConfig {
   hide_setpoint?: boolean
   hide_current_value_when_off?: boolean
   hide_setpoint_when_off?: boolean
+  disable_setpoint_change?: boolean
   disable_setpoint_change_when_off?: boolean
   hide?: {
     temperature?: boolean

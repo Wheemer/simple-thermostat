@@ -87,6 +87,28 @@ test('visual editor keeps common setup before advanced options', () => {
   ])
 })
 
+test('target editor exposes optional setpoint locking and hold repeat', () => {
+  const schema = buildSchema({ entity: 'climate.living_room' } as any, {
+    performAction,
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: { temperature: 20 },
+      },
+    },
+  })
+  const targetNames = schemaNames([findSection(schema, 'Target')])
+
+  expect(targetNames).toEqual(
+    expect.arrayContaining([
+      'disable_setpoint_change',
+      'disable_setpoint_change_when_off',
+      'setpoint_hold_repeat',
+    ])
+  )
+})
+
 test('advanced fields are grouped away from the common appearance workflow', () => {
   const schema = buildSchema({ entity: 'climate.living_room' } as any, {
     performAction,
@@ -588,6 +610,100 @@ test('footer control editor removes the config when the last row is removed', ()
   editor._removeFooterRow(0)
 
   expect(editor.config.footer).toBeUndefined()
+})
+
+test('editor suggests available entities registered to the same device', () => {
+  const editor = new SimpleThermostatEditor()
+  editor.setConfig({
+    entity: 'climate.living_room',
+    entities: [{ entity: 'sensor.already_added' }],
+  } as any)
+  editor.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: {},
+      },
+      'sensor.room_humidity': {
+        entity_id: 'sensor.room_humidity',
+        state: '45',
+        attributes: { friendly_name: 'Room Humidity' },
+      },
+      'sensor.already_added': {
+        entity_id: 'sensor.already_added',
+        state: '20',
+        attributes: {},
+      },
+      'sensor.other_device': {
+        entity_id: 'sensor.other_device',
+        state: '10',
+        attributes: {},
+      },
+    },
+    entities: {
+      'climate.living_room': { device_id: 'device-1' },
+      'sensor.room_humidity': { device_id: 'device-1' },
+      'sensor.already_added': { device_id: 'device-1' },
+      'sensor.disabled': { device_id: 'device-1', disabled_by: 'user' },
+      'sensor.other_device': { device_id: 'device-2' },
+    },
+  } as any
+
+  expect(editor._getRelatedEntitySuggestions()).toEqual([
+    'sensor.room_humidity',
+  ])
+})
+
+test('adding a related entity suggestion is explicit and preserves existing rows', () => {
+  const editor = new SimpleThermostatEditor()
+  editor.setConfig({
+    entity: 'climate.living_room',
+    entities: [{ entity: 'sensor.existing' }],
+  } as any)
+
+  editor._addSuggestedEntity('sensor.room_humidity')
+
+  expect(editor.config.entities).toEqual([
+    { entity: 'sensor.existing' },
+    { entity: 'sensor.room_humidity' },
+  ])
+})
+
+test('related entity suggestions are rendered as explicit add buttons', async () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  const editor = new SimpleThermostatEditor()
+  editor.setConfig({ entity: 'climate.living_room' } as any)
+  editor.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: {},
+      },
+      'sensor.room_humidity': {
+        entity_id: 'sensor.room_humidity',
+        state: '45',
+        attributes: { friendly_name: 'Room Humidity' },
+      },
+    },
+    entities: {
+      'climate.living_room': { device_id: 'device-1' },
+      'sensor.room_humidity': { device_id: 'device-1' },
+    },
+  } as any
+  document.body.appendChild(editor)
+
+  await editor.updateComplete
+
+  expect(editor.shadowRoot?.textContent).toContain(
+    'Add Room Humidity'
+  )
 })
 
 test('editor updates its local form data when enhanced visuals changes', () => {

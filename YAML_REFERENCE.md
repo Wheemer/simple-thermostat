@@ -129,7 +129,9 @@ cards:
 | `decimals`                         | number                 | Decimal places for target display.                                                                                                                                            |
 | `step_size`                        | number                 | Amount changed by the target controls.                                                                                                                                        |
 | `setpoint_debounce_ms`             | number                 | Delay in milliseconds before sending target changes. Rapid clicks are collapsed into one service call. Defaults to `500`; set `0` to send immediately.                         |
+| `setpoint_hold_repeat`             | boolean                | Repeat target changes while a step button is held. Defaults to `false`.                                                                                                       |
 | `hide_setpoint`                    | boolean                | Hide target value and setpoint controls.                                                                                                                                      |
+| `disable_setpoint_change`          | boolean                | Keep target values visible but disable all target step buttons. Defaults to `false`.                                                                                           |
 | `disable_setpoint_change_when_off` | boolean                | Disable climate target step buttons while the climate entity is `off`, useful for TRV-style entities that reject off-mode target changes. Defaults to `false`.                 |
 | `hide_current_value_when_off`      | boolean                | Hide the built-in current value row while the main entity is `off`.                                                                                                           |
 | `hide_setpoint_when_off`           | boolean                | Hide the target value and setpoint controls while the main entity is `off`.                                                                                                  |
@@ -532,6 +534,10 @@ Display modes:
 
 - `row`: classic label/value row. This is the default when no display is configured.
 - `auto`: domain-aware display. Toggle-capable entities become toggles, `button`/`input_button`/`script`/`scene` entities become buttons, and passive entities become chips.
+
+When Home Assistant exposes entity-registry data to the visual editor, the
+editor also offers available entities registered to the same device as the
+main card entity. Suggestions are never added automatically.
 - `toggle`: compact stateful toggle button with label and state text.
 - `button`: compact action button with label only.
 - `chip`: compact status/action pill.
@@ -613,6 +619,22 @@ Setpoints are detected automatically:
 - Climate entities use temperature setpoints.
 - Fan entities use percentage.
 - Humidifier and dehumidifier entities use humidity.
+
+Dual climate targets are constrained so `target_temp_low` cannot be raised
+above `target_temp_high`, and `target_temp_high` cannot be lowered below
+`target_temp_low`. Equal targets remain valid.
+
+Keep a target visible but make it read-only:
+
+```yaml
+disable_setpoint_change: true
+```
+
+Enable repeated stepping while a target button is held:
+
+```yaml
+setpoint_hold_repeat: true
+```
 
 Override setpoints only when needed.
 

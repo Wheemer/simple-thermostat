@@ -42,6 +42,14 @@ const STEP_SIZE = 0.5
 const DECIMALS = 1
 const UPDATING_TIMEOUT = 10000
 const MISSING_ENTITY_GRACE_MS = 5000
+const SETPOINT_REPEAT_DELAY_MS = 500
+const SETPOINT_REPEAT_INTERVAL_MS = 250
+
+const SETPOINT_SIBLING: Record<string, { field: string; caps: 'min' | 'max' }> =
+  {
+    target_temp_low: { field: 'target_temp_high', caps: 'max' },
+    target_temp_high: { field: 'target_temp_low', caps: 'min' },
+  }
 
 type PendingSetpointUpdate = {
   entity: string
@@ -605,6 +613,9 @@ export default class SimpleThermostat extends LitElement {
   _setpointUpdateTimer: ReturnType<typeof setTimeout> | null = null
   _pendingSetpointUpdate: PendingSetpointUpdate | null = null
   _missingEntityTimer: ReturnType<typeof setTimeout> | null = null
+  _stepRepeatDelayTimer: ReturnType<typeof setTimeout> | null = null
+  _stepRepeatIntervalTimer: ReturnType<typeof setInterval> | null = null
+  _stepRepeatFired = false
   static HOLD_MS = 500
   static DOUBLE_TAP_MS = 250
 
@@ -668,11 +679,18 @@ export default class SimpleThermostat extends LitElement {
   }
 
   _callAction(action: string, data: object) {
-    if (typeof this._hass.callService === 'function') {
+    let result: void | Promise<unknown>
+    if (typeof this._hass.performAction === 'function') {
+      result = this._hass.performAction({ action, data })
+    } else if (typeof this._hass.callService === 'function') {
       const [domain, service] = action.split('.')
-      this._hass.callService(domain, service, data)
-    } else if (typeof this._hass.performAction === 'function') {
-      this._hass.performAction({ action, data })
+      result = this._hass.callService(domain, service, data)
+    }
+
+    if (result && typeof result.catch === 'function') {
+      result.catch((error: unknown) => {
+        console.error(`simple-thermostat: ${action} failed`, error)
+      })
     }
   }
 
@@ -696,6 +714,7 @@ export default class SimpleThermostat extends LitElement {
     }
 
     this._flushPendingSetpointValues()
+    const previousEntity = this.config?.entity
     this._clearMissingEntityTimer()
     this.config = normalizeConfig({
       decimals: DECIMALS,
@@ -708,6 +727,9 @@ export default class SimpleThermostat extends LitElement {
     this.entities = []
     this.footer = []
     this.showEntities = true
+    if (previousEntity && previousEntity !== this.config.entity) {
+      this._clearOptimisticSetpointState()
+    }
     this.toggleAttribute('embedded', this.config.embedded === true)
     if (this._hass?.states?.[this.config.entity]) {
       this.updateFromHass(this._hass)
@@ -770,6 +792,7 @@ export default class SimpleThermostat extends LitElement {
     }
 
     this._clearMissingEntityTimer()
+    this._stopSetpointRepeat()
     this._flushPendingSetpointValues()
     super.disconnectedCallback()
   }
@@ -1025,9 +1048,10 @@ export default class SimpleThermostat extends LitElement {
             stepLayout,
             isOff: entity.state === HVAC_MODES.OFF,
             disableSteppers:
-              entityDomain === 'climate' &&
-              entity.state === HVAC_MODES.OFF &&
-              this.config.disable_setpoint_change_when_off === true,
+              this.config.disable_setpoint_change === true ||
+              (entityDomain === 'climate' &&
+                entity.state === HVAC_MODES.OFF &&
+                this.config.disable_setpoint_change_when_off === true),
           })}
         </section>
 
@@ -1164,6 +1188,7 @@ export default class SimpleThermostat extends LitElement {
     }: SetpointRenderOptions,
     direction: 'increase' | 'decrease'
   ) {
+    const bounds = this._setpointBounds(field, minValue, maxValue)
     const numericValue = Number(value)
     const hasNumericValue = !Number.isNaN(numericValue)
     const decreasing = direction === 'decrease'
@@ -1171,12 +1196,12 @@ export default class SimpleThermostat extends LitElement {
       disableSteppers ||
       (decreasing
         ? value === null ||
-          (minValue !== null && hasNumericValue && numericValue <= minValue)
-        : (value === null && minValue === null) ||
+          (bounds.min !== null && hasNumericValue && numericValue <= bounds.min)
+        : (value === null && bounds.min === null) ||
           (value !== null &&
-            maxValue !== null &&
+            bounds.max !== null &&
             hasNumericValue &&
-            numericValue >= maxValue))
+            numericValue >= bounds.max))
     const icon = decreasing
       ? row
         ? ICONS.MINUS
@@ -1191,16 +1216,131 @@ export default class SimpleThermostat extends LitElement {
         ?disabled=${disabled}
         class="thermostat-trigger ${direction}"
         aria-label=${`${decreasing ? 'Decrease' : 'Increase'} ${field}`}
-        @click="${() =>
-          decreasing
-            ? this.setTemperature(-this.stepSize, field)
-            : value === null && minValue !== null
-              ? this.setTemperature(0, field, minValue)
-              : this.setTemperature(this.stepSize, field)}"
+        @pointerdown=${(event: PointerEvent) =>
+          this._startSetpointRepeat(
+            event,
+            field,
+            decreasing ? -1 : 1,
+            minValue,
+            maxValue
+          )}
+        @pointerup=${this._stopSetpointRepeat}
+        @pointercancel=${this._stopSetpointRepeat}
+        @pointerleave=${this._stopSetpointRepeat}
+        @click=${() => {
+          if (this._stepRepeatFired) {
+            this._stepRepeatFired = false
+            return
+          }
+          this._stepSetpoint(field, decreasing ? -1 : 1, minValue, maxValue)
+        }}
       >
         <ha-icon .icon=${icon}></ha-icon>
       </button>
     `
+  }
+
+  _setpointBounds(
+    field: string,
+    minValue: number | null,
+    maxValue: number | null
+  ) {
+    const relation = SETPOINT_SIBLING[field]
+    if (!relation) return { min: minValue, max: maxValue }
+
+    const sibling = Number(this._values[relation.field])
+    if (!Number.isFinite(sibling)) return { min: minValue, max: maxValue }
+
+    return relation.caps === 'max'
+      ? {
+          min: minValue,
+          max: maxValue === null ? sibling : Math.min(maxValue, sibling),
+        }
+      : {
+          min: minValue === null ? sibling : Math.max(minValue, sibling),
+          max: maxValue,
+        }
+  }
+
+  _stepSetpoint(
+    field: string,
+    direction: 1 | -1,
+    minValue: number | null,
+    maxValue: number | null
+  ) {
+    const { min, max } = this._setpointBounds(field, minValue, maxValue)
+    const rawValue = this._values[field]
+
+    if (rawValue === null || rawValue === undefined) {
+      if (direction > 0 && min !== null) {
+        this.setTemperature(0, field, min)
+      }
+      return false
+    }
+
+    const value = Number(rawValue)
+    if (!Number.isFinite(value)) return false
+    if (direction > 0 && max !== null && value >= max) return false
+    if (direction < 0 && min !== null && value <= min) return false
+
+    const requestedValue = value + direction * this.stepSize
+    const boundedValue =
+      direction > 0 && max !== null
+        ? Math.min(requestedValue, max)
+        : direction < 0 && min !== null
+          ? Math.max(requestedValue, min)
+          : requestedValue
+    this.setTemperature(0, field, boundedValue)
+    return true
+  }
+
+  _startSetpointRepeat(
+    event: PointerEvent,
+    field: string,
+    direction: 1 | -1,
+    minValue: number | null,
+    maxValue: number | null
+  ) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    this._stepRepeatFired = false
+    if (this.config.setpoint_hold_repeat !== true) return
+
+    this._stopSetpointRepeat()
+    this._stepRepeatDelayTimer = setTimeout(() => {
+      this._stepRepeatDelayTimer = null
+      this._stepRepeatFired = this._stepSetpoint(
+        field,
+        direction,
+        minValue,
+        maxValue
+      )
+      if (!this._stepRepeatFired) return
+
+      this._stepRepeatIntervalTimer = setInterval(() => {
+        if (!this._stepSetpoint(field, direction, minValue, maxValue)) {
+          this._stopSetpointRepeat()
+        }
+      }, SETPOINT_REPEAT_INTERVAL_MS)
+    }, SETPOINT_REPEAT_DELAY_MS)
+  }
+
+  _stopSetpointRepeat = () => {
+    if (this._stepRepeatDelayTimer) {
+      clearTimeout(this._stepRepeatDelayTimer)
+      this._stepRepeatDelayTimer = null
+    }
+    if (this._stepRepeatIntervalTimer) {
+      clearInterval(this._stepRepeatIntervalTimer)
+      this._stepRepeatIntervalTimer = null
+    }
+  }
+
+  _clearOptimisticSetpointState() {
+    this._updatingValues = false
+    if (this._updatingValuesTimeout) {
+      clearTimeout(this._updatingValuesTimeout)
+      this._updatingValuesTimeout = null
+    }
   }
 
   renderSetpointValue({ field, value, unit, isOff }: SetpointRenderOptions) {

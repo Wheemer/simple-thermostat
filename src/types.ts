@@ -33,8 +33,15 @@ export interface FooterToggle extends FooterEntity {
 
 export interface HASS {
   states?: Record<string, any>
-  performAction?: (request: { action: string; data: object }) => void
-  callService?: (domain: string, service: string, data: object) => void
+  performAction?: (request: {
+    action: string
+    data: object
+  }) => void | Promise<unknown>
+  callService?: (
+    domain: string,
+    service: string,
+    data: object
+  ) => void | Promise<unknown>
   formatEntityName?: (
     stateObj: LooseObject,
     context?: unknown,
