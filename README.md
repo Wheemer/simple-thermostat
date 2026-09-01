@@ -213,6 +213,10 @@ footer:
   </thead>
   <tbody>
     <tr>
+      <td nowrap><strong>v4.3.3</strong></td>
+      <td>Restores balanced spacing between extra entity rows and a single vertical setpoint control.</td>
+    </tr>
+    <tr>
       <td rowspan="6" nowrap><strong>v4.3.2</strong></td>
       <td>Prevents dual heat/cool targets from being stepped past each other, adapted from work by <a href="https://github.com/duczz/ha-simple-thermostat/commit/4371180cb499ba292f44260aa19a842f33a7f68b">Martin Müller (@duczz)</a>.</td>
     </tr>

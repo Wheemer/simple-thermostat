@@ -173,7 +173,7 @@ ha-card.loading {
     minmax(max-content, 1fr);
 }
 .body.has-entities.step-column.setpoint-count-1 {
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(0, 1fr) minmax(max-content, 35%);
 }
 .body.has-entities.step-column.setpoint-count-2 {
   grid-template-columns:

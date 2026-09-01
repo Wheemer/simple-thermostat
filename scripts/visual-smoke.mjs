@@ -79,6 +79,19 @@ try {
               hvac_modes: ['off', 'heat', 'cool'],
             },
           },
+          'climate.audit_single': {
+            entity_id: 'climate.audit_single',
+            state: 'heat',
+            attributes: {
+              friendly_name: 'Smoker',
+              current_temperature: 96,
+              temperature: 105,
+              min_temp: 75,
+              max_temp: 260,
+              target_temp_step: 5,
+              hvac_modes: ['off', 'heat'],
+            },
+          },
           'sensor.long_temperature': {
             entity_id: 'sensor.long_temperature',
             state: '23.7',
@@ -128,6 +141,17 @@ try {
       })
       card.hass = hass
       document.body.append(card)
+      const singleSetpointCard = document.createElement('simple-thermostat')
+      singleSetpointCard.id = 'single-setpoint-audit'
+      singleSetpointCard.setConfig({
+        entity: 'climate.audit_single',
+        header: { name: 'Smoker' },
+        layout: { step: 'column', mode: { headings: false } },
+        control: { hvac: { off: {}, heat: {} } },
+      })
+      singleSetpointCard.hass = hass
+      singleSetpointCard.style.marginTop = '16px'
+      document.body.append(singleSetpointCard)
       const group = document.createElement('simple-thermostat-group')
       group.setConfig({
         cards: [
@@ -145,7 +169,11 @@ try {
     await page.waitForTimeout(100)
     const problems = await page.evaluate(() => {
       const problems = []
-      const inspectCard = (host, label) => {
+      const inspectCard = (
+        host,
+        label,
+        expectBalancedSingleSetpoint = false
+      ) => {
         const root = host.shadowRoot
         const surface = root?.querySelector('ha-card')
         if (!surface) return void problems.push(`${label}: missing surface`)
@@ -175,8 +203,31 @@ try {
               problems.push(`${label}: controls ${left}/${right} overlap`)
           }
         }
+        if (expectBalancedSingleSetpoint) {
+          const body = root.querySelector('.body')
+          const setpoint = root.querySelector('.current-wrapper')
+          if (!body || !setpoint) {
+            problems.push(`${label}: missing single-setpoint layout`)
+          } else {
+            const bodyRect = body.getBoundingClientRect()
+            const setpointRect = setpoint.getBoundingClientRect()
+            const setpointCenter =
+              setpointRect.left + setpointRect.width / 2 - bodyRect.left
+            const setpointPosition = setpointCenter / bodyRect.width
+            if (setpointPosition < 0.6 || setpointPosition > 0.85) {
+              problems.push(
+                `${label}: setpoint column is not balanced (${setpointPosition.toFixed(2)})`
+              )
+            }
+          }
+        }
       }
       inspectCard(document.querySelector('simple-thermostat'), 'main')
+      inspectCard(
+        document.querySelector('#single-setpoint-audit'),
+        'single-setpoint',
+        true
+      )
       const group = document.querySelector('simple-thermostat-group')
       const embedded = group?.shadowRoot?.querySelector(
         '.embedded-card-host'

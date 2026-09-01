@@ -61,7 +61,9 @@ test('card body keeps the legacy intrinsic column flow', () => {
   expect(styles).toContain('minmax(min-content, max-content)')
   expect(styles).toContain('minmax(max-content, 1fr)')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-1')
-  expect(styles).toContain('grid-template-columns: minmax(0, 1fr) max-content')
+  expect(styles).toContain(
+    'grid-template-columns: minmax(0, 1fr) minmax(max-content, 35%)'
+  )
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-2')
   expect(styles).toContain(
     'minmax(var(--st-entity-column-min-width), max-content)'
