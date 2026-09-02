@@ -202,6 +202,12 @@ footer:
     icon: mdi:shield-check
 ```
 
+## Troubleshooting
+
+### Setpoint controls stop at an unexpected temperature
+
+Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home Assistant entity. If a step button becomes disabled unexpectedly or Home Assistant rejects a temperature change, check those attributes under **Developer Tools → States**. Incorrect limits must be corrected in the integration or device configuration that provides the entity; the card cannot override Home Assistant's temperature validation.
+
 ## Changelog
 
 <table border="1" cellspacing="0" cellpadding="6">
