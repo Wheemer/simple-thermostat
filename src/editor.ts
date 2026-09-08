@@ -844,10 +844,16 @@ export default class SimpleThermostatEditor extends LitElement {
 
     this._applyDirectFormPaths(copy, formData, changedPaths)
 
-    if (formData.enhanced_visuals === false) {
-      copy.enhanced_visuals = false
-    } else {
-      delete copy.enhanced_visuals
+    if (changedPaths.has('enhanced_visuals')) {
+      copy.enhanced_visuals = formData.enhanced_visuals !== false
+    }
+
+    if (changedPaths.has('hide_setpoint_when_off')) {
+      deleteNested(copy, 'hide.setpoint_when_off')
+    }
+    if (changedPaths.has('hide_current_value_when_off')) {
+      deleteNested(copy, 'hide.current_value_when_off')
+      deleteNested(copy, 'hide.temperature_when_off')
     }
 
     if (HEADER_FORM_PATHS.some((path) => changedPaths.has(path))) {

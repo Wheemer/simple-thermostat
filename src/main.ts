@@ -235,6 +235,7 @@ function getModeList(
             : undefined) ??
           getModeIcon(modeKey),
         iconConfigured: typeof values.icon !== 'undefined',
+        nameConfigured: typeof configuredName !== 'undefined',
         value: modeKey,
         name,
       }
@@ -282,6 +283,7 @@ function getModeListFromSelect(
         hide_when_off: hideWhenOff || undefined,
         icon: values.icon ?? getModeIcon(modeKey),
         iconConfigured: typeof values.icon !== 'undefined',
+        nameConfigured: typeof configuredName !== 'undefined',
         value: modeKey,
         name,
       }
@@ -303,84 +305,23 @@ function getCardStyle(entityDomain: string, attributes: LooseObject) {
   return `--st-fan-spin-duration: ${fanSpinDuration.toFixed(2)}s;`
 }
 
-function extractCardRuleDeclarations(style: string) {
-  const selector = /ha-card\s*\{/g
-  const match = selector.exec(style)
-  if (!match) return ''
-
-  const start = match.index + match[0].length
-  let depth = 1
-  let quote = ''
-  let inComment = false
-
-  for (let index = start; index < style.length; index += 1) {
-    const character = style[index]
-    const next = style[index + 1]
-
-    if (inComment) {
-      if (character === '*' && next === '/') {
-        inComment = false
-        index += 1
-      }
-      continue
-    }
-
-    if (!quote && character === '/' && next === '*') {
-      inComment = true
-      index += 1
-      continue
-    }
-
-    if (quote) {
-      if (character === '\\') {
-        index += 1
-      } else if (character === quote) {
-        quote = ''
-      }
-      continue
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character
-    } else if (character === '{') {
-      depth += 1
-    } else if (character === '}') {
-      depth -= 1
-      if (depth === 0) return style.slice(start, index).trim()
-    }
-  }
-
-  return ''
-}
-
-function getCardModSurfaceDeclarations(cardMod: unknown) {
+function getEmbeddedCardModStyle(cardMod: unknown) {
   const style = (cardMod as LooseObject | undefined)?.style
-  if (typeof style === 'object' && style) {
-    const cardStyle = (style as LooseObject)['ha-card']
-    if (typeof cardStyle === 'string') return cardStyle.trim()
-
-    const rootStyle = (style as LooseObject)['.']
-    if (typeof rootStyle === 'string') {
-      return extractCardRuleDeclarations(rootStyle)
-    }
-  }
-
-  if (typeof style !== 'string') return ''
-
-  return extractCardRuleDeclarations(style)
-}
-
-function getInlineCardStyle(
-  config: CardConfig,
-  entityDomain: string,
-  attributes: LooseObject
-) {
-  return [
-    getCardModSurfaceDeclarations((config as LooseObject).card_mod),
-    getCardStyle(entityDomain, attributes),
-  ]
-    .filter((style) => !!style)
-    .join('; ')
+  // Keep static CSS scoped as written; card_mod owns templates and shadow traversal.
+  const css =
+    typeof style === 'string'
+      ? style
+      : style && typeof style === 'object'
+        ? Object.entries(style)
+            .flatMap(([selector, rules]) => {
+              if (typeof rules !== 'string') return []
+              if (selector === '.') return [rules]
+              if (selector === 'ha-card') return [`ha-card { ${rules} }`]
+              return []
+            })
+            .join('\n')
+        : ''
+  return css.includes('{{') || css.includes('{%') ? '' : css
 }
 
 function supportsModeType(
@@ -463,12 +404,8 @@ function buildConfiguredControlModes(
             definition === true || definition === false
               ? undefined
               : definition.entity
-          const selectState = controlEntity
-            ? hass?.states?.[controlEntity]
-            : undefined
-
           return (
-            isSelectModeEntity(selectState) ||
+            !!controlEntity ||
             supportsModeType(type, entityDomain, attributes, adapter)
           )
         })
@@ -494,14 +431,17 @@ function buildConfiguredControlModes(
 
           return {
             type,
-            entity: useSelectEntity ? controlEntity : undefined,
+            entity: controlEntity,
             hide_when_off: hide_when_off ?? _hide_when_off,
             icons: _icons,
             heading: _heading,
             name: _name,
             preserve_option_order: Object.keys(controlField).length > 0,
-            list: useSelectEntity
-              ? getModeListFromSelect(selectState, modeSpecification)
+            list: controlEntity
+              ? useSelectEntity &&
+                !['unknown', 'unavailable'].includes(String(selectState.state))
+                ? getModeListFromSelect(selectState, modeSpecification)
+                : []
               : getModeList(type, attributes, adapter, modeSpecification),
           }
         })
@@ -553,7 +493,10 @@ function shouldPreserveConfiguredControlOrder(control: CardConfig['control']) {
   if (Array.isArray(control)) return true
   if (!control || typeof control !== 'object') return false
 
-  return Array.isArray(control._order)
+  return (
+    Array.isArray(control._order) ||
+    Object.keys(control).some((key) => !key.startsWith('_'))
+  )
 }
 
 interface Values {
@@ -776,10 +719,7 @@ export default class SimpleThermostat extends LitElement {
   }
 
   override disconnectedCallback() {
-    if (this._updatingValuesTimeout) {
-      clearTimeout(this._updatingValuesTimeout)
-      this._updatingValuesTimeout = null
-    }
+    this._clearOptimisticSetpointState()
 
     if (this._holdTimer) {
       clearTimeout(this._holdTimer)
@@ -795,6 +735,13 @@ export default class SimpleThermostat extends LitElement {
     this._stopSetpointRepeat()
     this._flushPendingSetpointValues()
     super.disconnectedCallback()
+  }
+
+  override connectedCallback() {
+    super.connectedCallback()
+    if (this.config?.entity && this._hass?.states?.[this.config.entity]) {
+      this.updateFromHass(this._hass)
+    }
   }
 
   updateFromHass(hass: HASS) {
@@ -884,11 +831,8 @@ export default class SimpleThermostat extends LitElement {
           if (entity) {
             state = hass.states[entity]
             names.push(state?.attributes?.friendly_name)
-            if (attribute && !template) {
-              state = state?.attributes?.[attribute]
-            }
           } else if (attribute && attribute in (this.entity.attributes ?? {})) {
-            state = template ? this.entity : this.entity.attributes[attribute]
+            state = this.entity
             names.push(attribute)
           }
           names.push(entity)
@@ -936,6 +880,16 @@ export default class SimpleThermostat extends LitElement {
     }
 
     const warnings = []
+    this.modes
+      .filter((mode) => mode.entity && mode.list.length === 0)
+      .forEach((mode) => {
+        warnings.push(
+          html`<ha-alert alert-type="warning"
+            >Control entity unavailable or without options:
+            ${mode.entity}</ha-alert
+          >`
+        )
+      })
     if (this.stepSize < 1 && this.config.decimals === 0) {
       warnings.push(html`
         <ha-alert alert-type="warning">
@@ -973,7 +927,9 @@ export default class SimpleThermostat extends LitElement {
     const { min: minValue, max: maxValue } = adapter.getRange(entity.attributes)
     const unit = this.getUnit()
     const entityDomain = config.entity.split('.')[0]
-    const setpointCount = Object.keys(_values).length
+    const setpointCount = this.areSetpointsHidden()
+      ? 0
+      : Object.keys(_values).length
     const configuredStepLayout = this.config?.layout?.step
     const compactDualEntitySetpoints =
       !configuredStepLayout && this.showEntities && setpointCount > 1
@@ -1002,9 +958,10 @@ export default class SimpleThermostat extends LitElement {
       `setpoint-count-${setpointCount}`,
     ].filter((cx) => !!cx)
     const embedded = config.embedded === true
-    const cardStyle = embedded
-      ? getInlineCardStyle(config, entityDomain, entity.attributes)
-      : getCardStyle(entityDomain, entity.attributes)
+    const cardStyle = getCardStyle(entityDomain, entity.attributes)
+    const embeddedStyle = embedded
+      ? getEmbeddedCardModStyle((config as LooseObject).card_mod)
+      : ''
     const entitiesHtml = this.showEntities
       ? renderEntities({
           _hide,
@@ -1030,6 +987,13 @@ export default class SimpleThermostat extends LitElement {
     return html`
       <ha-card class="${classes.join(' ')}" style=${cardStyle}>
         ${
+          embeddedStyle
+            ? html`<style>
+                ${embeddedStyle}
+              </style>`
+            : nothing
+        }
+        ${
           config.styles
             ? html`<style>
                 ${config.styles}
@@ -1039,20 +1003,26 @@ export default class SimpleThermostat extends LitElement {
         ${warnings} ${headerHtml}
         <section class="${bodyClasses.join(' ')}">
           ${entitiesHtml}
-          ${this.renderSetpoints({
-            values: _values,
-            minValue,
-            maxValue,
-            unit,
-            row,
-            stepLayout,
-            isOff: entity.state === HVAC_MODES.OFF,
-            disableSteppers:
-              this.config.disable_setpoint_change === true ||
-              (entityDomain === 'climate' &&
-                entity.state === HVAC_MODES.OFF &&
-                this.config.disable_setpoint_change_when_off === true),
-          })}
+          ${
+            setpointCount
+              ? html`<div class="setpoints">
+                  ${this.renderSetpoints({
+                    values: _values,
+                    minValue,
+                    maxValue,
+                    unit,
+                    row,
+                    stepLayout,
+                    isOff: entity.state === HVAC_MODES.OFF,
+                    disableSteppers:
+                      this.config.disable_setpoint_change === true ||
+                      (entityDomain === 'climate' &&
+                        entity.state === HVAC_MODES.OFF &&
+                        this.config.disable_setpoint_change_when_off === true),
+                  })}
+                </div>`
+              : nothing
+          }
         </section>
 
         ${
@@ -1140,6 +1110,15 @@ export default class SimpleThermostat extends LitElement {
         isOff,
         disableSteppers,
       })
+    )
+  }
+
+  areSetpointsHidden() {
+    return (
+      this.config.hide_setpoint === true ||
+      ((this.config.hide_setpoint_when_off === true ||
+        this.config.hide?.setpoint_when_off === true) &&
+        this.entity?.state === HVAC_MODES.OFF)
     )
   }
 
@@ -1403,6 +1382,8 @@ export default class SimpleThermostat extends LitElement {
     this._updatingValuesTimeout = setTimeout(() => {
       this._updatingValues = false
       this._updatingValuesTimeout = null
+      if (this._hass?.states?.[this.config.entity])
+        this.updateFromHass(this._hass)
     }, UPDATING_TIMEOUT)
     const previousValue = baseValue ?? this._values[field]
     const newValue = Number(previousValue) + change
@@ -1418,18 +1399,25 @@ export default class SimpleThermostat extends LitElement {
   setMode = (type: string, mode: string) => {
     if (type && mode) {
       const adapter = getAdapter(this.config.entity)
-      if (type === MODES.STATE) {
-        this._callAction(`${adapter.getLocalizationDomain()}.turn_${mode}`, {
-          entity_id: this.config.entity,
+      const configuredMode = this.modes.find((entry) => entry.type === type)
+      if (configuredMode?.entity) {
+        const selected = this._hass.states?.[configuredMode.entity]
+        if (
+          !isSelectModeEntity(selected) ||
+          ['unknown', 'unavailable'].includes(String(selected.state)) ||
+          !selected.attributes.options.includes(mode)
+        )
+          return
+        this._callAction('select.select_option', {
+          entity_id: configuredMode.entity,
+          option: mode,
         })
         fireEvent(this, 'haptic', 'light')
         return
       }
-      const configuredMode = this.modes.find((mode) => mode.type === type)
-      if (configuredMode?.entity) {
-        this._callAction('select.select_option', {
-          entity_id: configuredMode.entity,
-          option: mode,
+      if (type === MODES.STATE) {
+        this._callAction(`${adapter.getLocalizationDomain()}.turn_${mode}`, {
+          entity_id: this.config.entity,
         })
         fireEvent(this, 'haptic', 'light')
         return

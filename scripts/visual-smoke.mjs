@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { chromium } from 'playwright'
+import * as mdi from '@mdi/js'
 
 const bundle = resolve('simple-thermostat.js')
 const outputDirectory = resolve('test-results', 'visual')
@@ -13,7 +14,15 @@ try {
   for (const fixture of [
     { name: 'desktop', width: 900, height: 900 },
     { name: 'mobile', width: 334, height: 900 },
-  ]) {
+  ].flatMap((viewport) =>
+    ['column', 'row', 'classic', 'left', 'hidden', 'compact', 'tabs'].map(
+      (variant) => ({
+        ...viewport,
+        variant,
+        name: `${viewport.name}-${variant}`,
+      })
+    )
+  )) {
     const page = await browser.newPage({
       viewport: { width: fixture.width, height: fixture.height },
       deviceScaleFactor: 1,
@@ -26,7 +35,8 @@ try {
       simple-thermostat, simple-thermostat-group { display:block; max-width:720px; }
       ha-icon { display:inline-block; width:24px; height:24px; }
     </style><body></body>`)
-    await page.evaluate(() => {
+    await page.evaluate((icons) => {
+      window.__fallbackIconPath = icons.mdiHelpCircle
       window.customCards = []
       if (!customElements.get('ha-card')) {
         customElements.define(
@@ -36,11 +46,47 @@ try {
               super()
               const root = this.attachShadow({ mode: 'open' })
               root.innerHTML =
-                '<style>:host{display:block;box-sizing:border-box;width:100%}</style><slot></slot>'
+                '<style>:host{display:block;box-sizing:border-box;width:100%;background:var(--ha-card-background);color:var(--primary-text-color)}</style><slot></slot>'
             }
           }
         )
       }
+      customElements.define(
+        'ha-icon',
+        class extends HTMLElement {
+          set icon(value) {
+            this.setAttribute('icon', value)
+          }
+          get icon() {
+            return this.getAttribute('icon')
+          }
+          static get observedAttributes() {
+            return ['icon']
+          }
+          constructor() {
+            super()
+            this.attachShadow({ mode: 'open' }).innerHTML =
+              '<style>:host{display:inline-flex;width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px);flex-shrink:0}svg{width:100%;height:100%;fill:currentColor}</style><svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 1,0 12,22A10,10 0 1,0 12,2M11,6H13V13H11M11,16H13V18H11"/></svg>'
+          }
+          connectedCallback() {
+            // Lit can set properties while elements are still in an inert template.
+            if (Object.hasOwn(this, 'icon')) {
+              const icon = this.icon
+              delete this.icon
+              this.icon = icon
+            }
+            this.attributeChangedCallback()
+          }
+          attributeChangedCallback() {
+            const name = this.getAttribute('icon')
+              ?.replace(/^(mdi|hass):/, 'mdi-')
+              .replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())
+            this.shadowRoot
+              .querySelector('path')
+              .setAttribute('d', icons[name] ?? icons.mdiHelpCircle)
+          }
+        }
+      )
       window.loadCardHelpers = async () => ({
         createCardElement: async (config) => {
           const card = document.createElement('simple-thermostat')
@@ -48,9 +94,9 @@ try {
           return card
         },
       })
-    })
+    }, mdi)
     await page.addScriptTag({ path: bundle })
-    await page.evaluate(() => {
+    await page.evaluate((variant) => {
       const hass = {
         states: {
           'climate.audit': {
@@ -120,7 +166,8 @@ try {
           return labels[key] ?? key.split('.').at(-1)?.replaceAll('_', ' ')
         },
         formatEntityName: (entity) => entity.attributes.friendly_name,
-        formatEntityState: (entity) => entity.state,
+        formatEntityState: (entity) =>
+          entity.state === 'heat_cool' ? 'Auto' : entity.state,
         callService: () => undefined,
       }
       const card = document.createElement('simple-thermostat')
@@ -154,6 +201,7 @@ try {
       document.body.append(singleSetpointCard)
       const group = document.createElement('simple-thermostat-group')
       group.setConfig({
+        selector: { style: variant === 'tabs' ? 'tabs' : 'dropdown' },
         cards: [
           { entity: 'climate.audit', header: { name: 'Main Floor' } },
           {
@@ -165,9 +213,46 @@ try {
       group.hass = hass
       group.style.marginTop = '16px'
       document.body.append(group)
-    })
+      for (const target of [card, singleSetpointCard]) {
+        const config = { ...target.config, layout: { ...target.config.layout } }
+        if (variant === 'row') config.layout.step = 'row'
+        if (variant === 'classic') config.enhanced_visuals = false
+        if (variant === 'left') config.layout.entities = { alignment: 'left' }
+        if (variant === 'hidden') config.hide_setpoint = true
+        if (variant === 'compact') config.layout.entities = { display: 'chip' }
+        target.setConfig(config)
+      }
+    }, fixture.variant)
     await page.waitForTimeout(100)
-    const problems = await page.evaluate(() => {
+    const cssResults = await page.evaluate(async () => {
+      const original = document.querySelector('simple-thermostat')
+      const card = document.createElement('simple-thermostat')
+      card.setConfig({
+        entity: 'climate.audit',
+        embedded: true,
+        card_mod: {
+          style:
+            'ha-card { background: rgb(10, 20, 30); } ha-card { background: rgb(40, 50, 60); --st-mode-active-background: rgb(68, 99, 117); --st-mode-active-accent-color: transparent; } @media (max-width: 1px) { ha-card { background: red; } }',
+        },
+      })
+      card.hass = original._hass
+      document.body.append(card)
+      await card.updateComplete
+      const surface = card.shadowRoot.querySelector('ha-card')
+      const active = card.shadowRoot.querySelector('.mode-item.active')
+      const result = {
+        background: getComputedStyle(surface).backgroundColor,
+        active: getComputedStyle(active).backgroundColor,
+      }
+      card.remove()
+      return result
+    })
+    assert.deepEqual(
+      cssResults,
+      { background: 'rgb(40, 50, 60)', active: 'rgb(68, 99, 117)' },
+      'embedded CSS must retain media conditions, cascade and public overrides'
+    )
+    const problems = await page.evaluate((variant) => {
       const problems = []
       const inspectCard = (
         host,
@@ -203,6 +288,84 @@ try {
               problems.push(`${label}: controls ${left}/${right} overlap`)
           }
         }
+        const content = [
+          ...root.querySelectorAll(
+            '.entity-heading, .entity-value, .current--value, .current--label, .mode-label, .entity-action__label, .entity-action__state'
+          ),
+        ]
+        const rectangles = content.flatMap((element) => {
+          const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT
+          )
+          const rects = []
+          while (walker.nextNode()) {
+            if (!walker.currentNode.textContent.trim()) continue
+            const range = document.createRange()
+            range.selectNodeContents(walker.currentNode)
+            rects.push(
+              ...[...range.getClientRects()]
+                .filter((rect) => rect.width > 0 && rect.height > 0)
+                .map((rect) => ({ rect, element }))
+            )
+          }
+          return rects
+        })
+        for (const { rect, element } of rectangles) {
+          if (rect.left < bounds.left - 1 || rect.right > bounds.right + 1)
+            problems.push(
+              `${label}: text escapes: ${element.textContent.trim()}`
+            )
+          for (const control of controls) {
+            if (control.contains(element)) continue
+            // Step buttons include transparent hit padding; test their visible icon.
+            const button = (
+              control.matches('.thermostat-trigger')
+                ? control.querySelector('ha-icon')
+                : control
+            ).getBoundingClientRect()
+            if (
+              Math.min(rect.right, button.right) -
+                Math.max(rect.left, button.left) >
+                1 &&
+              Math.min(rect.bottom, button.bottom) -
+                Math.max(rect.top, button.top) >
+                1
+            )
+              problems.push(
+                `${label}: text overlaps a control: ${element.textContent.trim()}`
+              )
+          }
+        }
+        for (const element of root.querySelectorAll('.mode-label')) {
+          if (element.scrollWidth > element.clientWidth + 1)
+            problems.push(
+              `${label}: button label clipped: ${element.textContent.trim()}`
+            )
+        }
+        for (const icon of root.querySelectorAll('ha-icon')) {
+          if (
+            icon.icon &&
+            icon.shadowRoot?.querySelector('path')?.getAttribute('d') ===
+              window.__fallbackIconPath
+          )
+            problems.push(`${label}: unresolved icon ${icon.icon}`)
+        }
+        for (let a = 0; a < rectangles.length; a++)
+          for (let b = a + 1; b < rectangles.length; b++) {
+            const left = rectangles[a],
+              right = rectangles[b]
+            if (left.element === right.element) continue
+            if (
+              Math.min(left.rect.right, right.rect.right) -
+                Math.max(left.rect.left, right.rect.left) >
+                1 &&
+              Math.min(left.rect.bottom, right.rect.bottom) -
+                Math.max(left.rect.top, right.rect.top) >
+                1
+            )
+              problems.push(`${label}: text cells overlap`)
+          }
         if (expectBalancedSingleSetpoint) {
           const body = root.querySelector('.body')
           const setpoint = root.querySelector('.current-wrapper')
@@ -214,7 +377,17 @@ try {
             const setpointCenter =
               setpointRect.left + setpointRect.width / 2 - bodyRect.left
             const setpointPosition = setpointCenter / bodyRect.width
-            if (setpointPosition < 0.6 || setpointPosition > 0.85) {
+            const entities = root
+              .querySelector('.entities')
+              ?.getBoundingClientRect()
+            const sameRow =
+              entities &&
+              setpointRect.top < entities.bottom &&
+              entities.top < setpointRect.bottom
+            if (
+              sameRow &&
+              (setpointPosition < 0.6 || setpointPosition > 0.85)
+            ) {
               problems.push(
                 `${label}: setpoint column is not balanced (${setpointPosition.toFixed(2)})`
               )
@@ -226,7 +399,7 @@ try {
       inspectCard(
         document.querySelector('#single-setpoint-audit'),
         'single-setpoint',
-        true
+        variant !== 'hidden'
       )
       const group = document.querySelector('simple-thermostat-group')
       const embedded = group?.shadowRoot?.querySelector(
@@ -235,7 +408,7 @@ try {
       if (!embedded) problems.push('group: missing embedded card')
       else inspectCard(embedded, 'group')
       return problems
-    })
+    }, fixture.variant)
     await page.screenshot({
       path: resolve(outputDirectory, `${fixture.name}.png`),
       fullPage: true,

@@ -65,6 +65,7 @@ export interface ControlModeOption {
   name: string | false
   icon?: string | false
   iconConfigured?: boolean
+  nameConfigured?: boolean
   hide_when_off?: boolean
 }
 export interface ControlMode {

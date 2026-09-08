@@ -45,14 +45,16 @@ This watches source files and rebuilds the debug bundle. Copy the rebuilt file t
 
 ## Creating a Release
 
+Only start this flow after explicit release authorization. Local fixes, tests, and installation requests do not authorize a GitHub push or release.
+
 1. Update the version in `package.json`.
 2. Update README/changelog notes for the release.
 3. Run `npm run verify`.
 4. Commit source, lockfile, and docs. Do not commit generated release bundles.
 5. Push to `master`.
 6. Confirm HACS and test workflows pass. The test workflow must validate both release bundles before the GitHub release is published.
-7. Create a draft GitHub release with tag `vX.X.X` and the approved manual release notes. Keep it as a draft.
-8. Run the `Release` workflow with that tag. It checks the package/tag version, reruns the complete verification suite, and attaches both bundles to the draft.
+7. Create and push the Git tag `vX.X.X` at the verified release commit. Create a draft GitHub release using that existing tag and the approved manual release notes. Keep it as a draft; creating an unpublished draft alone does not ensure the Git ref exists.
+8. Run the `Release` workflow with that tag. Its read-only build job checks the package/tag version and reruns the complete verification suite. A separate write-enabled job attaches the verified bundles to the draft without running repository code.
 9. Inspect the successful workflow and attached assets, then publish the draft release.
 
 ## File Structure

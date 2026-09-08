@@ -54,12 +54,18 @@ export default function renderModeType({
     localizePrefix = ''
   }
 
-  const maybeRenderName = (name: string | false, value: string) => {
+  const maybeRenderName = (
+    name: string | false,
+    value: string,
+    nameConfigured?: boolean
+  ) => {
     if (name === false) return null
     if (modeOptions?.names === false) return null
-    if (name !== value) {
-      return localizePrefix ? localize(name, localizePrefix) : name
-    }
+    if (
+      nameConfigured === true ||
+      (nameConfigured === undefined && name !== value)
+    )
+      return name
     if (
       (type === 'hvac' || type === 'state') &&
       typeof hass?.formatEntityState === 'function'
@@ -73,7 +79,8 @@ export default function renderModeType({
     ) {
       return hass.formatEntityAttributeValue(entity, modeAttribute, value)
     }
-    return localizePrefix ? localize(name, localizePrefix) : name
+    const translated = localizePrefix ? localize(value, localizePrefix) : value
+    return translated && translated !== value ? translated : name
   }
   const maybeRenderIcon = (
     icon: string | false | undefined,
@@ -171,8 +178,7 @@ export default function renderModeType({
   const isFanPreset =
     type === 'preset' && adapter.getLocalizationDomain() === 'fan'
   const sparseMainControls =
-    (type === 'hvac' || type === 'state' || type === 'fan') &&
-    list.length <= 4
+    (type === 'hvac' || type === 'state' || type === 'fan') && list.length <= 4
   const compact =
     (type === 'preset' && list.length <= 4) ||
     [
@@ -208,58 +214,69 @@ export default function renderModeType({
       </span>`
     }
 
-    return html`<span class="mode-label">${presentation.lines[0] ?? label}</span>`
+    return html`<span class="mode-label"
+      >${presentation.lines[0] ?? label}</span
+    >`
   }
 
   return html`
     <div
-      class="modes ${type} ${isFanPreset ? 'fan-preset' : ''} ${showHeading
-        ? 'heading'
-        : ''} ${compact ? 'compact' : ''} ${dense
-        ? 'dense'
-        : ''} ${sparseMainControls ? 'sparse' : ''}"
+      class="modes ${type} ${isFanPreset ? 'fan-preset' : ''} ${
+        showHeading ? 'heading' : ''
+      } ${compact ? 'compact' : ''} ${
+        dense ? 'dense' : ''
+      } ${sparseMainControls ? 'sparse' : ''}"
       role="group"
       aria-label=${title || type}
     >
       ${showHeading ? html` <div class="mode-title">${title}</div> ` : ''}
-      ${list.map(({ value, icon, iconConfigured, name, hide_when_off }) => {
-        if (hide_when_off === true && state === HVAC_MODES.OFF) return nothing
+      ${list.map(
+        ({
+          value,
+          icon,
+          iconConfigured,
+          name,
+          nameConfigured,
+          hide_when_off,
+        }) => {
+          if (hide_when_off === true && state === HVAC_MODES.OFF) return nothing
 
-        const modeClass = safeClass(value)
-        const displayName = maybeRenderName(name, value)
-        const labelPresentation = getModeLabelPresentation(
-          String(value),
-          displayName,
-          sparseMainControls
-        )
-        const labelLayoutClass =
-          labelPresentation.layout === 'stacked'
-            ? 'label-stacked'
-            : labelPresentation.layout === 'column'
-              ? 'label-column'
-              : ''
-        const tooltip = displayName ? nothing : controlTooltip || nothing
-        return html`
-          <div
-            class="mode-item ${modeClass} ${labelLayoutClass} ${value === mode ? 'active' : ''}"
-            role="button"
-            tabindex="0"
-            aria-pressed=${value === mode ? 'true' : 'false'}
-            aria-label=${name || value}
-            title=${tooltip}
-            @click=${() => setMode(type, value)}
-            @keydown=${(e: KeyboardEvent) => {
+          const modeClass = safeClass(value)
+          const displayName = maybeRenderName(name, value, nameConfigured)
+          const labelPresentation = getModeLabelPresentation(
+            String(value),
+            displayName,
+            sparseMainControls
+          )
+          const labelLayoutClass =
+            labelPresentation.layout === 'stacked'
+              ? 'label-stacked'
+              : labelPresentation.layout === 'column'
+                ? 'label-column'
+                : ''
+          const tooltip = displayName ? nothing : controlTooltip || nothing
+          return html`
+            <div
+              class="mode-item ${modeClass} ${labelLayoutClass} ${value === mode ? 'active' : ''}"
+              role="button"
+              tabindex="0"
+              aria-pressed=${value === mode ? 'true' : 'false'}
+              aria-label=${name || value}
+              title=${tooltip}
+              @click=${() => setMode(type, value)}
+              @keydown=${(e: KeyboardEvent) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
                 setMode(type, value)
               }
             }}
-          >
-            ${maybeRenderIcon(icon, iconConfigured)}
-            ${renderModeLabel(String(value), displayName)}
-          </div>
-        `
-      })}
+            >
+              ${maybeRenderIcon(icon, iconConfigured)}
+              ${renderModeLabel(String(value), displayName)}
+            </div>
+          `
+        }
+      )}
     </div>
   `
 }

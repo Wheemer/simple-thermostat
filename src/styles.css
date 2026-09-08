@@ -161,27 +161,36 @@ ha-card.loading {
 }
 
 .body {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(min-content, auto);
-  place-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
+  align-items: center;
+  justify-content: center;
   padding: 0 calc(var(--st-spacing, var(--st-default-spacing)) * 4);
 }
-.body.has-entities.setpoint-count-2 {
-  grid-template-columns:
-    minmax(min-content, max-content) minmax(max-content, 1fr)
-    minmax(max-content, 1fr);
+.body > .entities {
+  flex: 1 1 max-content;
+  min-width: 0;
+  max-width: 100%;
 }
-.body.has-entities.step-column.setpoint-count-1 {
-  grid-template-columns: minmax(0, 1fr) minmax(max-content, 35%);
+.setpoints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
+  flex: 1 0 max-content;
+  justify-content: space-around;
+  min-width: 0;
+  max-width: 100%;
 }
-.body.has-entities.step-column.setpoint-count-2 {
-  grid-template-columns:
-    minmax(var(--st-entity-column-min-width), max-content)
-      minmax(max-content, 1fr)
-    minmax(max-content, 1fr);
+.body.has-entities.step-column.setpoint-count-1 > .setpoints {
+  flex: 0 0 auto;
+  width: 35%;
+  min-width: max-content;
 }
-
+.setpoints > .current-wrapper {
+  flex: 1 0 max-content;
+  width: auto;
+}
 .toggle-label {
   color: var(--st-toggle-label-color, var(--primary-text-color));
   --st-toggle-color: var(--primary-color);
@@ -296,7 +305,10 @@ ha-card.loading {
     place-items: start;
   }
   &.with-labels {
-    grid-template-columns: auto auto;
+    grid-template-columns: minmax(min-content, max-content) minmax(
+        min-content,
+        max-content
+      );
     grid-auto-flow: row;
     column-gap: 8px;
     place-items: start;
@@ -317,7 +329,9 @@ ha-card.loading {
   font-weight: 300;
   padding-right: 8px;
   padding-bottom: 0;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -335,6 +349,8 @@ ha-card.loading {
 .entity-action {
   grid-column: 1 / -1;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   min-width: 0;
   min-height: 28px;
   border: 0;
@@ -371,7 +387,12 @@ ha-card.loading {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.entity-action__label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .entity-action__state {
+  flex-shrink: 0;
   color: var(--secondary-text-color);
   font-size: 0.9em;
 }
@@ -1202,8 +1223,12 @@ ha-card.drying {
   padding-block: var(--st-spacing, var(--st-default-spacing));
 }
 
-.modes.hvac.sparse .mode-item:not(.label-stacked):not(.label-column) .mode-label,
-.modes.state.sparse .mode-item:not(.label-stacked):not(.label-column) .mode-label {
+.modes.hvac.sparse
+  .mode-item:not(.label-stacked):not(.label-column)
+  .mode-label,
+.modes.state.sparse
+  .mode-item:not(.label-stacked):not(.label-column)
+  .mode-label {
   white-space: nowrap;
 }
 
@@ -1220,7 +1245,10 @@ ha-card.drying {
 }
 
 .modes.hvac.sparse .mode-item.label-stacked .mode-label-line + .mode-label-line,
-.modes.state.sparse .mode-item.label-stacked .mode-label-line + .mode-label-line {
+.modes.state.sparse
+  .mode-item.label-stacked
+  .mode-label-line
+  + .mode-label-line {
   margin-top: 1px;
 }
 

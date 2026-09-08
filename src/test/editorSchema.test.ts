@@ -701,9 +701,7 @@ test('related entity suggestions are rendered as explicit add buttons', async ()
 
   await editor.updateComplete
 
-  expect(editor.shadowRoot?.textContent).toContain(
-    'Add Room Humidity'
-  )
+  expect(editor.shadowRoot?.textContent).toContain('Add Room Humidity')
 })
 
 test('editor updates its local form data when enhanced visuals changes', () => {
@@ -776,7 +774,7 @@ test('enhanced visuals on returns to row default when step layout was never expl
   expect(editor._buildFormData()['layout.step']).toBe('column')
 
   editor.config = editor._applyFormChange({ enhanced_visuals: true } as any)
-  expect(editor.config.enhanced_visuals).toBeUndefined()
+  expect(editor.config.enhanced_visuals).toBe(true)
   expect(editor.config.layout?.step).toBeUndefined()
   expect(editor._buildFormData()['layout.step']).toBe('row')
 })
@@ -853,6 +851,7 @@ test('enhanced visuals toggle ignores full-form step default changes', () => {
   const onConfig = editor._applyFormChange(onForm as any)
   expect(onConfig).toEqual({
     entity: 'climate.living_room',
+    enhanced_visuals: true,
   })
 })
 

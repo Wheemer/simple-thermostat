@@ -1,11 +1,11 @@
 import { html, nothing } from 'lit'
-import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 import formatNumber from '../formatNumber'
 import { appendUnit } from '../unitFormat'
 import { LooseObject } from '../types'
 import { getToggleKind, getToggleKindClass } from '../toggleKind'
 import { renderTemplate } from '../template'
 import './timerRemaining'
+import { renderTemplateContent } from './templateContent'
 
 const TOGGLE_DOMAINS = [
   'automation',
@@ -66,9 +66,8 @@ function callEntityAction(hass, entityId: string, domain: string) {
     return
   }
 
-  const service = domain === 'button' || domain === 'input_button'
-    ? 'press'
-    : 'turn_on'
+  const service =
+    domain === 'button' || domain === 'input_button' ? 'press' : 'turn_on'
 
   if (typeof hass.performAction === 'function') {
     hass.performAction({
@@ -167,31 +166,93 @@ function resolveDisplay(display: unknown, domain: string) {
   return 'chip'
 }
 
-function getEntityDisplayValue({
-  state,
-  domain,
-  hass,
-  localize,
-}: {
-  state: any
-  domain: string
-  hass: any
-  localize?: (label: string, prefix?: string) => string
-}) {
-  if (domain === 'timer') {
+function isEntityState(state: any): boolean {
+  return (
+    !!state && typeof state === 'object' && typeof state.entity_id === 'string'
+  )
+}
+
+function renderInfoValue(
+  state: any,
+  details: InfoItemDetails,
+  hass: any,
+  localize?
+) {
+  const { template, attribute, decimals, unit, type, config, variables } =
+    details
+  const entityState = isEntityState(state)
+  if (template && entityState) {
+    return renderTemplateContent(
+      appendUnit(
+        renderTemplate({
+          template,
+          stateObj: state,
+          attribute,
+          hass,
+          config,
+          variables,
+          localize,
+        }),
+        unit || false
+      ),
+      hass
+    )
+  }
+  const raw = entityState
+    ? attribute
+      ? state.attributes?.[attribute]
+      : state.state
+    : state
+  if (type === 'relativetime') {
+    return html`<ha-relative-time
+      .datetime=${raw}
+      .hass=${hass}
+    ></ha-relative-time>`
+  }
+  if (entityState && !attribute && state.entity_id.startsWith('timer.')) {
     return html`<simple-thermostat-timer-remaining
       .stateObj=${state}
       .hass=${hass}
     ></simple-thermostat-timer-remaining>`
   }
 
-  if (typeof hass.formatEntityState === 'function') {
-    return hass.formatEntityState(state)
-  }
+  if (raw === null || typeof raw === 'undefined')
+    return config?.fallback ?? 'N/A'
+  if (typeof raw === 'object') return JSON.stringify(raw)
 
-  return localize
-    ? localize(state.state, `component.${domain}.state._.`)
-    : String(state.state)
+  let value = raw
+  if (typeof decimals === 'number') {
+    value = formatNumber(raw, {
+      decimals,
+      locale: hass.locale,
+      fallback: config?.fallback,
+    })
+  } else if (entityState) {
+    const domain = state.entity_id.split('.')[0]
+    value = attribute
+      ? typeof hass.formatEntityAttributeValue === 'function'
+        ? hass.formatEntityAttributeValue(state, attribute)
+        : raw
+      : typeof hass.formatEntityState === 'function'
+        ? hass.formatEntityState(state)
+        : localize
+          ? localize(
+              String(raw),
+              `component.${domain}.state.${state.attributes?.device_class ?? '_'}.`
+            )
+          : raw
+  }
+  const stateUnit =
+    entityState && !attribute ? state.attributes?.unit_of_measurement : ''
+  const humidityUnit =
+    entityState &&
+    !attribute &&
+    (state.attributes?.device_class === 'humidity' ||
+      state.entity_id.includes('humidity') ||
+      details.icon === 'mdi:water-percent')
+      ? '%'
+      : ''
+  return appendUnit(value, unit || stateUnit || humidityUnit || false, value)
 }
 
 export default function renderInfoItem({
@@ -237,12 +298,12 @@ export default function renderInfoItem({
     variables,
     localize,
   })
-  const hasConfiguredUnit = typeof unit === 'string' && unit.length > 0
-  const entityId = typeof state === 'object' ? state.entity_id : entity
+  const stateIsEntity = isEntityState(state)
+  const entityId = stateIsEntity ? state.entity_id : entity
   const canOpenEntity = entityId && typeof openEntityPopover === 'function'
   const entityTooltip =
     configuredTooltip ||
-    (typeof state === 'object'
+    (stateIsEntity
       ? state?.attributes?.friendly_name || state?.entity_id
       : entity
         ? hass.states?.[entity]?.attributes?.friendly_name || entity
@@ -253,30 +314,8 @@ export default function renderInfoItem({
   let usesCompactEntityDisplay = false
 
   let valueCell
-  if (template && typeof state === 'object') {
-    const value = renderTemplate({
-      template,
-      stateObj: state,
-      attribute,
-      hass,
-      config,
-      variables,
-      localize,
-    })
-    valueCell = html`<div
-      class="entity-value ${canOpenEntity ? 'clickable' : ''}"
-      title=${entityTooltip}
-      @click="${canOpenEntity ? () => openEntityPopover(entityId) : null}"
-    >
-      ${unsafeHTML(appendUnit(value, hasConfiguredUnit ? unit : false))}
-    </div>`
-  } else if (type === 'relativetime') {
-    valueCell = html`
-      <div class="entity-value">
-        <ha-relative-time .datetime=${state} .hass=${hass}></ha-relative-time>
-      </div>
-    `
-  } else if (typeof state === 'object') {
+  const displayValue = renderInfoValue(state, details, hass, localize)
+  if (stateIsEntity) {
     const [domain] = state.entity_id.split('.')
     entityDomain = domain
     entityState = state.state
@@ -302,25 +341,22 @@ export default function renderInfoItem({
 
     if (displayMode !== 'row') {
       usesCompactEntityDisplay = true
-      const supportsAction =
-        isToggleEntity || BUTTON_DOMAINS.includes(domain)
+      const supportsAction = isToggleEntity || BUTTON_DOMAINS.includes(domain)
       const active = state.state === 'on'
       const actionLabel =
-        typeof heading === 'string'
-          ? heading
-          : state.attributes?.friendly_name || state.entity_id
+        renderedHeading !== undefined
+          ? renderTemplateContent(renderedHeading, hass)
+          : typeof heading === 'string'
+            ? heading
+            : state.attributes?.friendly_name || state.entity_id
       const fallbackIcon =
-        renderedIcon || state.attributes?.icon || (isToggleEntity
+        renderedIcon ||
+        state.attributes?.icon ||
+        (isToggleEntity
           ? 'mdi:toggle-switch'
           : BUTTON_DOMAINS.includes(domain)
             ? 'mdi:gesture-tap-button'
             : undefined)
-      const displayValue = getEntityDisplayValue({
-        state,
-        domain,
-        hass,
-        localize,
-      })
 
       valueCell = html`
         <button
@@ -337,24 +373,29 @@ export default function renderInfoItem({
         >
           ${fallbackIcon ? html`<ha-icon .icon=${fallbackIcon}></ha-icon>` : ''}
           <span class="entity-action__label">${actionLabel}</span>
-          ${displayMode === 'chip' || displayMode === 'toggle'
-            ? html`<span class="entity-action__state">${displayValue}</span>`
-            : ''}
+          ${
+            displayMode === 'chip' || displayMode === 'toggle'
+              ? html`<span class="entity-action__state">${displayValue}</span>`
+              : ''
+          }
         </button>
       `
-    } else if (domain === 'timer') {
+    } else if (
+      domain === 'timer' ||
+      !isToggleEntity ||
+      attribute ||
+      template ||
+      type === 'relativetime'
+    ) {
       valueCell = html`
         <div
           class="entity-value ${canOpenEntity ? 'clickable' : ''}"
           title=${entityTooltip}
-          @click="${canOpenEntity
-            ? () => openEntityPopover(state.entity_id)
-            : null}"
+          @click="${
+            canOpenEntity ? () => openEntityPopover(state.entity_id) : null
+          }"
         >
-          <simple-thermostat-timer-remaining
-            .stateObj=${state}
-            .hass=${hass}
-          ></simple-thermostat-timer-remaining>
+          ${displayValue}
         </div>
       `
     } else if (isToggleEntity) {
@@ -371,61 +412,14 @@ export default function renderInfoItem({
           ></ha-switch>
         </div>
       `
-    } else {
-      const prefix = [
-        'component',
-        domain,
-        'state',
-        state.attributes?.device_class ?? '_',
-        '',
-      ].join('.')
-      let value =
-        typeof hass.formatEntityState === 'function'
-          ? hass.formatEntityState(state)
-          : localize(state.state, prefix)
-
-      if (typeof decimals === 'number') {
-        value = formatNumber(state.state, {
-          decimals,
-          locale: hass.locale,
-        })
-      }
-      const stateUnit = state.attributes.unit_of_measurement ?? ''
-      const humidityUnit =
-        state.attributes?.device_class === 'humidity' ||
-        state.entity_id?.includes('humidity') ||
-        icon === 'mdi:water-percent'
-          ? '%'
-          : ''
-      const configuredUnit = hasConfiguredUnit
-        ? unit
-        : stateUnit || humidityUnit
-      valueCell = html`
-        <div
-          class="entity-value ${canOpenEntity ? 'clickable' : ''}"
-          title=${entityTooltip}
-          @click="${canOpenEntity
-            ? () => openEntityPopover(state.entity_id)
-            : null}"
-        >
-          ${appendUnit(value, configuredUnit, value)}
-        </div>
-      `
     }
   } else {
-    let value =
-      typeof decimals === 'number'
-        ? formatNumber(state, {
-            decimals,
-            locale: hass.locale,
-          })
-        : state
     valueCell = html`<div
       class="entity-value ${canOpenEntity ? 'clickable' : ''}"
       title=${entityTooltip || nothing}
       @click=${canOpenEntity ? () => openEntityPopover(entityId) : null}
     >
-      ${appendUnit(value, hasConfiguredUnit ? unit : false)}
+      ${displayValue}
     </div>`
   }
 
@@ -469,16 +463,16 @@ export default function renderInfoItem({
         ></ha-icon>
       `
     : typeof renderedHeading === 'string'
-      ? html`${unsafeHTML(renderedHeading)}`
+      ? renderTemplateContent(renderedHeading, hass)
       : ` ${heading}${separator === false ? '' : ':'} `
 
   const headingCell = html`<div
-      class=${headingClasses}
-      title=${renderedIcon ? tooltip : nothing}
-      @click=${canOpenEntity ? () => openEntityPopover(entityId) : null}
-    >
-      ${headingResult}
-    </div>`
+    class=${headingClasses}
+    title=${renderedIcon ? tooltip : nothing}
+    @click=${canOpenEntity ? () => openEntityPopover(entityId) : null}
+  >
+    ${headingResult}
+  </div>`
 
   return [headingCell, valueCell]
 }

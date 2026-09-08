@@ -9,13 +9,15 @@ on:
     branches:
       - master
 
-permissions: read-all
+permissions: {}
 
 jobs:
   analysis:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      actions: read
       security-events: write
       id-token: write
 

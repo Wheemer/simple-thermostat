@@ -10,6 +10,8 @@ on:
   schedule:
     - cron: '34 6 * * 1'
 
+permissions: {}
+
 jobs:
   analyze:
     name: Analyze JavaScript and TypeScript
@@ -23,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@4c0873ef8656cb3c50b3f42fb63bc1ade0cfa827 # v4

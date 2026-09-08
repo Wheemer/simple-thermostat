@@ -51,12 +51,14 @@ interface ActivityRecord {
   entity: string
   signature: string
   timestamp: number
+  observed?: boolean
 }
 
 interface ActivityCandidate {
   target: GroupTarget
   timestamp: number
   activeRank: number
+  observed?: boolean
 }
 
 interface StoredSelection {
@@ -167,6 +169,7 @@ export default class SimpleThermostatGroup extends LitElement {
   private removeOutsideClickListener?: () => void
   private fadeInAfterSync = false
   private activitySignatures = new Map<string, string>()
+  private activityRecords = new Map<string, ActivityRecord>()
   private activitySignaturesInitialized = false
   private persistedActivityApplied = false
   private lastManualSelectionAt = 0
@@ -851,6 +854,26 @@ export default class SimpleThermostatGroup extends LitElement {
       },
     }
     this.targets = targets
+    this.activityRecords.clear()
+    try {
+      const records = JSON.parse(
+        window.localStorage.getItem(
+          `${this.getActivityStorageKey(config)}:v2`
+        ) ?? '[]'
+      )
+      if (Array.isArray(records))
+        records.forEach((record) => {
+          if (
+            targets.some((target) => target.entity === record?.entity) &&
+            typeof record.signature === 'string' &&
+            Number.isFinite(record.timestamp)
+          ) {
+            this.activityRecords.set(record.entity, record)
+          }
+        })
+    } catch {
+      /* Storage may be unavailable. Live tracking still works. */
+    }
     this.selectedEntity = this.getInitialSelection(config, targets)
     this.activitySignatures.clear()
     this.activitySignaturesInitialized = false
@@ -1155,11 +1178,10 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private getActivityTimestamp(target: GroupTarget) {
     const state = this.hass?.states?.[target.entity]
-    const activeRank = this.getActivityActiveRank(target)
-    const value =
-      activeRank > 1
-        ? (state?.last_updated ?? state?.last_changed)
-        : (state?.last_changed ?? state?.last_updated)
+    const record = this.activityRecords.get(target.entity)
+    if (record?.signature === this.getActivitySignature(target))
+      return record.timestamp
+    const value = state?.last_changed ?? state?.last_updated
     const timestamp = typeof value === 'string' ? Date.parse(value) : NaN
     return Number.isFinite(timestamp) ? timestamp : 0
   }
@@ -1172,6 +1194,10 @@ export default class SimpleThermostatGroup extends LitElement {
       target,
       timestamp,
       activeRank: this.getActivityActiveRank(target),
+      observed:
+        this.activityRecords.get(target.entity)?.observed === true &&
+        this.activityRecords.get(target.entity)?.signature ===
+          this.getActivitySignature(target),
     }
   }
 
@@ -1180,6 +1206,11 @@ export default class SimpleThermostatGroup extends LitElement {
     selected?: ActivityCandidate
   ) {
     if (!selected) return true
+    if (candidate.observed || selected.observed) {
+      if (candidate.observed !== selected.observed)
+        return candidate.observed === true
+      return candidate.timestamp > selected.timestamp
+    }
     if (candidate.activeRank !== selected.activeRank) {
       return candidate.activeRank > selected.activeRank
     }
@@ -1209,7 +1240,10 @@ export default class SimpleThermostatGroup extends LitElement {
 
     this.persistedActivityApplied = true
 
-    const storedSelection = this.readStoredSelectionRecord(this.config)
+    const storedSelection =
+      this.config.remember_selection === false
+        ? undefined
+        : this.readStoredSelectionRecord(this.config)
     const validStoredSelection =
       storedSelection &&
       this.targets.some((target) => target.entity === storedSelection.entity)
@@ -1321,24 +1355,47 @@ export default class SimpleThermostatGroup extends LitElement {
 
     const changedTargets: ActivityCandidate[] = []
     const nextSignatures = new Map<string, string>()
+    let recordsChanged = false
 
     this.targets.forEach((target) => {
       const signature = this.getActivitySignature(target)
       nextSignatures.set(target.entity, signature)
+      const previous = this.activityRecords.get(target.entity)
 
       if (
         this.activitySignaturesInitialized &&
         signature &&
         signature !== this.activitySignatures.get(target.entity)
       ) {
-        this.writeStoredActivity({
+        const record = {
           entity: target.entity,
           signature,
           timestamp: Date.now(),
-        })
+          observed: true,
+        }
+        this.activityRecords.set(target.entity, record)
+        recordsChanged = true
+        this.writeStoredActivity(record)
         changedTargets.push(this.getActivityCandidate(target, Date.now()))
+      } else if (signature && previous?.signature !== signature) {
+        recordsChanged = true
+        this.activityRecords.set(target.entity, {
+          entity: target.entity,
+          signature,
+          timestamp: this.getActivityTimestamp(target),
+          observed: false,
+        })
       }
     })
+    if (recordsChanged)
+      try {
+        window.localStorage.setItem(
+          `${this.getActivityStorageKey(this.config)}:v2`,
+          JSON.stringify([...this.activityRecords.values()])
+        )
+      } catch {
+        /* Storage may be unavailable. Live tracking still works. */
+      }
 
     this.activitySignatures = nextSignatures
     if (!this.activitySignaturesInitialized) {
@@ -1440,18 +1497,8 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private getEmbeddedConfigSignature(config: LooseObject) {
-    return JSON.stringify(config, (_key, value) => {
-      if (!value || typeof value !== 'object' || Array.isArray(value)) {
-        return value
-      }
-
-      return Object.keys(value)
-        .sort()
-        .reduce<LooseObject>((result, key) => {
-          result[key] = value[key]
-          return result
-        }, {})
-    })
+    // Control and option key order affects rendering, even without an _order array.
+    return JSON.stringify(config)
   }
 
   private getTargetCardConfig(target: GroupTarget): LooseObject {

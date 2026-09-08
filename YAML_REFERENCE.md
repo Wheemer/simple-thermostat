@@ -186,6 +186,8 @@ Nested `label` options:
 
 `auto_select` can be configured as a simple value:
 
+Observed activity transitions are remembered in this browser. Measurements do not update those timestamps. When no transition has been observed, startup falls back to current activity and `last_changed`; the card cannot reconstruct complete activity cycles that occurred while the browser was closed. `remember_selection: false` disables restoring the manual selection, not meaningful-activity tracking.
+
 ```yaml
 auto_select: recent_activity
 ```

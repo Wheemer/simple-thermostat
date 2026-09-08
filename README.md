@@ -156,6 +156,8 @@ Group options:
 
 ## Domain Defaults
 
+Recent-activity selection remembers transitions observed by this browser. Measurement-only updates do not count as activity, including after reload. Without a recorded transition, startup uses the entity's current activity and state-change timestamp; activity cycles that happen entirely while the browser is closed cannot be reconstructed from the current state alone. Selection memory is local to the browser, not shared between devices.
+
 The card chooses sensible defaults from the selected entity:
 
 | Domain       | Target      | Current value                                            | Default controls                          |
@@ -218,6 +220,17 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="8" nowrap><strong>v4.3.4</strong></td>
+      <td>Handles empty and structured extra-entity attributes safely, and preserves attribute, template, unit, and decimal formatting in compact displays.</td>
+    </tr>
+    <tr><td>Keeps configured helper controls from falling back to controlling the thermostat when the helper is unavailable.</td></tr>
+    <tr><td>Restores setpoint updates after a card is detached and reattached, and removes empty space left by hidden targets.</td></tr>
+    <tr><td>Keeps readings separate from setpoints on narrow cards, and lets long compact labels wrap without splitting their values or units.</td></tr>
+    <tr><td>Preserves explicit appearance overrides in the editor and correctly clears older hide-when-off aliases.</td></tr>
+    <tr><td>Preserves configured control order, including order-only edits inside the multi-card, and uses Home Assistant translations for default fan labels.</td></tr>
+    <tr><td>Preserves conditional embedded CSS and cascade order, and corrects relative-time template rendering.</td></tr>
+    <tr><td>Remembers observed group activity across reloads without treating ordinary sensor updates as new activity.</td></tr>
     <tr>
       <td nowrap><strong>v4.3.3</strong></td>
       <td>Restores balanced spacing between extra entity rows and a single vertical setpoint control.</td>

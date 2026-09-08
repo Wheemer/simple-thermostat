@@ -476,7 +476,7 @@ test('does not apply card_mod ha-card surface declarations inline on normal card
   expect(surface.getAttribute('style')).not.toContain('border-radius: 8px')
 })
 
-test('applies card_mod ha-card surface declarations inline only for embedded cards', async () => {
+test('preserves embedded card_mod declarations in a stylesheet', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)
@@ -513,10 +513,12 @@ test('applies card_mod ha-card surface declarations inline only for embedded car
   await card.updateComplete
 
   const surface = card.shadowRoot?.querySelector('ha-card') as HTMLElement
-  expect(surface.getAttribute('style')).toContain(
+  expect(surface.querySelector('style')?.textContent).toContain(
     'background: linear-gradient(145deg, red, blue)'
   )
-  expect(surface.getAttribute('style')).toContain('border-radius: 8px')
+  expect(surface.querySelector('style')?.textContent).toContain(
+    'border-radius: 8px'
+  )
 })
 
 test('parses embedded card_mod declarations containing quoted braces', async () => {
@@ -544,8 +546,12 @@ test('parses embedded card_mod declarations containing quoted braces', async () 
   await card.updateComplete
 
   const surface = card.shadowRoot?.querySelector('ha-card') as HTMLElement
-  expect(surface.getAttribute('style')).toContain('--st-test-content: "}"')
-  expect(surface.getAttribute('style')).toContain('background: rgb(12, 34, 56)')
+  expect(surface.querySelector('style')?.textContent).toContain(
+    '--st-test-content: "}"'
+  )
+  expect(surface.querySelector('style')?.textContent).toContain(
+    'background: rgb(12, 34, 56)'
+  )
 })
 
 test('keeps last rendered entity during transient missing hass updates', async () => {
@@ -1113,7 +1119,7 @@ test('climate controls preserve explicit _order from object config', () => {
   ])
 })
 
-test('climate controls use display order for object config without _order', () => {
+test('climate controls use object config order without _order', () => {
   const card = createCard()
   card.setConfig({
     entity: 'climate.living_room',
@@ -1145,10 +1151,10 @@ test('climate controls use display order for object config without _order', () =
     },
   }
 
-  expect(card.modes.map(({ type }) => type)).toEqual(['preset', 'fan', 'hvac'])
+  expect(card.modes.map(({ type }) => type)).toEqual(['hvac', 'fan', 'preset'])
 })
 
-test('climate object control config renders fan before hvac without _order', async () => {
+test('climate object control config renders its HVAC-first order without _order', async () => {
   document.body.innerHTML = ''
   const card = createCard()
   document.body.appendChild(card)
@@ -1203,7 +1209,7 @@ test('climate object control config renders fan before hvac without _order', asy
     )
   )
 
-  expect(rows).toEqual(['fan', 'hvac'])
+  expect(rows).toEqual(['hvac', 'fan'])
 })
 
 test('climate control options preserve explicit YAML order', () => {
@@ -1297,7 +1303,7 @@ test('configured control options append unconfigured integration options', () =>
   ])
 })
 
-test('plain object control config uses default display order', () => {
+test('plain object control config preserves its supplied order', () => {
   const card = createCard()
   card.setConfig({
     entity: 'climate.living_room',
@@ -1329,7 +1335,7 @@ test('plain object control config uses default display order', () => {
     },
   }
 
-  expect(card.modes.map(({ type }) => type)).toEqual(['preset', 'fan', 'hvac'])
+  expect(card.modes.map(({ type }) => type)).toEqual(['hvac', 'fan', 'preset'])
 })
 
 test('object control config can preserve explicit _order', () => {
@@ -1518,7 +1524,7 @@ test('swing controls preserve explicit icon config without enabling default swin
   await card.updateComplete
 
   expect(card.modes).toHaveLength(1)
-  expect(card.modes[0].list).toEqual([
+  expect(card.modes[0].list).toMatchObject([
     {
       value: 'vertical',
       name: false,
