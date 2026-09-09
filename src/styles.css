@@ -1718,6 +1718,7 @@ ha-card.standard-visuals .thermostat-trigger:active {
 
 .editor-extra-entities__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
@@ -1757,13 +1758,24 @@ ha-card.standard-visuals .thermostat-trigger:active {
 
 .editor-entity-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(120px, 0.7fr) auto auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   align-items: center;
   gap: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
   margin-top: calc(var(--st-spacing, var(--st-default-spacing)) * 2);
 }
 
-@media (max-width: 720px) {
+.editor-entity-row > * {
+  min-width: 0;
+}
+
+.editor-row-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+@media (max-width: 420px) {
   .editor-extra-entities__header,
   .editor-entity-row {
     display: flex;

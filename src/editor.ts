@@ -1,6 +1,11 @@
 import { LitElement, html, nothing } from 'lit'
 import { property, state } from 'lit/decorators.js'
-import { mdiBookOpenVariant } from '@mdi/js'
+import {
+  mdiBookOpenVariant,
+  mdiArrowUp,
+  mdiArrowDown,
+  mdiDeleteOutline,
+} from '@mdi/js'
 import styles from './styles.css'
 import fireEvent from './fireEvent'
 import { version } from '../package.json'
@@ -79,7 +84,7 @@ const LABELS: Record<string, string> = {
   unit: 'Unit',
   'layout.step': 'Step layout',
   step_size: 'Step size',
-  setpoint_debounce_ms: 'Target debounce',
+  setpoint_debounce_ms: 'Target debounce (ms)',
   setpoint_hold_repeat: 'Repeat target changes while held',
   fallback: 'Fallback text',
   'hide.temperature': 'Hide current value',
@@ -294,21 +299,25 @@ function getDefaultControlData(config: CardConfig) {
 }
 
 function getSupportedControlTypes(config: CardConfig, hass?: HASS) {
-  if (!config.entity || !hass?.states?.[config.entity]) {
-    return []
-  }
-
-  const entity = hass.states[config.entity]
-  const attributes = entity.attributes ?? {}
-  const [entityDomain] = config.entity.split('.')
+  const entity = hass?.states?.[config.entity]
+  const attributes = entity?.attributes ?? {}
+  const entityDomain = config.entity?.split('.')[0]
   const adapter = getAdapter(config.entity)
+  const configuredTypes = Array.isArray(config.control)
+    ? config.control
+    : isControlObject(config.control)
+      ? Object.keys(config.control)
+      : []
 
   return CONTROL_TYPES.filter(
     (type) =>
       MODE_TYPES.includes(type) &&
-      (type === MODES.STATE
-        ? entityDomain === 'fan' || entityDomain === 'humidifier'
-        : typeof attributes[adapter.getModeAttribute(type)] !== 'undefined')
+      (configuredTypes.includes(type) ||
+        (entity &&
+          (type === MODES.STATE
+            ? entityDomain === 'fan' || entityDomain === 'humidifier'
+            : typeof attributes[adapter.getModeAttribute(type)] !==
+              'undefined')))
   )
 }
 
@@ -860,7 +869,7 @@ export default class SimpleThermostatEditor extends LitElement {
       if (formData.show_header === false) {
         copy.header = false
       } else {
-        this._applyHeaderFormChange(copy, formData)
+        this._applyHeaderFormChange(copy, formData, changedPaths)
       }
     }
 
@@ -896,7 +905,11 @@ export default class SimpleThermostatEditor extends LitElement {
     }
   }
 
-  _applyHeaderFormChange(copy: Record<string, unknown>, updated: FormData) {
+  _applyHeaderFormChange(
+    copy: Record<string, unknown>,
+    updated: FormData,
+    changedPaths: Set<string>
+  ) {
     if (copy.header === false || copy.header == null) copy.header = {}
     const header = copy.header as HeaderConfig
     const headerName = updated.name
@@ -905,25 +918,39 @@ export default class SimpleThermostatEditor extends LitElement {
     const toggleLabel = updated['toggle.name']
     const toggleIcon = updated['toggle.icon']
 
-    if (typeof headerName === 'string' && headerName) header.name = headerName
-    else delete header.name
-    if (typeof headerIcon === 'string' && headerIcon) header.icon = headerIcon
-    else delete header.icon
+    if (changedPaths.has('name')) {
+      if (typeof headerName === 'string' && headerName) header.name = headerName
+      else delete header.name
+    }
+    if (changedPaths.has('icon')) {
+      if (typeof headerIcon === 'string' && headerIcon) header.icon = headerIcon
+      else delete header.icon
+    }
 
     if (typeof toggleEntity === 'string' && toggleEntity) {
+      if (
+        !['toggle.entity', 'toggle.name', 'toggle.icon'].some((path) =>
+          changedPaths.has(path)
+        )
+      )
+        return
       header.toggle = header.toggle || { entity: toggleEntity }
       header.toggle.entity = toggleEntity
-      if (typeof toggleLabel === 'string' && toggleLabel) {
-        header.toggle.name = toggleLabel
-      } else {
-        delete header.toggle.name
+      if (changedPaths.has('toggle.name')) {
+        if (typeof toggleLabel === 'string' && toggleLabel) {
+          header.toggle.name = toggleLabel
+        } else {
+          delete header.toggle.name
+        }
       }
-      if (typeof toggleIcon === 'string' && toggleIcon) {
-        header.toggle.icon = toggleIcon
-      } else {
-        delete header.toggle.icon
+      if (changedPaths.has('toggle.icon')) {
+        if (typeof toggleIcon === 'string' && toggleIcon) {
+          header.toggle.icon = toggleIcon
+        } else {
+          delete header.toggle.icon
+        }
       }
-    } else {
+    } else if (changedPaths.has('toggle.entity')) {
       delete header.toggle
     }
   }
@@ -1012,6 +1039,20 @@ export default class SimpleThermostatEditor extends LitElement {
     )
   }
 
+  _moveEntityRow(index: number, offset: number) {
+    const rows = [...this._getExtraEntities()]
+    const destination = index + offset
+    if (
+      index < 0 ||
+      index >= rows.length ||
+      destination < 0 ||
+      destination >= rows.length
+    )
+      return
+    rows.splice(destination, 0, rows.splice(index, 1)[0])
+    this._commitEntityRows(rows)
+  }
+
   _updateEntityRow(
     index: number,
     field: keyof Pick<ConfigEntity, 'entity' | 'name' | 'icon' | 'display'>,
@@ -1057,6 +1098,20 @@ export default class SimpleThermostatEditor extends LitElement {
     )
   }
 
+  _moveFooterRow(index: number, offset: number) {
+    const rows = [...this._getFooterRows()]
+    const destination = index + offset
+    if (
+      index < 0 ||
+      index >= rows.length ||
+      destination < 0 ||
+      destination >= rows.length
+    )
+      return
+    rows.splice(destination, 0, rows.splice(index, 1)[0])
+    this._commitFooterRows(rows)
+  }
+
   _updateFooterRow(
     index: number,
     field: keyof Pick<FooterEntity, 'entity' | 'name' | 'icon'>,
@@ -1072,7 +1127,39 @@ export default class SimpleThermostatEditor extends LitElement {
     this._commitFooterRows(footer)
   }
 
-  _renderExtraEntityRows() {
+  _renderRowActions(
+    index: number,
+    count: number,
+    move: (offset: number) => void,
+    remove: () => void
+  ) {
+    return html`
+      <div class="editor-row-actions">
+        <ha-icon-button
+          label="Move up"
+          title="Move up"
+          .path=${mdiArrowUp}
+          .disabled=${index === 0}
+          @click=${() => move(-1)}
+        ></ha-icon-button>
+        <ha-icon-button
+          label="Move down"
+          title="Move down"
+          .path=${mdiArrowDown}
+          .disabled=${index === count - 1}
+          @click=${() => move(1)}
+        ></ha-icon-button>
+        <ha-icon-button
+          label="Remove"
+          title="Remove"
+          .path=${mdiDeleteOutline}
+          @click=${remove}
+        ></ha-icon-button>
+      </div>
+    `
+  }
+
+  _renderExtraEntityRows(schema: Array<FormSchema> = []) {
     const entities = this._getExtraEntities()
     const suggestions = this._getRelatedEntitySuggestions()
 
@@ -1085,6 +1172,14 @@ export default class SimpleThermostatEditor extends LitElement {
           </div>
           <ha-button @click=${this._addEntityRow}>Add row</ha-button>
         </div>
+
+        <ha-form
+          .hass=${this.hass}
+          .data=${this._buildFormData()}
+          .schema=${schema}
+          .computeLabel=${this._computeLabel}
+          @value-changed=${this._valueChanged}
+        ></ha-form>
 
         ${
           suggestions.length
@@ -1116,6 +1211,7 @@ export default class SimpleThermostatEditor extends LitElement {
                 (entity, index) => html`
                   <div class="editor-entity-row">
                     <ha-entity-picker
+                      label="Entity"
                       .hass=${this.hass}
                       .value=${entity.entity ?? ''}
                       allow-custom-entity
@@ -1133,6 +1229,7 @@ export default class SimpleThermostatEditor extends LitElement {
                         )}
                     ></ha-textfield>
                     <ha-icon-picker
+                      label="Icon"
                       .hass=${this.hass}
                       .value=${entity.icon ?? ''}
                       @value-changed=${(ev: CustomEvent) =>
@@ -1170,9 +1267,12 @@ export default class SimpleThermostatEditor extends LitElement {
                         `
                       )}
                     </ha-select>
-                    <ha-button @click=${() => this._removeEntityRow(index)}>
-                      Remove
-                    </ha-button>
+                    ${this._renderRowActions(
+                      index,
+                      entities.length,
+                      (offset) => this._moveEntityRow(index, offset),
+                      () => this._removeEntityRow(index)
+                    )}
                   </div>
                 `
               )
@@ -1203,6 +1303,7 @@ export default class SimpleThermostatEditor extends LitElement {
                 (row, index) => html`
                   <div class="editor-entity-row">
                     <ha-entity-picker
+                      label="Entity"
                       .hass=${this.hass}
                       .value=${row.entity ?? ''}
                       allow-custom-entity
@@ -1220,14 +1321,18 @@ export default class SimpleThermostatEditor extends LitElement {
                         )}
                     ></ha-textfield>
                     <ha-icon-picker
+                      label="Icon"
                       .hass=${this.hass}
                       .value=${row.icon ?? ''}
                       @value-changed=${(ev: CustomEvent) =>
                         this._updateFooterRow(index, 'icon', ev.detail.value)}
                     ></ha-icon-picker>
-                    <ha-button @click=${() => this._removeFooterRow(index)}>
-                      Remove
-                    </ha-button>
+                    ${this._renderRowActions(
+                      index,
+                      footer.length,
+                      (offset) => this._moveFooterRow(index, offset),
+                      () => this._removeFooterRow(index)
+                    )}
                   </div>
                 `
               )
@@ -1241,18 +1346,23 @@ export default class SimpleThermostatEditor extends LitElement {
 
   override render() {
     if (!this.hass || !this.config) return html``
+    const schema = buildSchema(this.config, this.hass)
+    const rowSection = schema.find(
+      (section) => section.title === 'Extra entity rows'
+    )
 
     return html`
       <div class="card-config">
         <ha-form
           .hass=${this.hass}
           .data=${this._buildFormData()}
-          .schema=${buildSchema(this.config, this.hass)}
+          .schema=${schema.filter((section) => section !== rowSection)}
           .computeLabel=${this._computeLabel}
           @value-changed=${this._valueChanged}
         ></ha-form>
 
-        ${this._renderExtraEntityRows()} ${this._renderFooterRows()}
+        ${this._renderExtraEntityRows(rowSection?.schema as Array<FormSchema>)}
+        ${this._renderFooterRows()}
 
         <div class="editor-footer">
           <ha-button @click=${this._openLink}>

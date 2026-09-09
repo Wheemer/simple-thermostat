@@ -1,6 +1,8 @@
 # Simple Thermostat YAML Reference
 
 Most v4 cards should be configured with the Home Assistant visual editor first.
+
+Extra-entity display settings are grouped with the rows they affect. Use the up/down buttons to reorder extra entity rows, footer controls, or cards in the multi-card editor. Moving an item preserves its settings; no order changes are made automatically.
 Use this reference for advanced YAML customization, migration, or manual
 dashboard editing. See the [README](README.md) for the recommended UI-first
 setup flow.

@@ -2,6 +2,177 @@ import SimpleThermostatEditor, { buildSchema } from '../editor'
 
 const performAction = () => undefined
 
+test('row appearance settings and rows share one editor section', async () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  const editor = new SimpleThermostatEditor()
+  editor.hass = { states: {}, performAction }
+  editor.setConfig({
+    entity: 'climate.test',
+    header: {},
+    entities: [{ entity: 'sensor.test' }],
+  })
+  document.body.appendChild(editor)
+  await editor.updateComplete
+  const forms = Array.from(
+    editor.shadowRoot!.querySelectorAll('ha-form')
+  ) as any[]
+  expect(forms).toHaveLength(2)
+  expect(schemaNames(forms[0].schema)).not.toContain('layout.entities.display')
+  expect(schemaNames(forms[1].schema)).toContain('layout.entities.display')
+  expect(
+    forms[1].closest('section')!.querySelector('.editor-entity-row')
+  ).not.toBeNull()
+  forms[1].dispatchEvent(
+    new CustomEvent('value-changed', {
+      detail: {
+        value: {
+          ...editor._buildFormData(),
+          'layout.entities.display': 'chip',
+        },
+      },
+    })
+  )
+  expect(editor.config.layout?.entities?.display).toBe('chip')
+  expect(editor.config.entities).toEqual([{ entity: 'sensor.test' }])
+  editor.remove()
+})
+
+test.each(['entity', 'footer'])(
+  '%s rows reorder without losing settings',
+  async (kind) => {
+    if (!customElements.get('simple-thermostat-editor-test')) {
+      customElements.define(
+        'simple-thermostat-editor-test',
+        SimpleThermostatEditor
+      )
+    }
+    const editor = new SimpleThermostatEditor()
+    const rows = [
+      { entity: 'switch.first', name: 'First', hide_when_off: true },
+      { entity: 'switch.second', name: 'Second', icon: 'mdi:fan' },
+    ]
+    editor.hass = { states: {}, performAction }
+    editor.setConfig({
+      entity: 'climate.test',
+      header: {},
+      [kind === 'entity' ? 'entities' : 'footer']: rows,
+    })
+    document.body.appendChild(editor)
+    await editor.updateComplete
+    const changed = jest.fn()
+    editor.addEventListener('config-changed', changed)
+    const buttons = editor.shadowRoot!.querySelectorAll(
+      '.editor-row-actions ha-icon-button'
+    ) as NodeListOf<HTMLElement>
+    expect((buttons[0] as any).disabled).toBe(true)
+    buttons[1].click()
+    await editor.updateComplete
+    const saved = changed.mock.calls.at(-1)[0].detail.config
+    expect(saved[kind === 'entity' ? 'entities' : 'footer']).toEqual([
+      rows[1],
+      rows[0],
+    ])
+    const move =
+      kind === 'entity'
+        ? editor._moveEntityRow.bind(editor)
+        : editor._moveFooterRow.bind(editor)
+    changed.mockClear()
+    move(0, -1)
+    move(1, 1)
+    expect(changed).not.toHaveBeenCalled()
+    editor.remove()
+  }
+)
+
+test('debounce field identifies its milliseconds unit', () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  expect(
+    new SimpleThermostatEditor()._computeLabel({
+      name: 'setpoint_debounce_ms',
+    })
+  ).toBe('Target debounce (ms)')
+})
+
+test('configured helpers remain editable without native mode attributes', () => {
+  if (!customElements.get('simple-thermostat-editor-test')) {
+    customElements.define(
+      'simple-thermostat-editor-test',
+      SimpleThermostatEditor
+    )
+  }
+  const editor = new SimpleThermostatEditor()
+  editor.hass = {
+    performAction,
+    states: {
+      'climate.pool': {
+        entity_id: 'climate.pool',
+        state: 'heat',
+        attributes: { hvac_modes: ['off', 'heat'] },
+      },
+    },
+  }
+  editor.setConfig({
+    entity: 'climate.pool',
+    control: { hvac: true, fan: { entity: 'select.speed' } },
+  } as any)
+  expect(schemaNames(buildSchema(editor.config, editor.hass))).toContain(
+    'control.fan'
+  )
+  const updated = editor._applyFormChange({ 'control.hvac': false })
+  expect(updated.control).toMatchObject({ fan: { entity: 'select.speed' } })
+  expect(updated.control).not.toHaveProperty('hvac')
+})
+
+test('configured controls remain editable while the primary entity is missing', () => {
+  const names = schemaNames(
+    buildSchema(
+      {
+        entity: 'climate.pool',
+        control: { fan: { entity: 'select.speed' }, hvac: true },
+      } as any,
+      { performAction, states: {} }
+    )
+  )
+  expect(names).toEqual(expect.arrayContaining(['control.fan', 'control.hvac']))
+})
+
+test.each([false, { heat: 'mdi:fire', off: 'mdi:power' }])(
+  'editing the header name preserves a non-string icon: %j',
+  (icon) => {
+    if (!customElements.get('simple-thermostat-editor-test')) {
+      customElements.define(
+        'simple-thermostat-editor-test',
+        SimpleThermostatEditor
+      )
+    }
+    const editor = new SimpleThermostatEditor()
+    editor.setConfig({
+      entity: 'climate.pool',
+      header: {
+        name: 'Before',
+        icon,
+        toggle: { entity: 'switch.power', name: false },
+      },
+    } as any)
+    const updated = editor._applyFormChange({ name: 'After' })
+    expect(updated.header).toEqual({
+      name: 'After',
+      icon,
+      toggle: { entity: 'switch.power', name: false },
+    })
+  }
+)
+
 function schemaNames(schema: Array<Record<string, any>>): Array<string> {
   return schema
     .flatMap((item) => [

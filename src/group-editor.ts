@@ -1,6 +1,7 @@
 import { LitElement, html, css, nothing } from 'lit'
 import { property, state } from 'lit/decorators.js'
 import { ref } from 'lit/directives/ref.js'
+import { mdiArrowUp, mdiArrowDown, mdiDeleteOutline } from '@mdi/js'
 import { name as CARD_NAME } from '../package.json'
 import fireEvent from './fireEvent'
 import { HASS } from './types'
@@ -28,8 +29,12 @@ function toEditableTarget(target: GroupTargetConfig): EditableTarget {
   return {
     ...target,
     entity: target?.entity ?? '',
-    name: target?.name ?? header.name,
-    icon: target?.icon ?? header.icon,
+    name:
+      target?.name ??
+      (typeof header.name === 'string' ? header.name : undefined),
+    icon:
+      target?.icon ??
+      (typeof header.icon === 'string' ? header.icon : undefined),
   }
 }
 
@@ -85,8 +90,8 @@ export default class SimpleThermostatGroupEditor extends LitElement {
       }
 
       .target {
-        display: grid;
-        grid-template-columns: 1fr auto;
+        display: flex;
+        flex-wrap: wrap;
         gap: 8px;
         align-items: end;
         padding: 12px;
@@ -120,12 +125,14 @@ export default class SimpleThermostatGroupEditor extends LitElement {
 
       .target-fields {
         display: grid;
+        flex: 1 1 360px;
+        min-width: 0;
         gap: 8px;
       }
 
       .target-meta {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
         gap: 8px;
       }
 
@@ -137,13 +144,24 @@ export default class SimpleThermostatGroupEditor extends LitElement {
 
       .target-actions {
         display: flex;
-        flex-direction: column;
+        flex-wrap: wrap;
+        margin-left: auto;
         gap: 8px;
         align-items: center;
       }
 
+      .target-order {
+        display: flex;
+        gap: 4px;
+      }
+
+      .editor-section + .editor-section {
+        margin-top: 24px;
+      }
+
       .target-editor {
-        grid-column: 1 / -1;
+        flex-basis: 100%;
+        min-width: 0;
         border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
         margin-top: 4px;
         padding-top: 12px;
@@ -203,12 +221,9 @@ export default class SimpleThermostatGroupEditor extends LitElement {
       }
 
       @media (max-width: 500px) {
-        .target {
-          grid-template-columns: 1fr;
-        }
-
         .target-actions {
           flex-direction: row;
+          flex-wrap: wrap;
           justify-content: flex-end;
         }
 
@@ -248,7 +263,18 @@ export default class SimpleThermostatGroupEditor extends LitElement {
 
   private updateTarget(index: number, patch: Partial<EditableTarget>) {
     const targets = this.getTargets()
-    targets[index] = { ...targets[index], ...patch }
+    const target = { ...targets[index], ...patch }
+    // The summary fields can originate from the embedded card's header.
+    if (target.header && typeof target.header === 'object') {
+      target.header = { ...target.header }
+      for (const field of ['name', 'icon'] as const) {
+        if (!(field in patch) || !(field in target.header)) continue
+        const value = patch[field]?.trim()
+        if (value) target.header[field] = value
+        else delete target.header[field]
+      }
+    }
+    targets[index] = target
     this.commitTargets(targets)
   }
 
@@ -257,8 +283,10 @@ export default class SimpleThermostatGroupEditor extends LitElement {
   ): Array<GroupTargetConfig> {
     return targets.map((target) => {
       const entity = target.entity?.trim() ?? ''
-      const name = target.name?.trim()
-      const icon = target.icon?.trim()
+      const name =
+        typeof target.name === 'string' ? target.name.trim() : undefined
+      const icon =
+        typeof target.icon === 'string' ? target.icon.trim() : undefined
       const { name: _name, icon: _icon, entity: _entity, ...rest } = target
 
       if (!name && !icon && Object.keys(rest).length === 0) return entity
@@ -281,7 +309,31 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     const targets = this.getTargets().filter(
       (_, targetIndex) => targetIndex !== index
     )
+    if (this.expandedTargetIndex === index) this.expandedTargetIndex = null
+    else if (
+      this.expandedTargetIndex !== null &&
+      this.expandedTargetIndex > index
+    )
+      this.expandedTargetIndex--
     this.commitTargets(targets.length ? targets : [{ entity: '' }])
+  }
+
+  private moveTarget(index: number, offset: number) {
+    const targets = this.getTargets()
+    const destination = index + offset
+    if (
+      index < 0 ||
+      index >= targets.length ||
+      destination < 0 ||
+      destination >= targets.length
+    )
+      return
+    targets.splice(destination, 0, targets.splice(index, 1)[0])
+    if (this.expandedTargetIndex === index)
+      this.expandedTargetIndex = destination
+    else if (this.expandedTargetIndex === destination)
+      this.expandedTargetIndex = index
+    this.commitTargets(targets)
   }
 
   private commitTargets(targets: Array<EditableTarget>) {
@@ -324,6 +376,7 @@ export default class SimpleThermostatGroupEditor extends LitElement {
       <ha-button
         class=${selected ? 'selected' : ''}
         appearance=${selected ? 'filled' : 'outlined'}
+        aria-pressed=${String(selected)}
         @click=${() => this.updateSelectorStyle(value)}
       >
         ${label}
@@ -473,17 +526,34 @@ export default class SimpleThermostatGroupEditor extends LitElement {
           <ha-button size="s" @click=${() => this.toggleTargetEditor(index)}>
             ${expanded ? 'Close' : 'Configure'}
           </ha-button>
-          ${
-            this.getTargets().length > 1
-              ? html`
-                  <ha-icon-button
-                    label="Remove"
-                    .path=${'M19,13H5V11H19V13Z'}
-                    @click=${() => this.removeTarget(index)}
-                  ></ha-icon-button>
-                `
-              : nothing
-          }
+          <div class="target-order">
+            <ha-icon-button
+              label="Move up"
+              title="Move up"
+              .path=${mdiArrowUp}
+              .disabled=${index === 0}
+              @click=${() => this.moveTarget(index, -1)}
+            ></ha-icon-button>
+            <ha-icon-button
+              label="Move down"
+              title="Move down"
+              .path=${mdiArrowDown}
+              .disabled=${index === this.getTargets().length - 1}
+              @click=${() => this.moveTarget(index, 1)}
+            ></ha-icon-button>
+            ${
+              this.getTargets().length > 1
+                ? html`
+                    <ha-icon-button
+                      label="Remove"
+                      title="Remove"
+                      .path=${mdiDeleteOutline}
+                      @click=${() => this.removeTarget(index)}
+                    ></ha-icon-button>
+                  `
+                : nothing
+            }
+          </div>
         </div>
         ${
           expanded
@@ -602,6 +672,7 @@ export default class SimpleThermostatGroupEditor extends LitElement {
           <span class="option-description">${description}</span>
         </div>
         <ha-switch
+          aria-label=${title}
           .checked=${checked}
           @change=${(ev: Event) =>
             update((ev.currentTarget as HTMLInputElement).checked)}

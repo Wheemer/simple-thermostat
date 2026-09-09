@@ -221,6 +221,13 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
   </thead>
   <tbody>
     <tr>
+      <td rowspan="4" nowrap><strong>v4.3.7</strong></td>
+      <td>Adds up/down controls for reordering extra entity rows, footer controls, and cards in the multi-card editor without losing their settings.</td>
+    </tr>
+    <tr><td>Groups extra-entity display options with their rows, improves narrow editor layouts, and labels target debounce in milliseconds.</td></tr>
+    <tr><td>Preserves configured helper controls and hidden or dynamic header icons when editing unrelated settings, including when the main entity is missing.</td></tr>
+    <tr><td>Handles hidden header names and icons in the multi-card editor, keeps cleared overrides cleared, and keeps the expanded editor attached to its card when reordering.</td></tr>
+    <tr>
       <td rowspan="2" nowrap><strong>v4.3.6</strong></td>
       <td>Keeps available header toggles, footer toggles, extra-entity controls, and select helpers usable when the main thermostat is unavailable or unknown, including in the multi-card.</td>
     </tr>
