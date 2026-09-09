@@ -172,6 +172,7 @@ ha-card.loading {
   flex: 1 1 max-content;
   min-width: 0;
   max-width: 100%;
+  justify-content: center;
 }
 .setpoints {
   display: flex;

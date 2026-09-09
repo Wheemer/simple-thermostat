@@ -263,6 +263,26 @@ try {
         const surface = root?.querySelector('ha-card')
         if (!surface) return void problems.push(`${label}: missing surface`)
         const bounds = surface.getBoundingClientRect()
+        const table = root.querySelector('.body > .entities.as-table')
+        if (table && variant !== 'compact') {
+          const cells = Array.from(table.children)
+            .filter((cell) => cell.matches('.entity-heading, .entity-value'))
+            .map((cell) => cell.getBoundingClientRect())
+            .filter((rect) => rect.width > 0)
+          if (cells.length) {
+            const section = table.getBoundingClientRect()
+            const left = Math.min(...cells.map((rect) => rect.left))
+            const right = Math.max(...cells.map((rect) => rect.right))
+            if (
+              Math.abs(
+                (left + right) / 2 - (section.left + section.right) / 2
+              ) > 1
+            )
+              problems.push(
+                `${label}: entity content is not centered in its section`
+              )
+          }
+        }
         if (bounds.width <= 0 || bounds.height <= 0)
           problems.push(`${label}: blank surface`)
         const controls = Array.from(

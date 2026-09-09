@@ -45,6 +45,14 @@ This watches source files and rebuilds the debug bundle. Copy the rebuilt file t
 
 ## Creating a Release
 
+For layout changes, compare against the actual reference release asset as well as running the collision checks:
+
+```sh
+node scripts/compare-layout.mjs /path/to/reference/simple-thermostat.js
+```
+
+This checks card-relative positions and sizes at 334px, 480px and 900px, with screenshots under `test-results/layout-comparison/`. Matching the reference establishes appearance preservation, not absence of existing overflow defects. Neither this comparison nor the overlap tests replace the other.
+
 Only start this flow after explicit release authorization. Local fixes, tests, and installation requests do not authorize a GitHub push or release.
 
 1. Update the version in `package.json`.

@@ -146,6 +146,7 @@ test.each([
   const c = card({ ...config, layout: { step: 'column' } }, h)
   await c.updateComplete
   expect(c.shadowRoot?.querySelector('.setpoints')).toBeNull()
+  expect(c.shadowRoot?.querySelector('.current-wrapper')).toBeNull()
   expect(c.shadowRoot?.querySelector('.body')?.className).toContain(
     'setpoint-count-0'
   )

@@ -59,6 +59,9 @@ test('card body wraps intrinsic sections without clipping their contents', () =>
   expect(bodyRule).not.toContain('overflow: hidden')
   expect(bodyChildrenRule).toBe('')
   expect(styles).toContain('flex: 1 1 max-content')
+  const entitySection =
+    styles.match(/\.body > \.entities\s*\{[^}]*\}/)?.[0] ?? ''
+  expect(entitySection).toContain('justify-content: center')
   expect(styles).toContain('.body.has-entities.step-column.setpoint-count-1')
   expect(styles).toContain('width: 35%')
   expect(styles).not.toContain(
