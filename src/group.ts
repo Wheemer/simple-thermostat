@@ -1,4 +1,5 @@
 import { LitElement, html, css, nothing } from 'lit'
+import { isEntityAvailable } from './entityAvailability'
 import { property, state } from 'lit/decorators.js'
 import { name as CARD_NAME } from '../package.json'
 import { CardConfig } from './config/card'
@@ -1748,6 +1749,7 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private toggleHeaderEntity(ev: Event, entityId: string) {
     ev.stopPropagation()
+    if (!isEntityAvailable(this.hass?.states?.[entityId])) return
     const checked = Boolean((ev.target as HTMLInputElement).checked)
     this.hass?.callService?.(
       'homeassistant',
@@ -1778,6 +1780,7 @@ export default class SimpleThermostatGroup extends LitElement {
             <div class="group-toggle">
               <ha-switch
                 .checked=${state?.state === 'on'}
+                .disabled=${!isEntityAvailable(state)}
                 @change=${(ev: Event) =>
                   this.toggleHeaderEntity(ev, toggle.entity)}
               ></ha-switch>

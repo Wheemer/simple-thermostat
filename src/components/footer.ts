@@ -1,4 +1,5 @@
 import { html, nothing } from 'lit'
+import { isEntityAvailable } from '../entityAvailability'
 import { FooterToggle, HVAC_MODES } from '../types'
 import { renderModeIcon } from './modeIcon'
 
@@ -9,8 +10,7 @@ interface FooterOptions {
   openEntityPopover
 }
 
-const safeClass = (value: unknown) =>
-  String(value).replace(/[^a-z0-9_-]/gi, '')
+const safeClass = (value: unknown) => String(value).replace(/[^a-z0-9_-]/gi, '')
 
 export default function renderFooter({
   toggles,
@@ -19,8 +19,7 @@ export default function renderFooter({
   openEntityPopover,
 }: FooterOptions) {
   const visibleToggles = toggles.filter(
-    (toggle) =>
-      !(toggle.hide_when_off === true && mainState === HVAC_MODES.OFF)
+    (toggle) => !(toggle.hide_when_off === true && mainState === HVAC_MODES.OFF)
   )
 
   if (!visibleToggles.length) return nothing
@@ -28,9 +27,7 @@ export default function renderFooter({
   return html`
     <section class="footer-controls controls">
       <div
-        class="modes footer compact ${visibleToggles.length > 4
-          ? 'dense'
-          : ''}"
+        class="modes footer compact ${visibleToggles.length > 4 ? 'dense' : ''}"
         role="group"
         aria-label="Footer controls"
       >
@@ -38,10 +35,13 @@ export default function renderFooter({
           const entityId = toggle.state.entity_id
           const state = String(toggle.state.state ?? '')
           const active = state === 'on'
+          const disabled = !isEntityAvailable(toggle.state)
           const label =
             toggle.name === false
               ? false
-              : toggle.name || toggle.state.attributes?.friendly_name || entityId
+              : toggle.name ||
+                toggle.state.attributes?.friendly_name ||
+                entityId
           const icon = toggle.icon ?? toggle.state.attributes?.icon
           const domain = entityId.split('.')[0]
 
@@ -51,15 +51,18 @@ export default function renderFooter({
                 domain
               )} ${active ? 'active' : ''}"
               role="button"
-              tabindex="0"
+              tabindex=${disabled ? -1 : 0}
+              aria-disabled=${String(disabled)}
               aria-pressed=${active ? 'true' : 'false'}
               aria-label=${label || entityId}
               title=${label || entityId}
-              @click=${() => toggleFooterEntity(entityId, !active)}
+              @click=${() => {
+                if (!disabled) toggleFooterEntity(entityId, !active)
+              }}
               @keydown=${(e: KeyboardEvent) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
-                  toggleFooterEntity(entityId, !active)
+                  if (!disabled) toggleFooterEntity(entityId, !active)
                 }
               }}
               @contextmenu=${(e: MouseEvent) => {

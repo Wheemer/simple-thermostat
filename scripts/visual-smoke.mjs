@@ -15,13 +15,21 @@ try {
     { name: 'desktop', width: 900, height: 900 },
     { name: 'mobile', width: 334, height: 900 },
   ].flatMap((viewport) =>
-    ['column', 'row', 'classic', 'left', 'hidden', 'compact', 'tabs'].map(
-      (variant) => ({
-        ...viewport,
-        variant,
-        name: `${viewport.name}-${variant}`,
-      })
-    )
+    [
+      'column',
+      'row',
+      'classic',
+      'left',
+      'hidden',
+      'compact',
+      'tabs',
+      'unavailable',
+      'unknown',
+    ].map((variant) => ({
+      ...viewport,
+      variant,
+      name: `${viewport.name}-${variant}`,
+    }))
   )) {
     const page = await browser.newPage({
       viewport: { width: fixture.width, height: fixture.height },
@@ -95,8 +103,37 @@ try {
         },
       })
     }, mdi)
+    await page.evaluate(() => {
+      customElements.define(
+        'ha-switch',
+        class extends HTMLElement {
+          constructor() {
+            super()
+            this.attachShadow({ mode: 'open' }).innerHTML =
+              '<style>:host{display:inline-flex}input{width:32px;height:24px;margin:0;cursor:pointer}</style><input type="checkbox" aria-label="Power">'
+            this.input = this.shadowRoot.querySelector('input')
+            this.input.addEventListener('change', () =>
+              this.dispatchEvent(new Event('change'))
+            )
+          }
+          set checked(value) {
+            this.input.checked = value
+          }
+          get checked() {
+            return this.input.checked
+          }
+          set disabled(value) {
+            this.input.disabled = value
+          }
+          get disabled() {
+            return this.input.disabled
+          }
+        }
+      )
+    })
     await page.addScriptTag({ path: bundle })
     await page.evaluate((variant) => {
+      window.auditCalls = []
       const hass = {
         states: {
           'climate.audit': {
@@ -168,12 +205,26 @@ try {
         formatEntityName: (entity) => entity.attributes.friendly_name,
         formatEntityState: (entity) =>
           entity.state === 'heat_cool' ? 'Auto' : entity.state,
-        callService: () => undefined,
+        callService: (...args) => window.auditCalls.push(args),
+      }
+      const unavailable = ['unavailable', 'unknown'].includes(variant)
+      if (unavailable) {
+        hass.states['climate.audit'].state = variant
+        hass.states['switch.power'] = {
+          entity_id: 'switch.power',
+          state: 'off',
+          attributes: { friendly_name: 'Power' },
+        }
       }
       const card = document.createElement('simple-thermostat')
       card.setConfig({
         entity: 'climate.audit',
-        header: { name: 'Main Floor Thermostat' },
+        header: {
+          name: 'Main Floor Thermostat',
+          ...(unavailable
+            ? { toggle: { entity: 'switch.power', name: 'Power' } }
+            : {}),
+        },
         layout: { step: 'column', mode: { headings: false } },
         control: {
           hvac: { off: {}, heat: {}, cool: {}, heat_cool: { name: 'Auto' } },
@@ -203,7 +254,15 @@ try {
       group.setConfig({
         selector: { style: variant === 'tabs' ? 'tabs' : 'dropdown' },
         cards: [
-          { entity: 'climate.audit', header: { name: 'Main Floor' } },
+          {
+            entity: 'climate.audit',
+            header: {
+              name: 'Main Floor',
+              ...(unavailable
+                ? { toggle: { entity: 'switch.power', name: 'Power' } }
+                : {}),
+            },
+          },
           {
             entity: 'climate.audit_second',
             header: { name: 'Second Thermostat' },
@@ -224,6 +283,31 @@ try {
       }
     }, fixture.variant)
     await page.waitForTimeout(100)
+    if (['unavailable', 'unknown'].includes(fixture.variant)) {
+      const card = page.locator('simple-thermostat').first()
+      await card.locator('ha-switch').click()
+      await page
+        .locator('simple-thermostat-group .group-toggle ha-switch')
+        .click()
+      assert.deepEqual(
+        await page.evaluate(() => window.auditCalls),
+        [
+          ['homeassistant', 'turn_on', { entity_id: 'switch.power' }],
+          ['homeassistant', 'turn_on', { entity_id: 'switch.power' }],
+        ],
+        'independent power switches must accept actual pointer clicks'
+      )
+      assert.equal(
+        await card.locator('.thermostat-trigger:not([disabled])').count(),
+        0
+      )
+      assert.equal(
+        await card
+          .locator('.modes.hvac .mode-item:not([aria-disabled="true"])')
+          .count(),
+        0
+      )
+    }
     const cssResults = await page.evaluate(async () => {
       const original = document.querySelector('simple-thermostat')
       const card = document.createElement('simple-thermostat')
@@ -235,7 +319,16 @@ try {
             'ha-card { background: rgb(10, 20, 30); } ha-card { background: rgb(40, 50, 60); --st-mode-active-background: rgb(68, 99, 117); --st-mode-active-accent-color: transparent; } @media (max-width: 1px) { ha-card { background: red; } }',
         },
       })
-      card.hass = original._hass
+      card.hass = {
+        ...original._hass,
+        states: {
+          ...original._hass.states,
+          'climate.audit': {
+            ...original._hass.states['climate.audit'],
+            state: 'heat_cool',
+          },
+        },
+      }
       document.body.append(card)
       await card.updateComplete
       const surface = card.shadowRoot.querySelector('ha-card')

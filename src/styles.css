@@ -79,15 +79,16 @@ ha-card.no-header {
   padding: calc(var(--st-spacing, var(--st-default-spacing)) * 4) 0;
 }
 
-ha-card.unavailable,
-ha-card.unknown {
+ha-card.unavailable .header__main,
+ha-card.unknown .header__main,
+ha-card.unavailable .current-wrapper,
+ha-card.unknown .current-wrapper,
+.mode-item[aria-disabled='true'] {
   opacity: 0.56;
-  pointer-events: none;
   filter: saturate(0.6);
 }
 
-ha-card.unavailable .mode-item,
-ha-card.unknown .mode-item,
+.mode-item[aria-disabled='true'],
 ha-card.unavailable .thermostat-trigger,
 ha-card.unknown .thermostat-trigger {
   cursor: default;

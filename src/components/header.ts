@@ -1,4 +1,5 @@
 import { html, nothing } from 'lit'
+import { isEntityAvailable } from '../entityAvailability'
 import { HeaderData } from '../config/header'
 import { getEntityAction } from '../entityAction'
 import { getToggleKind, getToggleKindClass } from '../toggleKind'
@@ -55,9 +56,9 @@ function renderIcon(icon, state, action, slashOffIcon = false) {
   return icon
     ? html`
         <span
-          class="header__icon-wrap ${state}${actionClass} ${slashOffIcon
-            ? 'slash-off'
-            : ''}"
+          class="header__icon-wrap ${state}${actionClass} ${
+            slashOffIcon ? 'slash-off' : ''
+          }"
         >
           <ha-icon
             class="header__icon ${state}${actionClass}"
@@ -80,11 +81,9 @@ function renderFaults(faults, openEntityPopover) {
     if (!state) return nothing
 
     return html` <ha-icon
-      class="fault-icon ${state.state === 'on'
-        ? 'active'
-        : hide_inactive
-          ? ' hide'
-          : ''}"
+      class="fault-icon ${
+        state.state === 'on' ? 'active' : hide_inactive ? ' hide' : ''
+      }"
       .icon=${icon || state.attributes?.icon}
       @click="${() => openEntityPopover(state.entity_id)}"
     ></ha-icon>`
@@ -126,22 +125,25 @@ function renderToggles(
         const toggleKindClass = getToggleKindClass(toggleKind)
         return html`
           <div
-            class="header__toggle ${toggleState || ''} ${toggleDomain
-              ? `domain-${toggleDomain}`
-              : ''} ${toggleKindClass}"
+            class="header__toggle ${toggleState || ''} ${
+              toggleDomain ? `domain-${toggleDomain}` : ''
+            } ${toggleKindClass}"
           >
             <span
-              class="clickable toggle-label ${toggleState || ''} ${toggleDomain
-                ? `domain-${toggleDomain}`
-                : ''} ${toggleKindClass}"
+              class="clickable toggle-label ${toggleState || ''} ${
+                toggleDomain ? `domain-${toggleDomain}` : ''
+              } ${toggleKindClass}"
               title=${toggle.label || toggle.entity?.attributes?.friendly_name}
               @click=${() => openEntityPopover(entityId)}
-              >${toggle.icon !== false
-                ? html`<ha-icon .icon=${toggle.icon}></ha-icon>`
-                : toggle.label}
+              >${
+                toggle.icon !== false
+                  ? html`<ha-icon .icon=${toggle.icon}></ha-icon>`
+                  : toggle.label
+              }
             </span>
             <ha-switch
               .checked=${toggle.entity?.state === 'on'}
+              .disabled=${!isEntityAvailable(toggle.entity)}
               @change=${(ev: Event) => toggleEntityChanged(ev, entityId)}
             ></ha-switch>
           </div>

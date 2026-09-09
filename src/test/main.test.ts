@@ -2205,6 +2205,16 @@ test('dual heat-cool setpoints cannot be stepped past each other', async () => {
 test('dual heat-cool setpoints can meet without crossing', () => {
   const card = createCard()
   card.setConfig({ entity: 'climate.dual' } as any)
+  card.hass = {
+    states: {
+      'climate.dual': {
+        entity_id: 'climate.dual',
+        state: 'heat_cool',
+        attributes: { target_temp_low: 23.5, target_temp_high: 24 },
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+  } as any
   card.stepSize = 1
   card._values = {
     target_temp_low: 23.5,

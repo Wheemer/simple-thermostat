@@ -1,4 +1,5 @@
 import { html, nothing } from 'lit'
+import { isEntityAvailable } from '../entityAvailability'
 import { ControlMode, HVAC_MODES } from '../types'
 import { EntityAdapter } from '../adapters'
 import { getModeLabelPresentation } from '../modeLabelLayout'
@@ -39,6 +40,9 @@ export default function renderModeType({
   }
 
   const modeAttribute = type === 'hvac' ? null : adapter.getModePayloadKey(type)
+  const disabled = !isEntityAvailable(
+    options.entity ? hass?.states?.[options.entity] : entity
+  )
   let localizePrefix = modeAttribute
     ? `state_attributes.${adapter.getLocalizationDomain()}.${modeAttribute}.`
     : ''
@@ -259,17 +263,20 @@ export default function renderModeType({
             <div
               class="mode-item ${modeClass} ${labelLayoutClass} ${value === mode ? 'active' : ''}"
               role="button"
-              tabindex="0"
+              tabindex=${disabled ? -1 : 0}
+              aria-disabled=${String(disabled)}
               aria-pressed=${value === mode ? 'true' : 'false'}
               aria-label=${name || value}
               title=${tooltip}
-              @click=${() => setMode(type, value)}
+              @click=${() => {
+                if (!disabled) setMode(type, value)
+              }}
               @keydown=${(e: KeyboardEvent) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                setMode(type, value)
-              }
-            }}
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  if (!disabled) setMode(type, value)
+                }
+              }}
             >
               ${maybeRenderIcon(icon, iconConfigured)}
               ${renderModeLabel(String(value), displayName)}

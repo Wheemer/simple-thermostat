@@ -219,7 +219,8 @@ test('entity row template can use an attribute value as a top-level variable', (
     details: {
       heading: 'Outside',
       attribute: 'temperature',
-      template: '{{((temperature - 32) * 5 / 9)|formatNumber({decimals: 1})}} °C',
+      template:
+        '{{((temperature - 32) * 5 / 9)|formatNumber({decimals: 1})}} °C',
     },
     openEntityPopover: () => undefined,
     localize: (value: string) => value,
@@ -576,6 +577,13 @@ test('entity display button calls the entity action for momentary domains', () =
     hass: {
       callService,
       formatEntityState: () => 'Idle',
+      states: {
+        'button.restart_hvac': {
+          entity_id: 'button.restart_hvac',
+          state: 'idle',
+          attributes: {},
+        },
+      },
     },
     state: {
       entity_id: 'button.restart_hvac',

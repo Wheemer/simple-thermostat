@@ -12,6 +12,7 @@ import getFanModeIcon from './fanModeIcon'
 import formatNumber from './formatNumber'
 import fireEvent from './fireEvent'
 import renderHeader from './components/header'
+import { isEntityAvailable } from './entityAvailability'
 import renderEntities from './components/entities'
 import renderModeType from './components/modeType'
 import renderFooter from './components/footer'
@@ -565,6 +566,7 @@ export default class SimpleThermostat extends LitElement {
   _setpointDebounce = SETPOINT_DEBOUNCE_TIMEOUT
 
   _sendSetpointValues(update: PendingSetpointUpdate) {
+    if (!isEntityAvailable(this._hass?.states?.[update.entity])) return
     const { domain, service, data = {} } = update.service
     this._callAction(`${domain}.${service}`, {
       entity_id: update.entity,
@@ -1015,6 +1017,7 @@ export default class SimpleThermostat extends LitElement {
                     stepLayout,
                     isOff: entity.state === HVAC_MODES.OFF,
                     disableSteppers:
+                      !isEntityAvailable(entity) ||
                       this.config.disable_setpoint_change === true ||
                       (entityDomain === 'climate' &&
                         entity.state === HVAC_MODES.OFF &&
@@ -1057,6 +1060,7 @@ export default class SimpleThermostat extends LitElement {
 
   toggleEntityChanged = (ev: Event, entityId?: string) => {
     if (!this.header || !entityId) return
+    if (!isEntityAvailable(this._hass?.states?.[entityId])) return
 
     const el = ev.target as HTMLInputElement
     this._callAction(`homeassistant.turn_${el.checked ? 'on' : 'off'}`, {
@@ -1065,6 +1069,7 @@ export default class SimpleThermostat extends LitElement {
   }
 
   toggleFooterEntity = (entityId: string, checked: boolean) => {
+    if (!isEntityAvailable(this._hass?.states?.[entityId])) return
     this._callAction(`homeassistant.turn_${checked ? 'on' : 'off'}`, {
       entity_id: entityId,
     })
@@ -1247,6 +1252,8 @@ export default class SimpleThermostat extends LitElement {
     minValue: number | null,
     maxValue: number | null
   ) {
+    if (!isEntityAvailable(this._hass?.states?.[this.config.entity]))
+      return false
     const { min, max } = this._setpointBounds(field, minValue, maxValue)
     const rawValue = this._values[field]
 
@@ -1375,6 +1382,7 @@ export default class SimpleThermostat extends LitElement {
   }
 
   setTemperature(change: number, field: string, baseValue?: number) {
+    if (!isEntityAvailable(this._hass?.states?.[this.config.entity])) return
     this._updatingValues = true
     if (this._updatingValuesTimeout) {
       clearTimeout(this._updatingValuesTimeout)
@@ -1415,6 +1423,7 @@ export default class SimpleThermostat extends LitElement {
         fireEvent(this, 'haptic', 'light')
         return
       }
+      if (!isEntityAvailable(this._hass?.states?.[this.config.entity])) return
       if (type === MODES.STATE) {
         this._callAction(`${adapter.getLocalizationDomain()}.turn_${mode}`, {
           entity_id: this.config.entity,

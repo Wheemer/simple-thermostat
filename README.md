@@ -221,6 +221,11 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
   </thead>
   <tbody>
     <tr>
+      <td rowspan="2" nowrap><strong>v4.3.6</strong></td>
+      <td>Keeps available header toggles, footer toggles, extra-entity controls, and select helpers usable when the main thermostat is unavailable or unknown, including in the multi-card.</td>
+    </tr>
+    <tr><td>Disables controls according to their own entity's availability and prevents queued setpoint changes from being sent after the thermostat goes unavailable. No new configuration is required.</td></tr>
+    <tr>
       <td rowspan="10" nowrap><strong>v4.3.5</strong></td>
       <td>Handles empty and structured extra-entity attributes safely, and preserves attribute, template, unit, and decimal formatting in compact displays.</td>
     </tr>

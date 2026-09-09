@@ -277,6 +277,8 @@ Dehumidifiers use the Home Assistant `humidifier` domain.
 
 ## Header
 
+Header toggles follow their own entity's availability. A working power switch stays usable when the main thermostat is unavailable or unknown; the thermostat's own setpoint and mode controls remain disabled. The same applies to independent footer toggles, extra-entity controls, and configured select helpers. No additional option is required.
+
 Hide the header:
 
 ```yaml

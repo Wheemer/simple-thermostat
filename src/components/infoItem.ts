@@ -1,4 +1,5 @@
 import { html, nothing } from 'lit'
+import { isEntityAvailable } from '../entityAvailability'
 import formatNumber from '../formatNumber'
 import { appendUnit } from '../unitFormat'
 import { LooseObject } from '../types'
@@ -44,6 +45,7 @@ interface InfoItemOptions {
 }
 
 function toggleEntity(hass, entityId: string, checked: boolean) {
+  if (!isEntityAvailable(hass.states?.[entityId])) return
   const service = `turn_${checked ? 'on' : 'off'}`
   if (typeof hass.performAction === 'function') {
     hass.performAction({
@@ -60,6 +62,7 @@ function safeClass(value: unknown) {
 }
 
 function callEntityAction(hass, entityId: string, domain: string) {
+  if (!isEntityAvailable(hass.states?.[entityId])) return
   if (TOGGLE_DOMAINS.includes(domain)) {
     const checked = hass.states?.[entityId]?.state !== 'on'
     toggleEntity(hass, entityId, checked)
@@ -362,6 +365,7 @@ export default function renderInfoItem({
         <button
           class="entity-action ${entityClasses} ${active ? 'active' : ''}"
           type="button"
+          ?disabled=${supportsAction && !isEntityAvailable(state)}
           title=${entityTooltip}
           aria-pressed=${isToggleEntity ? String(active) : nothing}
           @click=${() =>
@@ -403,6 +407,7 @@ export default function renderInfoItem({
         <div class="entity-value ${entityClasses}">
           <ha-switch
             .checked=${state.state === 'on'}
+            .disabled=${!isEntityAvailable(state)}
             @change=${(ev: Event) =>
               toggleEntity(
                 hass,
