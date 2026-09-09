@@ -221,7 +221,7 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
   </thead>
   <tbody>
     <tr>
-      <td rowspan="9" nowrap><strong>v4.3.5</strong></td>
+      <td rowspan="10" nowrap><strong>v4.3.5</strong></td>
       <td>Handles empty and structured extra-entity attributes safely, and preserves attribute, template, unit, and decimal formatting in compact displays.</td>
     </tr>
     <tr><td>Keeps configured helper controls from falling back to controlling the thermostat when the helper is unavailable.</td></tr>
@@ -232,6 +232,7 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
     <tr><td>Preserves conditional embedded CSS and cascade order, and corrects relative-time template rendering.</td></tr>
     <tr><td>Remembers observed group activity across reloads without treating ordinary sensor updates as new activity.</td></tr>
     <tr><td>Restores centered entity information while retaining narrow-card overflow handling. Includes the fixes from the withdrawn v4.3.4 pre-release.</td></tr>
+    <tr><td>Updates build and test dependencies js-yaml and SVGO to resolve three security advisories.</td></tr>
     <tr>
       <td nowrap><strong>v4.3.3</strong></td>
       <td>Restores balanced spacing between extra entity rows and a single vertical setpoint control.</td>

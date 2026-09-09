@@ -63,13 +63,13 @@
   },
   "overrides": {
     "@babel/core": "7.29.7",
-    "js-yaml": "3.15.1",
+    "js-yaml": "3.15.2",
     "minimatch@3.1.5": {
       "brace-expansion": "1.1.18"
     },
     "minimatch@9.0.9": {
       "brace-expansion": "2.1.4"
     },
-    "svgo": "2.8.3"
+    "svgo": "2.8.4"
   }
 }
