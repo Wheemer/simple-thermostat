@@ -221,6 +221,18 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
   </thead>
   <tbody>
     <tr>
+      <td rowspan="9" nowrap><strong>v4.4.0</strong></td>
+      <td>Stable roll-up of the v4.3.1 through v4.3.7 pre-release improvements, including the corrected layout from v4.3.5. Existing configuration remains supported.</td>
+    </tr>
+    <tr><td>Improves setpoint updates across reconfiguration and reconnection, prevents dual heat/cool targets crossing, and keeps pending changes attached to the correct entity. Includes work adapted from <a href="https://github.com/duczz/ha-simple-thermostat">Martin Müller (@duczz)</a>.</td></tr>
+    <tr><td>Adds optional target locking, inspired by <a href="https://github.com/nervetattoo/simple-thermostat/pull/423">@temuccio</a>, and press-and-hold step controls, inspired by <a href="https://github.com/Ava-AgentOne/simple-thermostat-card/commit/3ab89cae5a4b7ebed8bb62b2c0a512ba203b296b">Esam / @Ava-AgentOne</a>.</td></tr>
+    <tr><td>Keeps independent header/footer toggles, extra-entity controls, and select helpers usable when the thermostat is offline, while respecting each control's own availability.</td></tr>
+    <tr><td>Improves balanced entity/setpoint spacing, narrow-card overflow handling, compact entity formatting, and relative-time templates.</td></tr>
+    <tr><td>Improves multi-card activity tracking, remembered activity across reloads, embedded sizing, and isolation of each card's custom styling.</td></tr>
+    <tr><td>Adds editor reordering for extra entities, footer controls, and group cards; preserves configured helpers, control order, and header overrides during unrelated edits.</td></tr>
+    <tr><td>Adds editor suggestions for related device entities, inspired by <a href="https://github.com/priyam13coding/simple-compact-thermostat-card/commit/a7da7839d9304982f24a364dc3face66f6554492">@priyam13coding</a>, and improves narrow editor layouts.</td></tr>
+    <tr><td>Refreshes configuration documentation, updates dependencies including js-yaml and SVGO security fixes, and adds OpenSSF Scorecard checks.</td></tr>
+    <tr>
       <td rowspan="4" nowrap><strong>v4.3.7</strong></td>
       <td>Adds up/down controls for reordering extra entity rows, footer controls, and cards in the multi-card editor without losing their settings.</td>
     </tr>
