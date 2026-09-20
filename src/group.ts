@@ -60,6 +60,7 @@ interface ActivityCandidate {
   timestamp: number
   activeRank: number
   observed?: boolean
+  stateTransition?: boolean
 }
 
 interface StoredSelection {
@@ -131,16 +132,18 @@ function normalizeTarget(target: GroupTargetConfig): GroupTarget | null {
   if (!target?.entity) return null
 
   const { entity, name, icon, ...config } = target
-  const header =
+  let header =
     typeof config.header === 'object' && config.header
       ? { ...config.header }
-      : {}
+      : undefined
 
-  if (name && config.header !== false && typeof header.name === 'undefined') {
+  if (name && config.header !== false && typeof header?.name === 'undefined') {
+    header ??= {}
     header.name = name
   }
 
-  if (icon && config.header !== false && typeof header.icon === 'undefined') {
+  if (icon && config.header !== false && typeof header?.icon === 'undefined') {
+    header ??= {}
     header.icon = icon
   }
 
@@ -150,7 +153,11 @@ function normalizeTarget(target: GroupTargetConfig): GroupTarget | null {
       type: config.type ?? `custom:${CARD_NAME}`,
       ...config,
       entity,
-      ...(config.header === false ? { header: false } : { header }),
+      ...(config.header === false
+        ? { header: false }
+        : header
+          ? { header }
+          : {}),
     },
   }
 }
@@ -175,6 +182,13 @@ export default class SimpleThermostatGroup extends LitElement {
   private persistedActivityApplied = false
   private lastManualSelectionAt = 0
   private autoSelectResumeTimer?: number
+  private embeddedResizeObserver?: ResizeObserver
+  private resizeObservedSelector?: Element
+  private resizeObservedCard?: Element
+  private presentationResizeListenersAttached = false
+  private readonly handlePresentationResize = () => {
+    this.syncEmbeddedPresentation()
+  }
 
   static override get styles() {
     return css`
@@ -547,7 +561,7 @@ export default class SimpleThermostatGroup extends LitElement {
         position: absolute;
         z-index: 5;
         top: calc(100% + 4px);
-        right: 0;
+        inset-inline-end: 0;
         min-width: min(280px, 100%);
         max-width: 100%;
         max-height: min(320px, 60vh);
@@ -572,7 +586,7 @@ export default class SimpleThermostatGroup extends LitElement {
         width: 100%;
         min-height: 36px;
         padding: 6px 8px;
-        text-align: left;
+        text-align: start;
         font: inherit;
         cursor: pointer;
       }
@@ -603,6 +617,10 @@ export default class SimpleThermostatGroup extends LitElement {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      :host-context([dir='rtl']) .group-nav ha-icon {
+        transform: scaleX(-1);
       }
 
       .embedded-card-host {
@@ -888,6 +906,12 @@ export default class SimpleThermostatGroup extends LitElement {
     this.syncTitleFit()
   }
 
+  override connectedCallback() {
+    super.connectedCallback()
+    this.attachPresentationResizeListeners()
+    this.resumeAutoSelectAfterReconnect()
+  }
+
   getCardSize() {
     if (!this.config || !this.targets.length) return 1
 
@@ -911,7 +935,28 @@ export default class SimpleThermostatGroup extends LitElement {
   override disconnectedCallback() {
     this.clearOutsideClickListener()
     this.clearAutoSelectResumeTimer()
+    this.clearEmbeddedResizeObserver()
+    this.detachPresentationResizeListeners()
     super.disconnectedCallback()
+  }
+
+  private attachPresentationResizeListeners() {
+    if (this.presentationResizeListenersAttached) return
+
+    window.addEventListener('resize', this.handlePresentationResize)
+    window.addEventListener('orientationchange', this.handlePresentationResize)
+    this.presentationResizeListenersAttached = true
+  }
+
+  private detachPresentationResizeListeners() {
+    if (!this.presentationResizeListenersAttached) return
+
+    window.removeEventListener('resize', this.handlePresentationResize)
+    window.removeEventListener(
+      'orientationchange',
+      this.handlePresentationResize
+    )
+    this.presentationResizeListenersAttached = false
   }
 
   private getInitialSelection(
@@ -1053,6 +1098,32 @@ export default class SimpleThermostatGroup extends LitElement {
     this.autoSelectResumeTimer = undefined
   }
 
+  private scheduleAutoSelectResume(delay: number) {
+    this.clearAutoSelectResumeTimer()
+    this.autoSelectResumeTimer = window.setTimeout(
+      () => {
+        this.autoSelectResumeTimer = undefined
+        this.lastManualSelectionAt = 0
+
+        if (!this.isRecentActivityAutoSelectEnabled() || this.menuOpen) return
+
+        this.selectMostRecentStateActivity()
+      },
+      Math.max(0, delay)
+    )
+  }
+
+  private resumeAutoSelectAfterReconnect() {
+    if (
+      !this.lastManualSelectionAt ||
+      !this.isRecentActivityAutoSelectEnabled()
+    )
+      return
+
+    const elapsed = Date.now() - this.lastManualSelectionAt
+    this.scheduleAutoSelectResume(this.getAutoSelectManualPauseMs() - elapsed)
+  }
+
   private getSelectedTarget() {
     return (
       this.targets.find((target) => target.entity === this.selectedEntity) ??
@@ -1158,14 +1229,7 @@ export default class SimpleThermostatGroup extends LitElement {
 
     if (!this.isRecentActivityAutoSelectEnabled()) return
 
-    this.autoSelectResumeTimer = window.setTimeout(() => {
-      this.autoSelectResumeTimer = undefined
-      this.lastManualSelectionAt = 0
-
-      if (!this.isRecentActivityAutoSelectEnabled() || this.menuOpen) return
-
-      this.selectMostRecentStateActivity()
-    }, this.getAutoSelectManualPauseMs())
+    this.scheduleAutoSelectResume(this.getAutoSelectManualPauseMs())
   }
 
   private getActivitySignature(target: GroupTarget) {
@@ -1199,7 +1263,14 @@ export default class SimpleThermostatGroup extends LitElement {
         this.activityRecords.get(target.entity)?.observed === true &&
         this.activityRecords.get(target.entity)?.signature ===
           this.getActivitySignature(target),
+      stateTransition: this.getStateTransitionTimestamp(target) === timestamp,
     }
+  }
+
+  private getStateTransitionTimestamp(target: GroupTarget) {
+    const value = this.hass?.states?.[target.entity]?.last_changed
+    const timestamp = typeof value === 'string' ? Date.parse(value) : NaN
+    return Number.isFinite(timestamp) ? timestamp : 0
   }
 
   private isBetterActivityCandidate(
@@ -1208,8 +1279,23 @@ export default class SimpleThermostatGroup extends LitElement {
   ) {
     if (!selected) return true
     if (candidate.observed || selected.observed) {
-      if (candidate.observed !== selected.observed)
+      if (candidate.observed !== selected.observed) {
+        if (
+          !candidate.observed &&
+          candidate.stateTransition &&
+          candidate.timestamp > selected.timestamp
+        ) {
+          return true
+        }
+        if (
+          !selected.observed &&
+          selected.stateTransition &&
+          selected.timestamp > candidate.timestamp
+        ) {
+          return false
+        }
         return candidate.observed === true
+      }
       return candidate.timestamp > selected.timestamp
     }
     if (candidate.activeRank !== selected.activeRank) {
@@ -1657,6 +1743,39 @@ export default class SimpleThermostatGroup extends LitElement {
       )
   }
 
+  private clearEmbeddedResizeObserver() {
+    this.embeddedResizeObserver?.disconnect()
+    this.embeddedResizeObserver = undefined
+    this.resizeObservedSelector = undefined
+    this.resizeObservedCard = undefined
+  }
+
+  private syncEmbeddedResizeObserver(
+    selector: HTMLElement | null,
+    embedded: HTMLElement
+  ) {
+    if (typeof ResizeObserver === 'undefined' || !selector) {
+      this.clearEmbeddedResizeObserver()
+      return
+    }
+    if (
+      this.embeddedResizeObserver &&
+      this.resizeObservedSelector === selector &&
+      this.resizeObservedCard === embedded
+    ) {
+      return
+    }
+
+    this.clearEmbeddedResizeObserver()
+    this.embeddedResizeObserver = new ResizeObserver(() =>
+      this.applyEmbeddedPresentation()
+    )
+    this.embeddedResizeObserver.observe(selector)
+    this.embeddedResizeObserver.observe(embedded)
+    this.resizeObservedSelector = selector
+    this.resizeObservedCard = embedded
+  }
+
   private applyEmbeddedPresentation() {
     const host = this.renderRoot.querySelector(
       '.embedded-card-host'
@@ -1667,6 +1786,8 @@ export default class SimpleThermostatGroup extends LitElement {
     const embedded = this.embeddedCard as HTMLElement | undefined
 
     if (!host || !embedded) return
+
+    this.syncEmbeddedResizeObserver(selector, embedded)
 
     host.style.removeProperty('--st-group-cropped-header-height')
     embedded.style.setProperty(
@@ -2004,6 +2125,18 @@ export default class SimpleThermostatGroup extends LitElement {
 
     const target = this.getSelectedTarget()
     const label = this.getTargetLabel(target)
+    const previousLabel = this.localizeNavigationLabel(
+      'ui.common.previous',
+      'Previous device'
+    )
+    const nextLabel = this.localizeNavigationLabel(
+      'ui.common.next',
+      'Next device'
+    )
+    const menuLabel = this.localizeNavigationLabel(
+      'ui.common.open_menu',
+      'Open menu'
+    )
 
     return html`
       <div class="group-selector">
@@ -2024,7 +2157,7 @@ export default class SimpleThermostatGroup extends LitElement {
           <button
             class="group-nav previous"
             type="button"
-            aria-label="Previous device"
+            aria-label=${previousLabel}
             ?disabled=${this.targets.length < 2}
             @click=${() => this.selectOffset(-1)}
           >
@@ -2033,7 +2166,7 @@ export default class SimpleThermostatGroup extends LitElement {
           <button
             class="group-nav next"
             type="button"
-            aria-label="Next device"
+            aria-label=${nextLabel}
             ?disabled=${this.targets.length < 2}
             @click=${() => this.selectOffset(1)}
           >
@@ -2042,7 +2175,7 @@ export default class SimpleThermostatGroup extends LitElement {
           <button
             class="group-menu"
             type="button"
-            aria-label="Select device"
+            aria-label=${menuLabel}
             aria-haspopup="menu"
             aria-expanded=${this.menuOpen ? 'true' : 'false'}
             ?disabled=${this.targets.length < 2}
@@ -2054,6 +2187,13 @@ export default class SimpleThermostatGroup extends LitElement {
         ${this.renderPicker()}
       </div>
     `
+  }
+
+  private localizeNavigationLabel(key: string, fallback: string) {
+    const localized = this.hass?.localize?.(key)
+    return typeof localized === 'string' && localized && localized !== key
+      ? localized
+      : fallback
   }
 
   override render() {

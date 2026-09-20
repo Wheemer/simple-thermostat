@@ -127,6 +127,58 @@ test('does not duplicate entity unit from Home Assistant formatted state', () =>
   expect(value.trim()).toBe('20.44 °C')
 })
 
+test('custom units replace only the displayed suffix without conversion', () => {
+  const formatEntityState = jest.fn(() => '20.44 °C')
+  const state = {
+    entity_id: 'sensor.average_temperature',
+    state: '20.44',
+    attributes: {
+      unit_of_measurement: '°C',
+    },
+  }
+  const result = renderInfoItem({
+    hide: false,
+    hass: { formatEntityState },
+    state,
+    details: { heading: false, unit: '°F' },
+    openEntityPopover: () => undefined,
+  })
+
+  render(result, document.body)
+  const value = document.body.querySelector('div').textContent
+
+  expect(value.trim()).toBe('20.44 °F')
+  expect(formatEntityState).toHaveBeenCalledWith({
+    ...state,
+    attributes: {
+      ...state.attributes,
+      unit_of_measurement: undefined,
+    },
+  })
+})
+
+test('custom units preserve formatted attribute values without native units', () => {
+  const result = renderInfoItem({
+    hide: false,
+    hass: { locale: { language: 'en', number_format: 'none' } },
+    state: {
+      entity_id: 'sensor.outside',
+      state: 'cloudy',
+      attributes: { temperature: 22.345 },
+    },
+    details: {
+      heading: false,
+      attribute: 'temperature',
+      decimals: 1,
+      unit: '°C',
+    },
+  })
+
+  render(result, document.body)
+
+  expect(document.body.querySelector('div').textContent.trim()).toBe('22.3 °C')
+})
+
 test('falls back to percent for humidity rows without an entity unit', () => {
   const result = renderInfoItem({
     hide: false,

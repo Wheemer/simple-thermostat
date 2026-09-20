@@ -102,6 +102,10 @@ export const MODE_ICONS = {
   narrow: 'mdi:arrow-collapse-horizontal',
   split: 'mdi:arrow-split-vertical',
   none: 'mdi:circle-off-outline',
+  frost: 'mdi:snowflake',
+  frost_protection: 'mdi:snowflake',
+  'frost-protection': 'mdi:snowflake',
+  frost_protect: 'mdi:snowflake',
   away: 'mdi:home-export-outline',
   eco: 'mdi:leaf',
   boost: 'mdi:weather-windy',
@@ -254,7 +258,9 @@ function getLegacyHeaderIcon(entity: HAState): Icon {
   return getEntityAction(entity) ? STATE_ICONS : MODE_ICONS
 }
 
-function getClimateHeaderIcons(entity: HAState): typeof STATE_ICONS | undefined {
+function getClimateHeaderIcons(
+  entity: HAState
+): typeof STATE_ICONS | undefined {
   const [entityDomain] = entity.entity_id.split('.')
   if (entityDomain !== 'climate') return undefined
 
@@ -269,7 +275,9 @@ function getClimateHeaderIcons(entity: HAState): typeof STATE_ICONS | undefined 
     hvacModes.includes('fan_only') ||
     ['cool', 'cooling', 'dry', 'fan_only', 'fan'].includes(modeOrAction)
 
-  return isCoolingMode ? CLIMATE_COOLING_STATE_ICONS : CLIMATE_HEATING_STATE_ICONS
+  return isCoolingMode
+    ? CLIMATE_COOLING_STATE_ICONS
+    : CLIMATE_HEATING_STATE_ICONS
 }
 
 function shouldSlashOffIcon(entity: HAState, icon: Icon) {
@@ -277,7 +285,7 @@ function shouldSlashOffIcon(entity: HAState, icon: Icon) {
 
   const resolvedIcon =
     typeof icon === 'object'
-      ? icon[getEntityAction(entity) || entity.state] ?? false
+      ? (icon[getEntityAction(entity) || entity.state] ?? false)
       : icon
 
   if (typeof resolvedIcon !== 'string') return false

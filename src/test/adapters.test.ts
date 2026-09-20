@@ -115,6 +115,17 @@ test('fan presets include default speed icons', () => {
   expect(getModeName('Low')).toBe('Low')
 })
 
+test.each([
+  'frost',
+  'Frost',
+  'frost_protection',
+  'frost-protection',
+  'frost protection',
+  'frost protect',
+])('frost preset %s has a default snowflake icon', (preset) => {
+  expect(getModeIcon(preset)).toBe('mdi:snowflake')
+})
+
 test('vane presets include default position icons without overriding fan mid', () => {
   expect(MODE_ICONS.swing).toBe('mdi:arrow-oscillating')
   expect(MODE_ICONS.wide).toBe('mdi:arrow-expand-horizontal')
@@ -125,7 +136,9 @@ test('vane presets include default position icons without overriding fan mid', (
 
 test('fan adapter maps oscillating payload as boolean', () => {
   expect(fanAdapter.transformModePayloadValue('oscillating', 'true')).toBe(true)
-  expect(fanAdapter.transformModePayloadValue('oscillating', 'false')).toBe(false)
+  expect(fanAdapter.transformModePayloadValue('oscillating', 'false')).toBe(
+    false
+  )
 })
 
 test('humidifier adapter maps humidity setpoint and current value', () => {

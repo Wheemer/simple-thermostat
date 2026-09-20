@@ -1476,6 +1476,63 @@ test('configured mode order can be supplied explicitly for numeric options', () 
   ])
 })
 
+test.each([
+  { frost: {}, icons: true, expected: 'mdi:snowflake' },
+  {
+    frost: { icon: 'mdi:shield-snowflake' },
+    icons: true,
+    expected: 'mdi:shield-snowflake',
+  },
+  { frost: { icon: false }, icons: true, expected: undefined },
+  { frost: {}, icons: false, expected: undefined },
+])(
+  'frost preset renders its default icon while respecting overrides: %j',
+  async ({ frost, icons, expected }) => {
+    const card = createCard()
+    document.body.appendChild(card)
+    card.setConfig({
+      entity: 'climate.room',
+      header: false,
+      layout: { mode: { icons } },
+      control: { preset: { frost } },
+    } as any)
+    card.hass = {
+      states: {
+        'climate.room': {
+          entity_id: 'climate.room',
+          state: 'heat',
+          attributes: {
+            preset_modes: [
+              'none',
+              'frost',
+              'away',
+              'eco',
+              'comfort',
+              'boost',
+              'home',
+              'sleep',
+              'activity',
+            ],
+            preset_mode: 'frost',
+            temperature: 7,
+            current_temperature: 10,
+          },
+        },
+      },
+      config: { unit_system: { temperature: 'C' } },
+      localize: (key: string) => key,
+    }
+    await card.updateComplete
+    const button = card.shadowRoot?.querySelector(
+      '.modes.preset .mode-item.frost'
+    )
+    expect(button).not.toBeNull()
+    expect(button?.getAttribute('aria-pressed')).toBe('true')
+    expect((button?.querySelector('ha-icon') as any)?.icon).toBe(expected)
+    card.remove()
+  }
+)
+
 test('swing controls preserve explicit icon config without enabling default swing icons', async () => {
   document.body.innerHTML = ''
   const card = createCard()
@@ -3320,4 +3377,323 @@ test('setpoint tap opens the configured entity more-info by default', async () =
     entityId: 'climate.living_room',
   })
   jest.useRealTimers()
+})
+
+test('a broken entity row template does not blank the card', async () => {
+  document.body.innerHTML = ''
+  const consoleError = jest.spyOn(console, 'error').mockImplementation()
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+    entities: [
+      {
+        entity: 'sensor.broken',
+        name: 'Broken row',
+        template: '{{missing.function()}}',
+      },
+      { entity: 'sensor.healthy', name: 'Healthy row' },
+    ],
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: { temperature: 20, current_temperature: 19 },
+      },
+      'sensor.broken': {
+        entity_id: 'sensor.broken',
+        state: 'broken fallback',
+        attributes: {},
+      },
+      'sensor.healthy': {
+        entity_id: 'sensor.healthy',
+        state: 'healthy value',
+        attributes: {},
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+    localize: (key: string) => key,
+    formatEntityState: (entity: any) => entity.state,
+  }
+
+  await card.updateComplete
+
+  expect(card.shadowRoot?.querySelector('ha-card')).not.toBeNull()
+  expect(card.shadowRoot?.textContent).toContain('broken fallback')
+  expect(card.shadowRoot?.textContent).toContain('healthy value')
+  consoleError.mockRestore()
+})
+
+test('null dual sibling neither constrains nor enters a setpoint payload', () => {
+  const performAction = jest.fn()
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.dual',
+    setpoint_debounce_ms: 0,
+    setpoints: {
+      target_temp_low: {},
+      target_temp_high: {},
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.dual': {
+        entity_id: 'climate.dual',
+        state: 'heat_cool',
+        attributes: {
+          target_temp_low: 20,
+          target_temp_high: null,
+          min_temp: 7,
+          max_temp: 35,
+        },
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+    performAction,
+  }
+
+  expect(card._setpointBounds('target_temp_low', 7, 35)).toEqual({
+    min: 7,
+    max: 35,
+  })
+  card.setTemperature(1, 'target_temp_low')
+
+  expect(performAction).toHaveBeenCalledWith({
+    action: 'climate.set_temperature',
+    data: {
+      entity_id: 'climate.dual',
+      target_temp_low: 21,
+    },
+  })
+})
+
+test('undefined dual sibling does not enter a setpoint payload', () => {
+  const performAction = jest.fn()
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.dual',
+    setpoint_debounce_ms: 0,
+    setpoints: {
+      target_temp_low: {},
+      target_temp_high: {},
+    },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.dual': {
+        entity_id: 'climate.dual',
+        state: 'heat_cool',
+        attributes: {
+          target_temp_low: 20,
+          target_temp_high: undefined,
+          min_temp: 7,
+          max_temp: 35,
+        },
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+    performAction,
+  }
+
+  card.setTemperature(1, 'target_temp_low')
+
+  expect(performAction).toHaveBeenCalledWith({
+    action: 'climate.set_temperature',
+    data: {
+      entity_id: 'climate.dual',
+      target_temp_low: 21,
+    },
+  })
+})
+
+test('pending dual update is discarded when the setpoint schema changes', () => {
+  jest.useFakeTimers()
+  const performAction = jest.fn()
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.dual',
+    setpoint_debounce_ms: 5000,
+  } as any)
+  const hass = {
+    states: {
+      'climate.dual': {
+        entity_id: 'climate.dual',
+        state: 'heat_cool',
+        attributes: {
+          target_temp_low: 20,
+          target_temp_high: 24,
+          temperature: null,
+        },
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+    performAction,
+  }
+  card.hass = hass
+  card.setTemperature(1, 'target_temp_low')
+
+  card.hass = {
+    ...hass,
+    states: {
+      'climate.dual': {
+        entity_id: 'climate.dual',
+        state: 'heat',
+        attributes: { temperature: 22 },
+      },
+    },
+  }
+
+  expect(card._values).toEqual({ temperature: 22 })
+  expect((card as any)._pendingSetpointUpdate).toBeNull()
+  jest.runOnlyPendingTimers()
+  expect(performAction).not.toHaveBeenCalled()
+  jest.useRealTimers()
+})
+
+test('long debounce continues from the pending optimistic value', () => {
+  jest.useFakeTimers()
+  const card = createCard()
+  card.setConfig({
+    entity: 'climate.living_room',
+    setpoint_debounce_ms: 30000,
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: { temperature: 20 },
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+    performAction: jest.fn(),
+  }
+
+  card.setTemperature(1, 'temperature')
+  jest.advanceTimersByTime(10000)
+  expect(card._values.temperature).toBe(20)
+
+  card.setTemperature(1, 'temperature')
+
+  expect(card._values.temperature).toBe(22)
+  expect((card as any)._pendingSetpointUpdate.values).toEqual({
+    temperature: 22,
+  })
+  card.disconnectedCallback()
+  jest.useRealTimers()
+})
+
+test('preset metadata alone does not hide every option', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: { preset: { hide_off_when_off: true } },
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'off',
+        attributes: {
+          preset_modes: ['off', 'eco', 'comfort'],
+          preset_mode: 'off',
+          temperature: 20,
+        },
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  expect(card.modes[0].list.map(({ value }) => value)).toEqual([
+    'off',
+    'eco',
+    'comfort',
+  ])
+  expect(card.modes[0].list[0].hide_when_off).toBe(true)
+})
+
+test('invalid decimal settings fall back before render', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.living_room',
+    decimals: -1,
+    entities: [{ entity: 'sensor.detail', decimals: 1000 }],
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'heat',
+        attributes: { temperature: 20.25, current_temperature: 19.25 },
+      },
+      'sensor.detail': {
+        entity_id: 'sensor.detail',
+        state: '18.25',
+        attributes: {},
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+    localize: (key: string) => key,
+  }
+
+  await expect(card.updateComplete).resolves.toBeDefined()
+  expect(card.config.decimals).toBe(1)
+  expect(card.entities[0].decimals).toBe(1)
+  expect(card.shadowRoot?.querySelector('ha-card')).not.toBeNull()
+})
+
+test('off fallback and setpoint steppers use available localizations', async () => {
+  const card = createCard()
+  document.body.appendChild(card)
+  card.setConfig({
+    entity: 'climate.living_room',
+    header: false,
+    control: false,
+  } as any)
+  card.hass = {
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'off',
+        attributes: {
+          temperature: null,
+          current_temperature: 19,
+          min_temp: 7,
+          max_temp: 30,
+        },
+      },
+    },
+    config: { unit_system: { temperature: 'C' } },
+    localize: (key: string) =>
+      ({
+        'component.climate.entity_component._.state.off': 'Localized off',
+        'ui.common.decrease': 'Localized decrease',
+        'ui.common.increase': 'Localized increase',
+        'ui.card.climate.target': 'Localized target',
+      })[key] ?? key,
+  }
+
+  await card.updateComplete
+
+  expect(
+    card.shadowRoot?.querySelector('.current--off')?.textContent
+  ).toContain('Localized off')
+  expect(
+    card.shadowRoot?.querySelector('.decrease')?.getAttribute('aria-label')
+  ).toBe('Localized decrease Localized target')
+  expect(
+    card.shadowRoot?.querySelector('.increase')?.getAttribute('aria-label')
+  ).toBe('Localized increase Localized target')
 })

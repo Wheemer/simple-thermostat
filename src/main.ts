@@ -45,6 +45,7 @@ const UPDATING_TIMEOUT = 10000
 const MISSING_ENTITY_GRACE_MS = 5000
 const SETPOINT_REPEAT_DELAY_MS = 500
 const SETPOINT_REPEAT_INTERVAL_MS = 250
+const MAX_DECIMALS = 100
 
 const SETPOINT_SIBLING: Record<string, { field: string; caps: 'min' | 'max' }> =
   {
@@ -55,7 +56,7 @@ const SETPOINT_SIBLING: Record<string, { field: string; caps: 'min' | 'max' }> =
 type PendingSetpointUpdate = {
   entity: string
   service: Service
-  values: object
+  values: Values
 }
 
 const MODE_TYPES: Array<string> = Object.values(MODES)
@@ -87,6 +88,33 @@ const CONTROL_ORDER = [
 ]
 const CONTROL_METADATA_KEYS = ['entity', 'hide_when_off', 'hide_off_when_off']
 
+function normalizeDecimals(value: unknown, fallback = DECIMALS) {
+  if (value === null || value === '' || typeof value === 'boolean') {
+    return fallback
+  }
+  const decimals = Number(value)
+  return Number.isInteger(decimals) && decimals >= 0 && decimals <= MAX_DECIMALS
+    ? decimals
+    : fallback
+}
+
+function haveSameFields(left: Values, right: Values) {
+  const leftFields = Object.keys(left).sort()
+  const rightFields = Object.keys(right).sort()
+  return (
+    leftFields.length === rightFields.length &&
+    leftFields.every((field, index) => field === rightFields[index])
+  )
+}
+
+function withoutNullSetpoints(values: Values) {
+  return Object.fromEntries(
+    Object.entries(values).filter(
+      ([, value]) => value !== null && typeof value !== 'undefined'
+    )
+  ) as Values
+}
+
 function getConfiguredEntities(config: CardConfig) {
   return config.entities ?? []
 }
@@ -108,7 +136,7 @@ function shouldShowModeControl(
   }
 
   const hasExplicitConfig = Object.keys(config).some(
-    (key) => !key.startsWith('_')
+    (key) => !key.startsWith('_') && !CONTROL_METADATA_KEYS.includes(key)
   )
   const hideUnlistedModes = type === MODES.PRESET
 
@@ -586,14 +614,24 @@ export default class SimpleThermostat extends LitElement {
     if (pendingUpdate) this._sendSetpointValues(pendingUpdate)
   }
 
-  _scheduleSetpointValues(values: object) {
+  _cancelPendingSetpointValues() {
+    if (this._setpointUpdateTimer) {
+      clearTimeout(this._setpointUpdateTimer)
+      this._setpointUpdateTimer = null
+    }
+    this._pendingSetpointUpdate = null
+  }
+
+  _scheduleSetpointValues(values: Values) {
     const wait = this._setpointDebounce
+    const payload = withoutNullSetpoints(values)
+    if (Object.keys(payload).length === 0) return
 
     if (wait <= 0) {
       this._sendSetpointValues({
         entity: this.config.entity,
         service: this.service,
-        values: { ...values },
+        values: payload,
       })
       return
     }
@@ -601,7 +639,7 @@ export default class SimpleThermostat extends LitElement {
     this._pendingSetpointUpdate = {
       entity: this.config.entity,
       service: this.service,
-      values: { ...values },
+      values: payload,
     }
     if (this._setpointUpdateTimer) {
       clearTimeout(this._setpointUpdateTimer)
@@ -665,6 +703,7 @@ export default class SimpleThermostat extends LitElement {
       decimals: DECIMALS,
       ...config,
     })
+    this.config.decimals = normalizeDecimals(this.config.decimals)
     const setpointDebounce = this._getSetpointDebounce(this.config)
     if (setpointDebounce !== this._setpointDebounce) {
       this._setpointDebounce = setpointDebounce
@@ -770,7 +809,11 @@ export default class SimpleThermostat extends LitElement {
       entity.state
     )
 
-    if (this._updatingValues && isEqual(values, this._values)) {
+    if (this._updatingValues && !haveSameFields(values, this._values)) {
+      this._cancelPendingSetpointValues()
+      this._clearOptimisticSetpointState()
+      this._values = values
+    } else if (this._updatingValues && isEqual(values, this._values)) {
       this._updatingValues = false
       if (this._updatingValuesTimeout) {
         clearTimeout(this._updatingValuesTimeout)
@@ -827,7 +870,15 @@ export default class SimpleThermostat extends LitElement {
     } else if (configuredEntities) {
       this.showEntities = true
       this.entities = configuredEntities.map(
-        ({ name, entity, attribute, template, unit = '', ...rest }) => {
+        ({
+          name,
+          entity,
+          attribute,
+          template,
+          unit = '',
+          decimals,
+          ...rest
+        }) => {
           let state
           const names = [name]
           if (entity) {
@@ -847,6 +898,14 @@ export default class SimpleThermostat extends LitElement {
             attribute,
             template,
             unit,
+            ...(typeof decimals !== 'undefined'
+              ? {
+                  decimals: normalizeDecimals(
+                    decimals,
+                    this.config.decimals ?? DECIMALS
+                  ),
+                }
+              : {}),
           } as Entity
         }
       )
@@ -874,6 +933,25 @@ export default class SimpleThermostat extends LitElement {
   localize = (label: string, prefix = '') => {
     const key = `${prefix}${label}`
     return this._hass.localize?.(key) || label
+  }
+
+  _localizeFirst(keys: Array<string>, fallback: string) {
+    for (const key of keys) {
+      const translated = this._hass.localize?.(key)
+      if (translated && translated !== key) return translated
+    }
+    return fallback
+  }
+
+  _getSetpointLabel(field: string) {
+    return (
+      this.config.label?.setpoint ??
+      this._hass.localize?.(
+        `ui.card.${getAdapter(this.config.entity).getLocalizationDomain()}.target`
+      ) ??
+      this._hass.localize?.('ui.card.climate.target_temperature') ??
+      this.localize(field, 'state_attributes.climate.')
+    )
   }
 
   override render({ _hide, _values, _updatingValues, config, entity } = this) {
@@ -1149,14 +1227,7 @@ export default class SimpleThermostat extends LitElement {
   renderSetpointLabel({ field }: SetpointRenderOptions) {
     if (this.config.hide?.setpoint_label === true) return nothing
 
-    const configuredLabel = this.config.label?.setpoint
-    const label =
-      configuredLabel ??
-      this._hass.localize?.(
-        `ui.card.${getAdapter(this.config.entity).getLocalizationDomain()}.target`
-      ) ??
-      this._hass.localize?.('ui.card.climate.target_temperature') ??
-      this.localize(field, 'state_attributes.climate.')
+    const label = this._getSetpointLabel(field)
 
     return html`<div class="current--label">${label}</div>`
   }
@@ -1193,13 +1264,19 @@ export default class SimpleThermostat extends LitElement {
       : row
         ? ICONS.PLUS
         : ICONS.UP
+    const actionLabel = this._localizeFirst(
+      decreasing
+        ? ['ui.common.decrease', 'ui.components.selectors.number.decrement']
+        : ['ui.common.increase', 'ui.components.selectors.number.increment'],
+      decreasing ? 'Decrease' : 'Increase'
+    )
 
     return html`
       <button
         type="button"
         ?disabled=${disabled}
         class="thermostat-trigger ${direction}"
-        aria-label=${`${decreasing ? 'Decrease' : 'Increase'} ${field}`}
+        aria-label=${`${actionLabel} ${this._getSetpointLabel(field)}`}
         @pointerdown=${(event: PointerEvent) =>
           this._startSetpointRepeat(
             event,
@@ -1232,7 +1309,11 @@ export default class SimpleThermostat extends LitElement {
     const relation = SETPOINT_SIBLING[field]
     if (!relation) return { min: minValue, max: maxValue }
 
-    const sibling = Number(this._values[relation.field])
+    const siblingValue = this._values[relation.field]
+    if (siblingValue === null || typeof siblingValue === 'undefined') {
+      return { min: minValue, max: maxValue }
+    }
+    const sibling = Number(siblingValue)
     if (!Number.isFinite(sibling)) return { min: minValue, max: maxValue }
 
     return relation.caps === 'max'
@@ -1337,7 +1418,13 @@ export default class SimpleThermostat extends LitElement {
     const showUnit = unit !== false && hasValue
     const showOffFallback = isOff && !hasValue
     const displayValue = showOffFallback
-      ? 'OFF'
+      ? this._localizeFirst(
+          [
+            'component.climate.entity_component._.state.off',
+            'component.climate.state._.off',
+          ],
+          'OFF'
+        )
       : formatNumber(value, {
           ...this.config,
           locale: this._hass.locale,
@@ -1393,9 +1480,14 @@ export default class SimpleThermostat extends LitElement {
       if (this._hass?.states?.[this.config.entity])
         this.updateFromHass(this._hass)
     }, UPDATING_TIMEOUT)
-    const previousValue = baseValue ?? this._values[field]
+    const pendingValue =
+      this._pendingSetpointUpdate?.entity === this.config.entity
+        ? this._pendingSetpointUpdate.values[field]
+        : undefined
+    const previousValue = baseValue ?? pendingValue ?? this._values[field]
     const newValue = Number(previousValue) + change
-    const { decimals } = this.config
+    if (!Number.isFinite(newValue)) return
+    const decimals = normalizeDecimals(this.config.decimals)
 
     this._values = {
       ...this._values,

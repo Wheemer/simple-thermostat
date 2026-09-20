@@ -175,6 +175,14 @@ function isEntityState(state: any): boolean {
   )
 }
 
+function removeFormattedUnit(value: unknown, unit: unknown) {
+  const formatted = String(value)
+  if (!unit || typeof unit !== 'string' || !formatted.endsWith(unit)) {
+    return formatted
+  }
+  return formatted.slice(0, -unit.length).trimEnd()
+}
+
 function renderInfoValue(
   state: any,
   details: InfoItemDetails,
@@ -237,7 +245,17 @@ function renderInfoValue(
         ? hass.formatEntityAttributeValue(state, attribute)
         : raw
       : typeof hass.formatEntityState === 'function'
-        ? hass.formatEntityState(state)
+        ? hass.formatEntityState(
+            unit
+              ? {
+                  ...state,
+                  attributes: {
+                    ...state.attributes,
+                    unit_of_measurement: undefined,
+                  },
+                }
+              : state
+          )
         : localize
           ? localize(
               String(raw),
@@ -255,7 +273,12 @@ function renderInfoValue(
       details.icon === 'mdi:water-percent')
       ? '%'
       : ''
-  return appendUnit(value, unit || stateUnit || humidityUnit || false, value)
+  const displayValue = unit ? removeFormattedUnit(value, stateUnit) : value
+  return appendUnit(
+    displayValue,
+    unit || stateUnit || humidityUnit || false,
+    String(value)
+  )
 }
 
 export default function renderInfoItem({

@@ -357,6 +357,59 @@ test('nested editor saves only values that differ from shared card settings', as
   })
 })
 
+test('nested editor persists clearing inherited step size and entity rows', async () => {
+  const editor = createEditor()
+  const configChanged = jest.fn()
+  editor.addEventListener('config-changed', configChanged)
+  editor.setConfig({
+    card: {
+      step_size: 0.5,
+      entities: [{ entity: 'sensor.living_room_temperature' }],
+    } as any,
+    cards: [{ entity: 'climate.living_room' }],
+  })
+
+  await editor.updateComplete
+  const configureButton = Array.from(
+    editor.shadowRoot?.querySelectorAll('ha-button') ?? []
+  ).find((button) => button.textContent?.includes('Configure')) as HTMLElement
+  configureButton.click()
+  await editor.updateComplete
+
+  const nested = editor.shadowRoot?.querySelector(
+    innerEditorTag
+  ) as TestSimpleThermostatEditor
+  nested.dispatchEvent(
+    new CustomEvent('config-changed', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        config: {
+          type: 'custom:simple-thermostat',
+          entity: 'climate.living_room',
+        },
+      },
+    })
+  )
+
+  const saved = configChanged.mock.calls.at(-1)?.[0].detail.config
+  expect(saved.cards[0]).toMatchObject({
+    entity: 'climate.living_room',
+    step_size: null,
+    entities: false,
+  })
+
+  editor.setConfig(saved)
+  await editor.updateComplete
+  const reloaded = editor.shadowRoot?.querySelector(
+    innerEditorTag
+  ) as TestSimpleThermostatEditor
+  expect(reloaded.config).toMatchObject({
+    step_size: null,
+    entities: false,
+  })
+})
+
 test('group editor toggles recent activity auto-select', async () => {
   const editor = createEditor()
   const configChanged = jest.fn()

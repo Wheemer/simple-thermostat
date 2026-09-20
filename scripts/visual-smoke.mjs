@@ -23,6 +23,8 @@ try {
       'hidden',
       'compact',
       'tabs',
+      'german',
+      'rtl',
       'unavailable',
       'unknown',
     ].map((variant) => ({
@@ -133,6 +135,9 @@ try {
     })
     await page.addScriptTag({ path: bundle })
     await page.evaluate((variant) => {
+      const german = variant === 'german'
+      const rtl = variant === 'rtl'
+      document.documentElement.dir = rtl ? 'rtl' : 'ltr'
       window.auditCalls = []
       const hass = {
         states: {
@@ -193,13 +198,30 @@ try {
           },
         },
         config: { unit_system: { temperature: '°C' } },
-        locale: { language: 'en' },
+        locale: {
+          language: german ? 'de' : rtl ? 'ar' : 'en',
+          number_format: german ? 'decimal_comma' : 'language',
+        },
         localize: (key) => {
-          const labels = {
-            'ui.card.climate.currently': 'Currently',
-            'ui.card.climate.target': 'Target',
-            'state_attributes.climate.hvac_action': 'State',
-          }
+          const labels = german
+            ? {
+                'ui.card.climate.currently': 'Aktuell',
+                'ui.card.climate.target': 'Zieltemperatur',
+                'state_attributes.climate.hvac_action': 'Status',
+                'component.climate.state._.heat_cool': 'Heizen/Kühlen',
+              }
+            : rtl
+              ? {
+                  'ui.card.climate.currently': 'حاليا',
+                  'ui.card.climate.target': 'الهدف',
+                  'state_attributes.climate.hvac_action': 'الحالة',
+                  'component.climate.state._.heat_cool': 'تدفئة وتبريد',
+                }
+              : {
+                  'ui.card.climate.currently': 'Currently',
+                  'ui.card.climate.target': 'Target',
+                  'state_attributes.climate.hvac_action': 'State',
+                }
           return labels[key] ?? key.split('.').at(-1)?.replaceAll('_', ' ')
         },
         formatEntityName: (entity) => entity.attributes.friendly_name,
@@ -283,6 +305,37 @@ try {
       }
     }, fixture.variant)
     await page.waitForTimeout(100)
+    if (fixture.variant === 'german') {
+      assert.match(
+        await page
+          .locator('simple-thermostat')
+          .first()
+          .evaluate((card) => card.shadowRoot?.textContent ?? ''),
+        /22,4/
+      )
+    }
+    if (fixture.variant === 'rtl') {
+      assert.deepEqual(
+        await page.evaluate(() => {
+          const group = document.querySelector('simple-thermostat-group')
+          const previous = group?.shadowRoot?.querySelector(
+            '.group-nav.previous ha-icon'
+          )
+          const next = group?.shadowRoot?.querySelector(
+            '.group-nav.next ha-icon'
+          )
+          return {
+            previousMirrored:
+              previous instanceof Element &&
+              getComputedStyle(previous).transform !== 'none',
+            nextMirrored:
+              next instanceof Element &&
+              getComputedStyle(next).transform !== 'none',
+          }
+        }),
+        { previousMirrored: true, nextMirrored: true }
+      )
+    }
     if (['unavailable', 'unknown'].includes(fixture.variant)) {
       const card = page.locator('simple-thermostat').first()
       await card.locator('ha-switch').click()
@@ -489,7 +542,11 @@ try {
             const setpointRect = setpoint.getBoundingClientRect()
             const setpointCenter =
               setpointRect.left + setpointRect.width / 2 - bodyRect.left
-            const setpointPosition = setpointCenter / bodyRect.width
+            const physicalPosition = setpointCenter / bodyRect.width
+            const setpointPosition =
+              getComputedStyle(body).direction === 'rtl'
+                ? 1 - physicalPosition
+                : physicalPosition
             const entities = root
               .querySelector('.entities')
               ?.getBoundingClientRect()

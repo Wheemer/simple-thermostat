@@ -221,6 +221,18 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
   </thead>
   <tbody>
     <tr>
+      <td rowspan="9" nowrap><strong>v4.5.0</strong></td>
+      <td>Compatibility and reliability release covering card rendering, target controls, the visual editors, multi-card behavior, localization, and accessibility. Existing visual defaults and configurations remain supported.</td>
+    </tr>
+    <tr><td>Contains template errors within the affected entity row so the thermostat remains usable, and safely handles missing values, malformed templates, invalid decimal settings, and custom display units.</td></tr>
+    <tr><td>Improves target controls for null or changing heat/cool setpoints, mode changes during pending updates, and longer configurable debounce periods.</td></tr>
+    <tr><td>Preserves configured control order and correctly refreshes implicit controls when the main entity changes to another domain.</td></tr>
+    <tr><td>Improves multi-card shared settings, cleared child overrides, recent-activity selection, reconnect behavior, and tab sizing after browser or orientation changes.</td></tr>
+    <tr><td>Uses Home Assistant number-format preferences more consistently, including grouped comma, space, and apostrophe formats, and localizes fan percentages and helper-backed options.</td></tr>
+    <tr><td>Improves translated labels, navigation, tooltips, and accessible names, with additional German and right-to-left browser coverage.</td></tr>
+    <tr><td>Adds built-in snowflake icons for <code>frost</code> and common frost-protection preset aliases.</td></tr>
+    <tr><td>Expands regression coverage for desktop and narrow-mobile layouts without changing the established enhanced/classic appearance behavior or the intentional headerless tab presentation.</td></tr>
+    <tr>
       <td rowspan="9" nowrap><strong>v4.4.0</strong></td>
       <td>Stable roll-up of the v4.3.1 through v4.3.7 pre-release improvements, including the corrected layout from v4.3.5. Existing configuration remains supported.</td>
     </tr>

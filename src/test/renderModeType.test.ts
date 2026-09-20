@@ -49,6 +49,111 @@ test('preset heading shows fallback label when explicitly enabled', () => {
   )
 })
 
+test('built-in headings use Home Assistant translations', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    localize: (key: string) =>
+      key === 'ui.card.fan.preset_mode' ? 'Ventilatorprofil' : key,
+    mode: {
+      type: 'preset',
+      mode: 'off',
+      heading: true,
+      list: [{ value: 'off', icon: 'mdi:power', name: 'off' }],
+    },
+  })
+
+  render(result, document.body)
+
+  expect(document.body.querySelector('.mode-title')?.textContent?.trim()).toBe(
+    'Ventilatorprofil'
+  )
+})
+
+test('helper-backed controls format labels using the helper entity', () => {
+  const helper = {
+    entity_id: 'select.fan_profile',
+    state: 'quiet',
+    attributes: { options: ['quiet', 'boost'] },
+  }
+  const formatEntityState = jest.fn((state) =>
+    state.entity_id === helper.entity_id ? `Helper ${state.state}` : 'Wrong'
+  )
+  const result = renderModeType({
+    ...baseOptions,
+    hass: {
+      states: { [helper.entity_id]: helper },
+      formatEntityState,
+    },
+    mode: {
+      type: 'preset',
+      entity: helper.entity_id,
+      mode: 'quiet',
+      list: [{ value: 'boost', icon: 'mdi:fan', name: 'boost' }],
+    },
+  })
+
+  render(result, document.body)
+
+  const control = document.body.querySelector('.mode-item')
+  expect(control?.textContent?.trim()).toBe('Helper boost')
+  expect(control?.getAttribute('aria-label')).toBe('Helper boost')
+  expect(formatEntityState).toHaveBeenCalledWith({
+    ...helper,
+    state: 'boost',
+  })
+})
+
+test('a missing configured helper keeps its control disabled', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    hass: { states: {} },
+    mode: {
+      type: 'preset',
+      entity: 'select.missing',
+      mode: 'quiet',
+      list: [{ value: 'boost', icon: 'mdi:fan', name: 'boost' }],
+    },
+  })
+
+  render(result, document.body)
+
+  const control = document.body.querySelector('.mode-item')
+  expect(control?.getAttribute('aria-disabled')).toBe('true')
+  expect(control?.getAttribute('tabindex')).toBe('-1')
+})
+
+test('icon-only controls keep translated accessible names and tooltips', () => {
+  const result = renderModeType({
+    ...baseOptions,
+    hass: {
+      formatEntityAttributeValue: (_entity, _attribute, value) =>
+        value === 'reverse' ? 'Rueckwaerts' : value,
+    },
+    localize: (key: string) =>
+      key === 'ui.card.fan.direction' ? 'Richtung' : key,
+    mode: {
+      type: 'direction',
+      mode: 'forward',
+      list: [
+        {
+          value: 'reverse',
+          icon: 'mdi:swap-horizontal',
+          name: false,
+        },
+      ],
+    },
+  })
+
+  render(result, document.body)
+
+  const control = document.body.querySelector('.mode-item')
+  expect(
+    document.body.querySelector('.modes')?.getAttribute('aria-label')
+  ).toBe('Richtung')
+  expect(control?.getAttribute('aria-label')).toBe('Rueckwaerts')
+  expect(control?.getAttribute('title')).toBe('Richtung')
+})
+
 test('hvac heading is hidden by default', () => {
   const result = renderModeType({
     ...baseOptions,

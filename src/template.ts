@@ -3,6 +3,17 @@ import formatNumber from './formatNumber'
 import { LooseObject } from './types'
 
 Sqrl.defaultConfig.autoEscape = false
+const MAX_DECIMALS = 100
+
+function normalizeDecimals(value: unknown, fallback = 1) {
+  if (value === null || value === '' || typeof value === 'boolean') {
+    return fallback
+  }
+  const decimals = Number(value)
+  return Number.isInteger(decimals) && decimals >= 0 && decimals <= MAX_DECIMALS
+    ? decimals
+    : fallback
+}
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -109,22 +120,35 @@ export function renderTemplate({
         : localize(String(rawState), `component.${domain}.state._.`)
   const lang = hass.selectedLanguage || hass.language
   const translationPrefix = 'ui.card.climate.'
-  const translations = Object.entries(hass.resources?.[lang] ?? {}).reduce(
-    (memo, [key, value]) => {
-      if (String(key).startsWith(translationPrefix)) {
-        memo[String(key).replace(translationPrefix, '')] = value
+  const resourceTranslations = Object.entries(
+    hass.resources?.[lang] ?? {}
+  ).reduce((memo, [key, value]) => {
+    if (String(key).startsWith(translationPrefix)) {
+      memo[String(key).replace(translationPrefix, '')] = value
+    }
+    return memo
+  }, {} as LooseObject)
+  const translations = new Proxy(resourceTranslations, {
+    get(target, property) {
+      if (typeof property !== 'string') return Reflect.get(target, property)
+      if (Object.prototype.hasOwnProperty.call(target, property)) {
+        return target[property]
       }
-      return memo
+
+      const key = `${translationPrefix}${property}`
+      const translated = hass.localize?.(key)
+      return translated && translated !== key ? translated : ''
     },
-    {} as LooseObject
-  )
+  })
 
   Sqrl.filters.define(
     'formatNumber',
     (str, opts = { decimals: config.decimals }) => {
+      const fallbackDecimals = normalizeDecimals(config.decimals)
       return String(
         formatNumber(str, {
           ...opts,
+          decimals: normalizeDecimals(opts?.decimals, fallbackDecimals),
           locale: hass.locale,
         })
       )
@@ -152,19 +176,24 @@ export function renderTemplate({
     return localize(str, prefix)
   })
 
-  return Sqrl.render(
-    template,
-    {
-      ...(escapeHtmlValue(attributes) as LooseObject),
-      state: {
-        raw: escapeHtmlValue(rawState),
-        text: escapeHtmlValue(textState),
+  try {
+    return Sqrl.render(
+      template,
+      {
+        ...(escapeHtmlValue(attributes) as LooseObject),
+        state: {
+          raw: escapeHtmlValue(rawState),
+          text: escapeHtmlValue(textState),
+        },
+        state_attr: (entityId: string, attr: string) =>
+          escapeHtmlValue(hass.states?.[entityId]?.attributes?.[attr]),
+        ui: translations,
+        v: variables,
       },
-      state_attr: (entityId: string, attr: string) =>
-        escapeHtmlValue(hass.states?.[entityId]?.attributes?.[attr]),
-      ui: translations,
-      v: variables,
-    },
-    { useWith: true }
-  )
+      { useWith: true }
+    )
+  } catch (error) {
+    console.error('simple-thermostat: entity template failed', error)
+    return escapeHtml(textState)
+  }
 }

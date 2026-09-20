@@ -145,6 +145,30 @@ test('renders only a selector and an embedded simple thermostat card', async () 
   expect(embeddedHass).toHaveBeenLastCalledWith(hass)
 })
 
+test('object targets without a header inherit the shared card header', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    card: { header: { name: 'Shared climate' } } as any,
+    cards: [{ entity: 'climate.living_room' }],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  expect(embeddedSetConfig).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      entity: 'climate.living_room',
+      header: { name: 'Shared climate' },
+    })
+  )
+  expect(
+    Object.prototype.hasOwnProperty.call(
+      (group as any).targets[0].config,
+      'header'
+    )
+  ).toBe(false)
+})
+
 test('switches the embedded card without rewriting the selected card config', async () => {
   const group = createGroup()
 
@@ -426,7 +450,7 @@ test('opens the picker from the dots and selects a target directly', async () =>
   await group.updateComplete
 
   const menuButton = group.shadowRoot?.querySelector(
-    'button[aria-label="Select device"]'
+    'button[aria-label="Open menu"]'
   ) as HTMLButtonElement
   menuButton.click()
   await group.updateComplete
@@ -477,6 +501,7 @@ test('renders optional tab selector and switches targets directly', async () => 
   expect(group.shadowRoot?.querySelector('.group-selector.tabs')).not.toBe(null)
   expect(group.shadowRoot?.querySelector('[role="tablist"]')).not.toBe(null)
   expect(group.shadowRoot?.querySelector('.group-nav-cluster')).toBe(null)
+  expect(group.shadowRoot?.querySelector('.header__main')).toBe(null)
   expect(tabs.map((tab) => tab.textContent?.trim())).toEqual([
     'Living AC',
     'Bedroom AC',
@@ -537,7 +562,7 @@ test('picker follows arrow order and closes when the current target is clicked',
   )
 
   const menuButton = group.shadowRoot?.querySelector(
-    'button[aria-label="Select device"]'
+    'button[aria-label="Open menu"]'
   ) as HTMLButtonElement
   menuButton.click()
   await group.updateComplete
@@ -566,6 +591,52 @@ test('keeps the picker scrollable instead of clipping long target lists', async 
   expect(styles).toContain('max-height: min(320px, 60vh)')
   expect(styles).toContain('overflow: auto')
   expect(styles).toContain('z-index: 5')
+  expect(styles).toContain('inset-inline-end: 0')
+  expect(styles).toContain('text-align: start')
+})
+
+test('localizes navigation labels with English fallbacks', async () => {
+  const group = createGroup()
+  const labels: Record<string, string> = {
+    'ui.common.previous': 'Précédent',
+    'ui.common.next': 'Suivant',
+    'ui.common.open_menu': 'Ouvrir le menu',
+  }
+  group.setConfig({ cards: ['climate.living_room', 'climate.bedroom'] })
+  group.hass = {
+    ...hass,
+    localize: (key: string) => labels[key] ?? key,
+  } as any
+  await group.updateComplete
+
+  expect(
+    group.shadowRoot
+      ?.querySelector('button.previous')
+      ?.getAttribute('aria-label')
+  ).toBe('Précédent')
+  expect(
+    group.shadowRoot?.querySelector('button.next')?.getAttribute('aria-label')
+  ).toBe('Suivant')
+  expect(
+    group.shadowRoot
+      ?.querySelector('button.group-menu')
+      ?.getAttribute('aria-label')
+  ).toBe('Ouvrir le menu')
+
+  group.hass = { ...hass, localize: (key: string) => key } as any
+  await group.updateComplete
+  expect(
+    group.shadowRoot
+      ?.querySelector('button.group-menu')
+      ?.getAttribute('aria-label')
+  ).toBe('Open menu')
+})
+
+test('mirrors previous and next chevrons in RTL layouts', () => {
+  const styles = String((SimpleThermostatGroup as any).styles.cssText ?? '')
+
+  expect(styles).toContain(":host-context([dir='rtl']) .group-nav ha-icon")
+  expect(styles).toContain('transform: scaleX(-1)')
 })
 
 test('keeps header controls in fixed columns so embedded content cannot nudge them', () => {
@@ -661,7 +732,7 @@ test('closes the picker when clicking outside the group card', async () => {
   await group.updateComplete
 
   const menuButton = group.shadowRoot?.querySelector(
-    'button[aria-label="Select device"]'
+    'button[aria-label="Open menu"]'
   ) as HTMLButtonElement
   menuButton.click()
   await group.updateComplete
@@ -795,6 +866,126 @@ test('keeps a compact minimum selector reserve when the measured header is short
   expect(
     child.style.getPropertyValue('--st-group-embedded-header-min-height')
   ).toBe('56px')
+})
+
+test('remeasures tab selector reserve on resize and orientation with cleanup', async () => {
+  const removeEventListener = jest.spyOn(window, 'removeEventListener')
+  const group = createGroup()
+
+  group.setConfig({
+    selector: { style: 'tabs' },
+    cards: ['climate.living_room', 'climate.bedroom'],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const selector = group.shadowRoot?.querySelector(
+    '.group-selector.tabs'
+  ) as HTMLElement
+  const child = group.shadowRoot?.querySelector(
+    '.embedded-card-host simple-thermostat'
+  ) as HTMLElement
+  const selectorRect = jest
+    .spyOn(selector, 'getBoundingClientRect')
+    .mockReturnValue(domRect(0, 96))
+  jest.spyOn(child, 'getBoundingClientRect').mockReturnValue(domRect(20, 120))
+
+  window.dispatchEvent(new Event('resize'))
+  await Promise.resolve()
+  await new Promise<void>((resolve) =>
+    window.requestAnimationFrame(() => resolve())
+  )
+  expect(
+    child.style.getPropertyValue('--st-group-embedded-header-min-height')
+  ).toBe('84px')
+
+  selectorRect.mockReturnValue(domRect(0, 120))
+  window.dispatchEvent(new Event('orientationchange'))
+  await Promise.resolve()
+  await new Promise<void>((resolve) =>
+    window.requestAnimationFrame(() => resolve())
+  )
+  expect(
+    child.style.getPropertyValue('--st-group-embedded-header-min-height')
+  ).toBe('108px')
+
+  group.remove()
+  expect(removeEventListener).toHaveBeenCalledWith(
+    'resize',
+    expect.any(Function)
+  )
+  expect(removeEventListener).toHaveBeenCalledWith(
+    'orientationchange',
+    expect.any(Function)
+  )
+  removeEventListener.mockRestore()
+})
+
+test('updates tab selector reserve on resize and resets the observer lifecycle', async () => {
+  const originalResizeObserver = globalThis.ResizeObserver
+  const observers: Array<{
+    callback: ResizeObserverCallback
+    observe: jest.Mock
+    disconnect: jest.Mock
+  }> = []
+
+  class TestResizeObserver {
+    callback: ResizeObserverCallback
+    observe = jest.fn()
+    disconnect = jest.fn()
+
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback
+      observers.push(this)
+    }
+
+    unobserve() {}
+  }
+
+  globalThis.ResizeObserver = TestResizeObserver as any
+  try {
+    const group = createGroup()
+    group.setConfig({
+      selector: { style: 'tabs' },
+      cards: [{ entity: 'climate.living_room' }, { entity: 'climate.bedroom' }],
+    })
+    group.hass = hass as any
+    await group.updateComplete
+
+    const selector = group.shadowRoot?.querySelector(
+      '.group-selector.tabs'
+    ) as HTMLElement
+    const child = group.shadowRoot?.querySelector(
+      '.embedded-card-host simple-thermostat'
+    ) as HTMLElement
+    const selectorRect = jest
+      .spyOn(selector, 'getBoundingClientRect')
+      .mockReturnValue(domRect(0, 48))
+    jest.spyOn(child, 'getBoundingClientRect').mockReturnValue(domRect(0, 120))
+
+    ;(group as any).applyEmbeddedPresentation()
+    expect(observers[0].observe).toHaveBeenCalledWith(selector)
+    expect(observers[0].observe).toHaveBeenCalledWith(child)
+    expect(
+      child.style.getPropertyValue('--st-group-embedded-header-min-height')
+    ).toBe('56px')
+
+    selectorRect.mockReturnValue(domRect(0, 96))
+    observers[0].callback([], observers[0] as any)
+    expect(
+      child.style.getPropertyValue('--st-group-embedded-header-min-height')
+    ).toBe('104px')
+
+    group.remove()
+    expect(observers[0].disconnect).toHaveBeenCalled()
+
+    document.body.appendChild(group)
+    await group.updateComplete
+    ;(group as any).applyEmbeddedPresentation()
+    expect(observers).toHaveLength(2)
+  } finally {
+    globalThis.ResizeObserver = originalResizeObserver
+  }
 })
 
 test('does not create a separate theme-derived card surface around the child card', async () => {
@@ -1219,6 +1410,56 @@ test('keeps persisted active activity ahead of newer inactive state timestamps',
   ).toBe('Bedroom AC')
 })
 
+test('lets a newer HA transition beat stale persisted observed activity', async () => {
+  const config = {
+    auto_select: { mode: 'recent_activity' as const, cooldown_ms: 0 },
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  }
+  const storageKey =
+    'simple-thermostat-group:climate.living_room|climate.bedroom:recent-activity'
+  const staleRecord = {
+    entity: 'climate.living_room',
+    signature: 'domain:climate|state:cool|action:',
+    timestamp: Date.parse('2026-07-05T12:00:00.000Z'),
+    observed: true,
+  }
+  window.localStorage.setItem(storageKey, JSON.stringify(staleRecord))
+  window.localStorage.setItem(`${storageKey}:v2`, JSON.stringify([staleRecord]))
+
+  const group = createGroup()
+  group.setConfig(config)
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.living_room': {
+        ...hass.states['climate.living_room'],
+        last_changed: '2026-07-05T12:00:00.000Z',
+        last_updated: '2026-07-05T13:30:00.000Z',
+      },
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        state: 'heat',
+        last_changed: '2026-07-05T13:00:00.000Z',
+        last_updated: '2026-07-05T13:15:00.000Z',
+        attributes: {
+          ...hass.states['climate.bedroom'].attributes,
+          hvac_action: 'heating',
+        },
+      },
+    },
+  } as any
+  await group.updateComplete
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Bedroom AC'
+  )
+})
+
 test('prefers newer active climate activity over stale persisted humidifier selection', async () => {
   const config = {
     auto_select: { mode: 'recent_activity' as const, cooldown_ms: 0 },
@@ -1436,6 +1677,70 @@ test('pauses recent activity auto-select after manual navigation', async () => {
   }
 })
 
+test('reconnect during manual pause resumes and reconciles auto-select', async () => {
+  jest.useFakeTimers()
+  const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(1000)
+
+  try {
+    const group = createGroup()
+    group.setConfig({
+      auto_select: { mode: 'recent_activity', manual_pause_ms: 30000 },
+      cards: [
+        { entity: 'climate.living_room', header: { name: 'Living AC' } },
+        { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+      ],
+    })
+    group.hass = hass as any
+    await group.updateComplete
+
+    ;(
+      group.shadowRoot?.querySelector(
+        'button[aria-label="Next device"]'
+      ) as HTMLButtonElement
+    ).click()
+    await group.updateComplete
+    expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Bedroom AC'
+    )
+
+    group.remove()
+    nowSpy.mockReturnValue(2000)
+    group.hass = {
+      ...hass,
+      states: {
+        ...hass.states,
+        'climate.living_room': {
+          ...hass.states['climate.living_room'],
+          state: 'heat',
+          last_changed: '2026-07-05T12:00:00.000Z',
+          attributes: {
+            ...hass.states['climate.living_room'].attributes,
+            hvac_action: 'heating',
+          },
+        },
+      },
+    } as any
+    document.body.appendChild(group)
+    await group.updateComplete
+
+    jest.advanceTimersByTime(28999)
+    await Promise.resolve()
+    expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Bedroom AC'
+    )
+
+    jest.advanceTimersByTime(1)
+    await Promise.resolve()
+    await group.updateComplete
+    expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+      'Living AC'
+    )
+  } finally {
+    nowSpy.mockRestore()
+    jest.useRealTimers()
+  }
+})
+
 test('keeps stored manual selection on refresh when no target changed later', async () => {
   const selectedAt = Date.parse('2026-07-05T12:00:00.000Z')
   const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(selectedAt)
@@ -1561,7 +1866,7 @@ test('does not auto-select while the selector menu is open', async () => {
   await group.updateComplete
 
   const menuButton = group.shadowRoot?.querySelector(
-    'button[aria-label="Select device"]'
+    'button[aria-label="Open menu"]'
   ) as HTMLButtonElement
   menuButton.click()
   await group.updateComplete

@@ -341,11 +341,18 @@ function getControlFromForm(
   const defaultControl = adapter.getDefaultControl()
 
   if (desired.length === 0) return false
-  if (
-    config.control &&
-    !Array.isArray(config.control) &&
-    typeof config.control === 'object'
-  ) {
+  if (Array.isArray(config.control)) {
+    const desiredSet = new Set(desired.map(String))
+    const configuredOrder = config.control.filter((type) =>
+      desiredSet.has(type)
+    )
+    const appendedOrder = desired.filter(
+      (type) => !configuredOrder.includes(type)
+    )
+
+    return [...configuredOrder, ...appendedOrder]
+  }
+  if (config.control && typeof config.control === 'object') {
     const desiredSet = new Set(desired.map(String))
     const configuredOrder = getConfiguredControlOrder(config.control).filter(
       (type) => desiredSet.has(type)
@@ -881,9 +888,21 @@ export default class SimpleThermostatEditor extends LitElement {
       changedPaths.has('entity') ||
       CONTROL_TYPES.some((type) => changedPaths.has(`control.${type}`))
     ) {
-      const control = getControlFromForm(formData, this.config, this.hass)
-      if (typeof control === 'undefined') delete copy.control
-      else copy.control = control
+      // The entity picker fires with the old domain's form values. When the
+      // card was using implicit defaults, let the new adapter provide its own
+      // defaults instead of serializing those stale values as explicit YAML.
+      if (
+        changedPaths.has('entity') &&
+        this.config.entity?.split('.')[0] !==
+          String(formData.entity ?? '').split('.')[0] &&
+        typeof this.config.control === 'undefined'
+      ) {
+        delete copy.control
+      } else {
+        const control = getControlFromForm(formData, this.config, this.hass)
+        if (typeof control === 'undefined') delete copy.control
+        else copy.control = control
+      }
     }
 
     return copy as unknown as CardConfig

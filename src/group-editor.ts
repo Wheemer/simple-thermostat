@@ -24,17 +24,19 @@ const DEFAULT_SELECTOR = {
 function toEditableTarget(target: GroupTargetConfig): EditableTarget {
   if (typeof target === 'string') return { entity: target }
   const header =
-    target?.header && typeof target.header === 'object' ? target.header : {}
+    target?.header && typeof target.header === 'object'
+      ? target.header
+      : undefined
 
   return {
     ...target,
     entity: target?.entity ?? '',
     name:
       target?.name ??
-      (typeof header.name === 'string' ? header.name : undefined),
+      (typeof header?.name === 'string' ? header.name : undefined),
     icon:
       target?.icon ??
-      (typeof header.icon === 'string' ? header.icon : undefined),
+      (typeof header?.icon === 'string' ? header.icon : undefined),
   }
 }
 
@@ -424,23 +426,37 @@ export default class SimpleThermostatGroupEditor extends LitElement {
       ...((this.config.card ?? {}) as Record<string, unknown>),
       ...targetConfig,
     } as EditableTarget
-    const header =
+    let header =
       config.header && typeof config.header === 'object'
         ? { ...config.header }
-        : {}
+        : undefined
 
-    if (name && config.header !== false && typeof header.name === 'undefined') {
+    if (
+      name &&
+      config.header !== false &&
+      typeof header?.name === 'undefined'
+    ) {
+      header ??= {}
       header.name = name
     }
 
-    if (icon && config.header !== false && typeof header.icon === 'undefined') {
+    if (
+      icon &&
+      config.header !== false &&
+      typeof header?.icon === 'undefined'
+    ) {
+      header ??= {}
       header.icon = icon
     }
 
     return {
       type: config.type ?? `custom:${CARD_NAME}`,
       ...config,
-      ...(config.header === false ? { header: false } : { header }),
+      ...(config.header === false
+        ? { header: false }
+        : header
+          ? { header }
+          : {}),
     }
   }
 
@@ -469,6 +485,12 @@ export default class SimpleThermostatGroupEditor extends LitElement {
     const targets = this.getTargets()
     const updated = { ...(ev.detail.config ?? {}) } as Record<string, unknown>
     const common = (this.config.card ?? {}) as Record<string, unknown>
+    if ('step_size' in common && !('step_size' in updated)) {
+      updated.step_size = null
+    }
+    if ('entities' in common && !('entities' in updated)) {
+      updated.entities = false
+    }
     Object.keys(common).forEach((key) => {
       if (key !== 'entity' && valuesEqual(updated[key], common[key])) {
         delete updated[key]

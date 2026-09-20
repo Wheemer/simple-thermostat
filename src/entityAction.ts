@@ -70,7 +70,9 @@ export function getEntityStateText(
     }
 
     if (typeof entity.attributes?.percentage === 'number') {
-      return `${entity.attributes.percentage}%`
+      return typeof hass.formatEntityAttributeValue === 'function'
+        ? hass.formatEntityAttributeValue(entity, 'percentage')
+        : `${entity.attributes.percentage}%`
     }
 
     if (entity.attributes?.speed) {

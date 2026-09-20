@@ -162,6 +162,110 @@ test('editor preserves explicit enhanced visuals on unrelated edits and when ena
   ).toBe(true)
 })
 
+test('changing entity domain keeps new adapter controls implicit', () => {
+  const e = document.createElement('audit-editor') as SimpleThermostatEditor
+  e.hass = {
+    ...hass(),
+    states: {
+      ...hass().states,
+      'fan.range_hood': {
+        entity_id: 'fan.range_hood',
+        state: 'on',
+        attributes: {
+          percentage: 50,
+          preset_modes: ['auto'],
+        },
+      },
+    },
+  } as any
+  e.setConfig({ entity: 'climate.room' } as any)
+
+  const updated = e._applyFormChange({
+    ...e._buildFormData(),
+    entity: 'fan.range_hood',
+  } as any)
+
+  expect(updated.entity).toBe('fan.range_hood')
+  expect(updated.control).toBeUndefined()
+})
+
+test('changing entity domain preserves explicit control choices', () => {
+  const e = document.createElement('audit-editor') as SimpleThermostatEditor
+  e.hass = {
+    ...hass(),
+    states: {
+      ...hass().states,
+      'fan.range_hood': {
+        entity_id: 'fan.range_hood',
+        state: 'on',
+        attributes: {
+          percentage: 50,
+          preset_modes: ['auto'],
+        },
+      },
+    },
+  } as any
+  e.setConfig({
+    entity: 'climate.room',
+    control: { hvac: true },
+  } as any)
+
+  const updated = e._applyFormChange({
+    ...e._buildFormData(),
+    entity: 'fan.range_hood',
+  } as any)
+
+  expect(updated.entity).toBe('fan.range_hood')
+  expect(updated.control).toBeDefined()
+})
+
+test.each([
+  ['fan.range_hood', ['preset', 'direction', 'oscillating', 'state']],
+  ['humidifier.basement', ['mode', 'state']],
+])(
+  'changing an implicit climate entity to %s recomputes domain defaults',
+  (entity, defaultControls) => {
+    const e = document.createElement('audit-editor') as SimpleThermostatEditor
+    e.setConfig({ entity: 'climate.room' } as any)
+
+    const updated = e._applyFormChange({
+      ...e._buildFormData(),
+      entity,
+    } as any)
+
+    expect(updated.control).toBeUndefined()
+    e.config = updated
+    for (const type of defaultControls) {
+      expect(e._buildFormData()[`control.${type}`]).toBe(true)
+    }
+    expect(e._buildFormData()['control.hvac']).toBe(false)
+  }
+)
+
+test.each([
+  [
+    ['swing', 'fan', 'hvac'],
+    ['swing', 'fan', 'hvac'],
+  ],
+  [
+    { _order: ['fan', 'hvac'], fan: true, hvac: true },
+    { _order: ['fan', 'hvac'], fan: true, hvac: true },
+  ],
+])(
+  'changing entity domain preserves explicit control ordering: %j',
+  (control, expected) => {
+    const e = document.createElement('audit-editor') as SimpleThermostatEditor
+    e.setConfig({ entity: 'climate.room', control } as any)
+
+    const updated = e._applyFormChange({
+      ...e._buildFormData(),
+      entity: 'fan.range_hood',
+    } as any)
+
+    expect(updated.control).toEqual(expected)
+  }
+)
+
 test('editor clears only corresponding legacy hide aliases', () => {
   const e = document.createElement('audit-editor') as SimpleThermostatEditor
   e.setConfig({

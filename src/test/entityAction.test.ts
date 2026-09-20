@@ -51,6 +51,7 @@ test('formats fan preset as state text', () => {
 })
 
 test('formats fan percentage as state text', () => {
+  const formatEntityAttributeValue = jest.fn(() => '42 %')
   expect(
     getEntityStateText(
       {
@@ -58,7 +59,25 @@ test('formats fan percentage as state text', () => {
         state: 'on',
         attributes: { percentage: 42 },
       },
-      { formatEntityState: () => 'On' },
+      { formatEntityAttributeValue, formatEntityState: () => 'On' },
+      localize
+    )
+  ).toBe('42 %')
+  expect(formatEntityAttributeValue).toHaveBeenCalledWith(
+    expect.objectContaining({ entity_id: 'fan.living_room' }),
+    'percentage'
+  )
+})
+
+test('fan percentage keeps its legacy fallback without an HA formatter', () => {
+  expect(
+    getEntityStateText(
+      {
+        entity_id: 'fan.living_room',
+        state: 'on',
+        attributes: { percentage: 42 },
+      },
+      {},
       localize
     )
   ).toBe('42%')
