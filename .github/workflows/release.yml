@@ -28,7 +28,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          npm ci
+          npm install --no-package-lock
           test "v$(node -p "require('./package.json').version")" = "$RELEASE_TAG"
           npm test -- --runInBand
           npm run typecheck

@@ -2,10 +2,10 @@
 
 ## Local Setup
 
-Install dependencies from the lockfile:
+Install the current dependency versions declared in `package.json`:
 
 ```bash
-npm ci
+npm install --no-package-lock
 ```
 
 ## Local Checks
@@ -58,7 +58,7 @@ Only start this flow after explicit release authorization. Local fixes, tests, a
 1. Update the version in `package.json`.
 2. Update README/changelog notes for the release.
 3. Run `npm run verify`.
-4. Commit source, lockfile, and docs. Do not commit generated release bundles.
+4. Commit source and docs. Do not commit generated release bundles or a lockfile.
 5. Push to `master`.
 6. Confirm HACS and test workflows pass. The test workflow must validate both release bundles before the GitHub release is published.
 7. Create and push the Git tag `vX.X.X` at the verified release commit. Create a draft GitHub release using that existing tag and the approved manual release notes. Keep it as a draft; creating an unpublished draft alone does not ensure the Git ref exists.
