@@ -1,0 +1,472 @@
+# Changelog
+
+All notable changes to Simple Thermostat are documented here.
+
+<table border="1" cellspacing="0" cellpadding="6">
+  <thead>
+    <tr>
+      <th nowrap>Version</th>
+      <th>Changes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.5.1</strong></td>
+      <td>Skips unavailable or unknown thermostats in the multi-card selector and automatically returns to an available card when the current one goes offline.</td>
+    </tr>
+    <tr><td>Multi-card availability follows the main thermostat entity, even when a card also has an independent header toggle.</td></tr>
+    <tr><td>Improves touch responsiveness for temperature controls and limits Home Assistant editor entity suggestions to climate entities.</td></tr>
+    <tr><td>Refreshes the project dependencies and build tooling for current Home Assistant browser environments.</td></tr>
+    <tr>
+      <td rowspan="9" nowrap><strong>v4.5.0</strong></td>
+      <td>Compatibility and reliability release covering card rendering, target controls, the visual editors, multi-card behavior, localization, and accessibility. Existing visual defaults and configurations remain supported.</td>
+    </tr>
+    <tr><td>Contains template errors within the affected entity row so the thermostat remains usable, and safely handles missing values, malformed templates, invalid decimal settings, and custom display units.</td></tr>
+    <tr><td>Improves target controls for null or changing heat/cool setpoints, mode changes during pending updates, and longer configurable debounce periods.</td></tr>
+    <tr><td>Preserves configured control order and correctly refreshes implicit controls when the main entity changes to another domain.</td></tr>
+    <tr><td>Improves multi-card shared settings, cleared child overrides, recent-activity selection, reconnect behavior, and tab sizing after browser or orientation changes.</td></tr>
+    <tr><td>Uses Home Assistant number-format preferences more consistently, including grouped comma, space, and apostrophe formats, and localizes fan percentages and helper-backed options.</td></tr>
+    <tr><td>Improves translated labels, navigation, tooltips, and accessible names, with additional German and right-to-left browser coverage.</td></tr>
+    <tr><td>Adds built-in snowflake icons for <code>frost</code> and common frost-protection preset aliases.</td></tr>
+    <tr><td>Expands regression coverage for desktop and narrow-mobile layouts without changing the established enhanced/classic appearance behavior or the intentional headerless tab presentation.</td></tr>
+    <tr>
+      <td rowspan="9" nowrap><strong>v4.4.0</strong></td>
+      <td>Stable roll-up of the v4.3.1 through v4.3.7 pre-release improvements, including the corrected layout from v4.3.5. Existing configuration remains supported.</td>
+    </tr>
+    <tr><td>Improves setpoint updates across reconfiguration and reconnection, prevents dual heat/cool targets crossing, and keeps pending changes attached to the correct entity. Includes work adapted from <a href="https://github.com/duczz/ha-simple-thermostat">Martin Müller (@duczz)</a>.</td></tr>
+    <tr><td>Adds optional target locking, inspired by <a href="https://github.com/nervetattoo/simple-thermostat/pull/423">@temuccio</a>, and press-and-hold step controls, inspired by <a href="https://github.com/Ava-AgentOne/simple-thermostat-card/commit/3ab89cae5a4b7ebed8bb62b2c0a512ba203b296b">Esam / @Ava-AgentOne</a>.</td></tr>
+    <tr><td>Keeps independent header/footer toggles, extra-entity controls, and select helpers usable when the thermostat is offline, while respecting each control's own availability.</td></tr>
+    <tr><td>Improves balanced entity/setpoint spacing, narrow-card overflow handling, compact entity formatting, and relative-time templates.</td></tr>
+    <tr><td>Improves multi-card activity tracking, remembered activity across reloads, embedded sizing, and isolation of each card's custom styling.</td></tr>
+    <tr><td>Adds editor reordering for extra entities, footer controls, and group cards; preserves configured helpers, control order, and header overrides during unrelated edits.</td></tr>
+    <tr><td>Adds editor suggestions for related device entities, inspired by <a href="https://github.com/priyam13coding/simple-compact-thermostat-card/commit/a7da7839d9304982f24a364dc3face66f6554492">@priyam13coding</a>, and improves narrow editor layouts.</td></tr>
+    <tr><td>Refreshes configuration documentation, updates dependencies including js-yaml and SVGO security fixes, and adds OpenSSF Scorecard checks.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.3.7</strong></td>
+      <td>Adds up/down controls for reordering extra entity rows, footer controls, and cards in the multi-card editor without losing their settings.</td>
+    </tr>
+    <tr><td>Groups extra-entity display options with their rows, improves narrow editor layouts, and labels target debounce in milliseconds.</td></tr>
+    <tr><td>Preserves configured helper controls and hidden or dynamic header icons when editing unrelated settings, including when the main entity is missing.</td></tr>
+    <tr><td>Handles hidden header names and icons in the multi-card editor, keeps cleared overrides cleared, and keeps the expanded editor attached to its card when reordering.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.3.6</strong></td>
+      <td>Keeps available header toggles, footer toggles, extra-entity controls, and select helpers usable when the main thermostat is unavailable or unknown, including in the multi-card.</td>
+    </tr>
+    <tr><td>Disables controls according to their own entity's availability and prevents queued setpoint changes from being sent after the thermostat goes unavailable. No new configuration is required.</td></tr>
+    <tr>
+      <td rowspan="10" nowrap><strong>v4.3.5</strong></td>
+      <td>Handles empty and structured extra-entity attributes safely, and preserves attribute, template, unit, and decimal formatting in compact displays.</td>
+    </tr>
+    <tr><td>Keeps configured helper controls from falling back to controlling the thermostat when the helper is unavailable.</td></tr>
+    <tr><td>Restores setpoint updates after a card is detached and reattached, and removes empty space left by hidden targets.</td></tr>
+    <tr><td>Keeps readings separate from setpoints on narrow cards, and lets long compact labels wrap without splitting their values or units.</td></tr>
+    <tr><td>Preserves explicit appearance overrides in the editor and correctly clears older hide-when-off aliases.</td></tr>
+    <tr><td>Preserves configured control order, including order-only edits inside the multi-card, and uses Home Assistant translations for default fan labels.</td></tr>
+    <tr><td>Preserves conditional embedded CSS and cascade order, and corrects relative-time template rendering.</td></tr>
+    <tr><td>Remembers observed group activity across reloads without treating ordinary sensor updates as new activity.</td></tr>
+    <tr><td>Restores centered entity information while retaining narrow-card overflow handling. Includes the fixes from the withdrawn v4.3.4 pre-release.</td></tr>
+    <tr><td>Updates build and test dependencies js-yaml and SVGO to resolve three security advisories.</td></tr>
+    <tr>
+      <td nowrap><strong>v4.3.3</strong></td>
+      <td>Restores balanced spacing between extra entity rows and a single vertical setpoint control.</td>
+    </tr>
+    <tr>
+      <td rowspan="6" nowrap><strong>v4.3.2</strong></td>
+      <td>Prevents dual heat/cool targets from being stepped past each other, adapted from work by <a href="https://github.com/duczz/ha-simple-thermostat/commit/4371180cb499ba292f44260aa19a842f33a7f68b">Martin Müller (@duczz)</a>.</td>
+    </tr>
+    <tr><td>Keeps pending and optimistic target changes attached to the entity where they began, adapted from work by <a href="https://github.com/duczz/ha-simple-thermostat/commit/d8561a0ecee90351050ac3dc37ed997862351fe9">Martin Müller (@duczz)</a>.</td></tr>
+    <tr><td>Reports rejected Home Assistant actions in the browser console with the action name.</td></tr>
+    <tr><td>Adds optional target locking while keeping the target value visible, inspired by <a href="https://github.com/nervetattoo/simple-thermostat/pull/423">@temuccio's proposal</a>.</td></tr>
+    <tr><td>Adds optional press-and-hold repetition for target step buttons, inspired by pointer interaction work from <a href="https://github.com/Ava-AgentOne/simple-thermostat-card/commit/3ab89cae5a4b7ebed8bb62b2c0a512ba203b296b">Esam / @Ava-AgentOne</a>.</td></tr>
+    <tr><td>Adds editor suggestions for available entities registered to the same Home Assistant device, inspired by <a href="https://github.com/priyam13coding/simple-compact-thermostat-card/commit/a7da7839d9304982f24a364dc3face66f6554492">@priyam13coding's editor discovery work</a>.</td></tr>
+    <tr>
+      <td rowspan="5" nowrap><strong>v4.3.1</strong></td>
+      <td>Improves setpoint reliability when a card is reconfigured or removed while an update is pending.</td>
+    </tr>
+    <tr><td>Keeps each group target's styling isolated and prevents settings changes from being mistaken for new device activity.</td></tr>
+    <tr><td>Improves shared and per-target settings in the group card editor.</td></tr>
+    <tr><td>Improves unavailable-entity handling and embedded group-card sizing.</td></tr>
+    <tr><td>Adds desktop and narrow-mobile browser checks to guard against layout regressions.</td></tr>
+    <tr>
+      <td rowspan="8" nowrap><strong>v4.3.0</strong></td>
+      <td>Rolls the tested v4.2 prerelease line into the normal release channel.</td>
+    </tr>
+    <tr><td>Adds optional extra entity display modes: <code>row</code>, <code>auto</code>, <code>button</code>, <code>toggle</code>, and <code>chip</code>, with editor support.</td></tr>
+    <tr><td>Adds footer toggle controls for helper switches that should appear below the normal mode rows.</td></tr>
+    <tr><td>Adds an optional tabbed selector style for <code>custom:simple-thermostat-group</code>, inspired by @m1xminus's multi-AC selector idea in <a href="https://github.com/Wheemer/simple-thermostat/issues/16">#16</a>.</td></tr>
+    <tr><td>Improves group-card selector editing, tab behavior, remembered selection, and embedded-card layout stability.</td></tr>
+    <tr><td>Improves sparse HVAC/fan label layout, compact dual-setpoint cards, active mode colors, and card-level color overrides.</td></tr>
+    <tr><td>Adds Dependabot and CodeQL coverage, plus dependency/security cleanup from the v4.2 prerelease cycle.</td></tr>
+    <tr><td>Refreshes the issue templates to make bug reports and feature requests easier to open.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.2.12</strong></td>
+      <td>Restores the tabbed Simple Thermostat Group layout, inspired by @m1xminus's multi-AC selector idea in <a href="https://github.com/Wheemer/simple-thermostat/issues/16">#16</a>, to the confirmed v4.2.10 behavior.</td>
+    </tr>
+    <tr><td>Keeps the visual editor selector-style improvements while preventing the v4.2.11 tab overlay regression.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.2.11</strong></td>
+      <td>Kept the selected card header visible when using the group card's tabbed selector style.</td>
+    </tr>
+    <tr><td>Preserved selected card header titles, icons, more-info behavior, and header toggles above the tab row.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.2.10</strong></td>
+      <td>Made the Simple Thermostat Group selector style visible as a two-button choice in the visual editor.</td>
+    </tr>
+    <tr><td>Kept <code>selector.style: tabs</code> as the YAML value written by the editor's <strong>Tabbed buttons</strong> option.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.2.9</strong></td>
+      <td>Added an optional tabbed selector style for <code>custom:simple-thermostat-group</code>, inspired by @m1xminus's multi-AC selector idea in <a href="https://github.com/Wheemer/simple-thermostat/issues/16">#16</a>.</td>
+    </tr>
+    <tr><td>Added a <strong>Selector style</strong> control to the group card visual editor.</td></tr>
+    <tr><td>Documented <code>selector.style: tabs</code> in the README and YAML reference.</td></tr>
+    <tr><td>Kept the existing arrow/menu group selector as the default so current group cards do not change unless the new tabbed style is selected.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.2.8</strong></td>
+      <td>Clarified the footer control name override field in the visual editor.</td>
+    </tr>
+    <tr><td>Added editor coverage to ensure the footer name override is visible in the visual editor.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.2.7</strong></td>
+      <td>Added footer toggle controls for helper switches that should appear below the normal mode rows.</td>
+    </tr>
+    <tr><td>Added visual editor support for footer controls with entity, name, icon, add, and remove actions.</td></tr>
+    <tr><td>Documented the new <code>footer</code> YAML option and added regression coverage for rendering, toggling, hiding, sizing, and editor behavior.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.2.6</strong></td>
+      <td>Restores compact vertical steppers for cards with extra entity rows and dual heat/cool setpoints when no step layout is configured.</td>
+    </tr>
+    <tr><td>Keeps explicit <code>layout.step: row</code> configurations respected for users who intentionally choose side-by-side steppers.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.2.5</strong></td>
+      <td>Aligns HVAC mode colors with Home Assistant theme variables such as <code>--state-climate-heat-cool-color</code>, removing the unreadable <code>springgreen</code> default.</td>
+    </tr>
+    <tr><td>Stacks sparse <code>heat_cool</code> and <code>fan_only</code> labels beside their icons so long English labels no longer clip.</td></tr>
+    <tr><td>Falls back to a taller column button for long localized labels that cannot be split cleanly.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.2.4</strong></td>
+      <td>Hardens template CSS sanitizing by blocking additional unsafe URL schemes.</td>
+    </tr>
+    <tr><td>Clears the CodeQL code scanning alerts introduced after security scanning was enabled.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.2.3</strong></td>
+      <td>Updates shell-quote through concurrently to resolve the Dependabot security alert.</td>
+    </tr>
+    <tr><td>Updates postcss and pins vulnerable transitive packages to patched versions.</td></tr>
+    <tr><td>Refreshes Babel, js-yaml, brace-expansion, nanoid, and svgo through the lockfile cleanup.</td></tr>
+    <tr><td>Confirms the package audit is clean after the dependency updates.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.2.2</strong></td>
+      <td>Fixes the visual editor's extra entity display dropdowns so selections apply and the menu closes normally.</td>
+    </tr>
+    <tr><td>Allows extra entity display controls to return to the default row behavior from the editor.</td></tr>
+    <tr><td>Adds Dependabot configuration for grouped npm and GitHub Actions dependency updates.</td></tr>
+    <tr><td>Adds CodeQL scanning for JavaScript and TypeScript security analysis.</td></tr>
+    <tr>
+      <td rowspan="7" nowrap><strong>v4.2.1</strong></td>
+      <td>Keeps card-level active mode overrides working while preserving the semantic active colors introduced in v4.</td>
+    </tr>
+    <tr><td>Restores classic visuals automatically for imported <code>version: 3</code> cards unless <code>enhanced_visuals: true</code> is explicitly set.</td></tr>
+    <tr><td>Includes the latest v4.2.0 layout, group-card, fan step, and mobile compatibility fixes.</td></tr>
+    <tr><td>Added optional extra entity display modes: <code>row</code>, <code>auto</code>, <code>button</code>, <code>toggle</code>, and <code>chip</code>.</td></tr>
+    <tr><td>Added a card-level <code>layout.entities.display</code> default and per-entity <code>entities[].display</code> overrides.</td></tr>
+    <tr><td>Made compact entity controls own their label so button, toggle, and chip displays do not duplicate labels or overlap table columns.</td></tr>
+    <tr><td>Kept existing extra entity rows as the default when no display mode is configured.</td></tr>
+    <tr>
+      <td rowspan="7" nowrap><strong>v4.2.0</strong></td>
+      <td>Rolls the tested v4.1 prerelease fixes into the normal release channel.</td>
+    </tr>
+    <tr><td>Restores compact and mobile entity-row behavior so labels, values, and units stay paired more reliably.</td></tr>
+    <tr><td>Improves sparse HVAC and fan control rows so buttons stay on one line where practical while preserving enhanced v4 visuals.</td></tr>
+    <tr><td>Restores mode color overrides such as <code>--fan_only-color</code> across active mode and fan-speed controls.</td></tr>
+    <tr><td>Uses Home Assistant fan <code>percentage_step</code> values for fan setpoint buttons.</td></tr>
+    <tr><td>Improves Simple Thermostat Group sizing, remembered selection, navigation, and title more-info behavior.</td></tr>
+    <tr><td>Documents Brave Mobile as a known browser limitation for some compact entity-row layouts.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.1.11</strong></td>
+      <td>Uses Home Assistant fan <code>percentage_step</code> values for setpoint buttons, so fans step through their supported speeds instead of moving one percent at a time.</td>
+    </tr>
+    <tr><td>Improves Lovelace card-size estimates by ignoring controls with no visible options.</td></tr>
+    <tr><td>Keeps setpoint units visually smaller without breaking the value/unit pairing.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.10</strong></td>
+      <td>Restored non-wrapping extra entity labels so mobile sensor names stay together like earlier versions.</td>
+    </tr>
+    <tr><td>Kept left entity alignment scoped to alignment only, without changing label/value wrapping behavior.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.9</strong></td>
+      <td>Restored the compact mobile entity-column width for dual setpoint cards with vertical step buttons.</td>
+    </tr>
+    <tr><td>Added <code>--st-entity-column-min-width</code> so narrow entity-table layouts can be tuned without changing the card config.</td></tr>
+    <tr>
+      <td rowspan="5" nowrap><strong>v4.1.8</strong></td>
+      <td>Restored custom <code>--fan_only-color</code> overrides for Fan only and fan-speed controls across the v4 visual paths.</td>
+    </tr>
+    <tr><td>Kept host, card-mod, and card-level Fan only color overrides from being masked by the card surface defaults.</td></tr>
+    <tr><td>Kept fan controls on the same public color path used by the working v4.0.37 behavior.</td></tr>
+    <tr><td>Made Simple Thermostat Group navigation buttons transparent and tightened the top header spacing.</td></tr>
+    <tr><td>Added CSS regression coverage for Fan only and fan control color overrides.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.1.7</strong></td>
+      <td>Fixed a 4.1 mobile regression where three visible HVAC mode buttons could wrap into two rows.</td>
+    </tr>
+    <tr><td>Kept four-button HVAC rows compact enough for enhanced visuals while preserving the larger primary control styling.</td></tr>
+    <tr><td>Restored the larger primary HVAC icon size for dense mode rows.</td></tr>
+    <tr><td>Made active fan speeds and Fan only use fan-themed coloring instead of resembling Off.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.1.6</strong></td>
+      <td>Restored the older active-mode color cascade so custom active backgrounds and mode colors such as <code>--fan_only-color</code> work together again.</td>
+    </tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.5</strong></td>
+      <td>Restored the default dual-setpoint entity layout so compact/mobile cards no longer get forced into a special split layout.</td>
+    </tr>
+    <tr><td>Fixed relative-time template rows so they render with Home Assistant's standard relative-time element attributes.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.1.4</strong></td>
+      <td>Fixed active mode button backgrounds so card-level color variables such as <code>--fan_only-color</code> are used directly in both visual styles.</td>
+    </tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.3</strong></td>
+      <td>Fixed enhanced visual mode buttons so <code>--fan_only-color</code> applies to the active Fan only button.</td>
+    </tr>
+    <tr><td>Added <code>state_labels</code> for display-only aliases on the built-in state row.</td></tr>
+    <tr>
+      <td rowspan="5" nowrap><strong>v4.1.2</strong></td>
+      <td>Restored <code>--fan_only-color</code> as the active Fan only button color source.</td>
+    </tr>
+    <tr><td>Added missing Simple Thermostat Group YAML documentation for activity following, remembered selection, and custom storage keys.</td></tr>
+    <tr><td>Added group-card sizing hints for better Lovelace masonry placement.</td></tr>
+    <tr><td>Fixed relative-time templates so they use Home Assistant's current relative-time binding path.</td></tr>
+    <tr><td>Updated release/development docs so generated bundles stay out of source commits.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.1.1</strong></td>
+      <td>Improved compact mobile layouts with extra entity rows and dual setpoints so labels and values stay paired instead of being squeezed.</td>
+    </tr>
+    <tr><td>Restored the active button accent override, including <code>--st-mode-active-accent-opacity: 0</code> for users who hide the underline.</td></tr>
+    <tr>
+      <td rowspan="8" nowrap><strong>v4.1.0</strong></td>
+      <td>Rolled the recent v4 prerelease fixes into the normal release channel.</td>
+    </tr>
+    <tr><td>Improved compact and mobile entity rows so labels, values, and units stay paired more reliably.</td></tr>
+    <tr><td>Restored safer default setpoint layout behavior while still respecting explicit <code>layout.step: row</code> configs.</td></tr>
+    <tr><td>Fixed classic <code>enhanced_visuals: false</code> mode and fan rows so buttons stay evenly sized without losing the old stacked icon-over-label style.</td></tr>
+    <tr><td>Improved multi-card embedding so grouped cards keep their own surface, spacing, remembered selection, and recent-activity behavior more reliably.</td></tr>
+    <tr><td>Fixed setpoint debouncing so rapid plus/minus clicks send the final target instead of every intermediate value.</td></tr>
+    <tr><td>Added cleaner off-state visibility options for current values, setpoints, control rows, toggles, and Off buttons.</td></tr>
+    <tr><td>Added support for separate <code>select.*</code> controls, useful for devices with independent horizontal/vertical swing selectors.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.40</strong></td>
+      <td>Restored active mode accent styling for users who customize the underline and button glow.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.39</strong></td>
+      <td>Standardized off-state hide options across built-in values, entity rows, controls, toggles, and Off buttons.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.38</strong></td>
+      <td>Added flat off-state visibility options for current values and setpoints while keeping legacy aliases working.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.37</strong></td>
+      <td>Restored the known-good compact card spacing baseline while keeping v4 compatibility fixes in place.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.36</strong></td>
+      <td>Fixed setpoint debouncing so rapid target changes collapse into one final Home Assistant service call.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.35</strong></td>
+      <td>Fixed <code>hide_when_off</code> for extra entity rows so documented row hiding works when the main entity is off.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.34</strong></td>
+      <td>Restored the safer column setpoint default for cards that do not explicitly set <code>layout.step</code>, while preserving explicit horizontal row layouts.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.33</strong></td>
+      <td>Improved support for separate horizontal and vertical swing select entities.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.32</strong></td>
+      <td>Refined compact mobile entity-row spacing for recent layout compatibility fixes.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.31</strong></td>
+      <td>Improved mobile layout handling for compact cards with long entity labels and values.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.30</strong></td>
+      <td>Kept entity label/value rows intact in compact dual-setpoint layouts so mobile cards do not collapse normal labels into stacked words.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.29</strong></td>
+      <td>Kept dual heat/cool setpoints compact when extra entity rows are shown and no step layout is explicitly configured.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.28</strong></td>
+      <td>Made the active button underline use one accent path so <code>--st-mode-active-accent-opacity: 0</code> can hide it cleanly.</td>
+    </tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.27</strong></td>
+      <td>Kept sparse HVAC mode rows on one line on narrow mobile screens when one mode is hidden.</td>
+    </tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.26</strong></td>
+      <td>Fixed order-only YAML edits so Home Assistant enables Save when control or option order changes.</td>
+    </tr>
+    <tr><td>Kept configured control order stable when editing cards in the visual editor.</td></tr>
+    <tr><td>Balanced entity label sizing so long labels can wrap cleanly without forcing normal mobile labels to split too early.</td></tr>
+    <tr><td>Reduced extra vertical space above sparse main control rows without changing button height.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.0.25</strong></td>
+      <td>Restored the active button underline so enhanced visuals show the tuned bottom accent by default.</td>
+    </tr>
+    <tr><td>Added <code>--st-mode-active-accent-opacity</code> for intentionally hiding or dimming the active underline without changing its color source.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.0.24</strong></td>
+      <td>Kept entity labels and values paired when using separator-free or left-aligned entity rows.</td>
+    </tr>
+    <tr><td>Preserved configured <code>control</code> order when changing enabled controls in the visual editor.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.23</strong></td>
+      <td>Added <code>layout.entities.alignment</code> so entity labels can use right-aligned or left-aligned table styling.</td>
+    </tr>
+    <tr><td>Improved separator-free entity rows so labels and values keep clear table spacing.</td></tr>
+    <tr><td>Refined multi-card selector navigation and menu behavior so the current card is clearer and controls stay steady while switching.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.22</strong></td>
+      <td>Added <code>_order</code> for numeric mode options that cannot preserve YAML key order after Home Assistant parses the config.</td>
+    </tr>
+    <tr><td>Improved fan speed icon handling for numeric speeds and <code>medium_high</code> style fan ladders.</td></tr>
+    <tr><td>Restored dynamic extra-entity icon templates, including legacy <code>{{icon|icon}}</code> rows and <code>state_attr()</code> icon lookups.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.21</strong></td>
+      <td>Preserved configured option order inside mode rows so fan, preset, swing, and HVAC options can be arranged from YAML.</td>
+    </tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.0.20</strong></td>
+      <td>Added <code>layout.entities.separator: false</code> to hide the colon after entity row labels.</td>
+    </tr>
+    <tr><td>Fixed value-only entity rows so current value and state text keep proper spacing.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.0.19</strong></td>
+      <td>Restored explicit <code>control:</code> ordering for configured HVAC, preset, fan, and swing rows.</td>
+    </tr>
+    <tr><td>Restored explicit per-mode <code>icon:</code> overrides, including icon-only swing and vane controls.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.18</strong></td>
+      <td>Improved compatibility for compact v3-style layouts with entity rows and dual setpoints.</td>
+    </tr>
+    <tr><td>Restored more natural entity label/value sizing so long labels wrap cleanly while values stay readable.</td></tr>
+    <tr><td>Tuned the multi-card header/body spacing for a cleaner embedded-card fit.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.17</strong></td>
+      <td>Restored off-mode climate target changes by default and added <code>disable_setpoint_change_when_off</code> for TRV-style setups that need the buttons locked while off.</td>
+    </tr>
+    <tr><td>Show current temperature on fan-based AC cards when the fan entity exposes a temperature attribute.</td></tr>
+    <tr><td>Tightened the Simple Thermostat Group menu button while keeping the embedded card isolated from the group header.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.16</strong></td>
+      <td>Restored support for <code>name: false</code> on individual mode controls so buttons can be shown as icon-only again.</td>
+    </tr>
+    <tr>
+      <td rowspan="6" nowrap><strong>v4.0.15</strong></td>
+      <td>Restored the original Simple Thermostat active mode color assignments for Heat, Cool, Heat/Cool, Dry, Auto, Fan only, and Off.</td>
+    </tr>
+    <tr><td>Restored <code>template:</code> support for extra entity rows, including legacy <code>state.raw|formatNumber</code> templates and attribute-based calculations.</td></tr>
+    <tr><td>Improved long extra-entity label wrapping so labels can wrap while values stay on one line.</td></tr>
+    <tr><td>Reduced wasted horizontal space for vertical setpoint controls when extra entity rows are shown.</td></tr>
+    <tr><td>Reduced header icon prominence while keeping setpoint controls and mode buttons unchanged.</td></tr>
+    <tr><td>Paused group-card activity-following briefly after manual navigation so the selector does not fight user input.</td></tr>
+    <tr>
+      <td rowspan="1" nowrap><strong>v4.0.14</strong></td>
+      <td>Fixed object-style <code>control</code> configs so entries set to <code>false</code> stay hidden.</td>
+    </tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.13</strong></td>
+      <td>Fixed legacy <code>sensors:</code> labels importing as long Home Assistant friendly names.</td>
+    </tr>
+    <tr><td>Restored legacy <code>show: false</code> behavior for imported sensor rows.</td></tr>
+    <tr><td>Preserved the old vertical setpoint stepper default for imported <code>version: 3</code> cards unless <code>layout.step</code> is explicitly configured.</td></tr>
+    <tr><td>Improved dual-setpoint layout so entity rows do not collide with heat/cool target controls.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.12</strong></td>
+      <td>Added <code>hide_when</code> for mode-aware setpoint visibility.</td>
+    </tr>
+    <tr><td>Added optional activity-following selection to <code>custom:simple-thermostat-group</code>.</td></tr>
+    <tr><td>Added a quick fade when switching grouped cards.</td></tr>
+    <tr><td>Removed the unused group selector style editor option.</td></tr>
+    <tr>
+      <td rowspan="2" nowrap><strong>v4.0.0-rc.11</strong></td>
+      <td>Disabled climate setpoint step buttons while the climate entity is <code>off</code>.</td>
+    </tr>
+    <tr><td>Added regression coverage for TRV-style <code>OFF</code> target values so the card no longer steps from <code>OFF</code> into invalid low temperatures.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.0-rc.10</strong></td>
+      <td>Added <code>custom:simple-thermostat-group</code> for switching between multiple thermostat cards in one dashboard footprint.</td>
+    </tr>
+    <tr><td>Kept each grouped card rendered by the normal Simple Thermostat card so existing per-card layouts and controls stay intact.</td></tr>
+    <tr><td>Added carousel arrows, direct selection menu, optional header toggles, remembered selection, and a visual editor for grouped cards.</td></tr>
+    <tr><td>Added regression coverage for group rendering, selection, menu behavior, title fitting, and embedded card isolation.</td></tr>
+    <tr>
+      <td rowspan="5" nowrap><strong>v4.0.0-rc.8</strong></td>
+      <td>Improved inactive mode button contrast on tinted or custom card backgrounds.</td>
+    </tr>
+    <tr><td>Used AC-aware default header icons for cooling-capable climate entities.</td></tr>
+    <tr><td>Kept off-icon slash overlays working with fallback climate icons.</td></tr>
+    <tr><td>Contained card sizing and internal layers inside dashboard wrappers.</td></tr>
+    <tr><td>Preferred Home Assistant's service-call path for card actions when available.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.0-rc.7</strong></td>
+      <td>Kept the latest Home Assistant state when <code>hass</code> arrives before <code>setConfig</code>.</td>
+    </tr>
+    <tr><td>Hydrated the card as soon as config is assigned.</td></tr>
+    <tr><td>Added regression coverage for Home Assistant state/config ordering.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.0-rc.6</strong></td>
+      <td>Polished the visual editor into a clearer setup flow.</td>
+    </tr>
+    <tr><td>Added simple extra entity row editing for entity, name, and icon.</td></tr>
+    <tr><td>Moved precision, fallback, custom labels, actions, and mode display options into Advanced.</td></tr>
+    <tr><td>Updated editor-first README guidance.</td></tr>
+    <tr>
+      <td rowspan="3" nowrap><strong>v4.0.0-rc.5</strong></td>
+      <td>Aligned card lifecycle behavior more closely with v3.</td>
+    </tr>
+    <tr><td>Removed extra loading and missing-entity wrapper behavior.</td></tr>
+    <tr><td>Added detach and reattach lifecycle regression coverage.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.0-rc.4</strong></td>
+      <td>Hardened card lifecycle when Home Assistant provides state before config.</td>
+    </tr>
+    <tr><td>Kept optional extra entity rows from breaking the card during transient missing states.</td></tr>
+    <tr><td>Mapped <code>auto_comfort</code> preset variants to the comfort icon.</td></tr>
+    <tr><td>Added lifecycle and icon regression tests.</td></tr>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.0.0-rc.3</strong></td>
+      <td>Preserved last valid render during transient missing entity updates.</td>
+    </tr>
+    <tr><td>Tightened single-row entity spacing.</td></tr>
+    <tr><td>Standardized dense mode button sizing.</td></tr>
+    <tr><td>Added lifecycle regression tests.</td></tr>
+    <tr>
+      <td rowspan="7" nowrap><strong>v4.0.0-rc.2</strong></td>
+      <td>Improved <code>enhanced_visuals: false</code> v3-style defaults.</td>
+    </tr>
+    <tr><td>Improved state text for climate, fan, humidifier, and dehumidifier cards.</td></tr>
+    <tr><td>Refined header and entity toggle colors.</td></tr>
+    <tr><td>Increased active icon animation visibility.</td></tr>
+    <tr><td>Cleaned up dense climate mode layouts.</td></tr>
+    <tr><td>Added contextual fan speed icons.</td></tr>
+    <tr><td>Linked v3 documentation.</td></tr>
+    <tr>
+      <td rowspan="6" nowrap><strong>v4.0.0-rc.1</strong></td>
+      <td>Added domain-aware climate, fan, humidifier, and dehumidifier support.</td>
+    </tr>
+    <tr><td>Added fan percentage setpoints and mode controls.</td></tr>
+    <tr><td>Added humidifier and dehumidifier humidity controls.</td></tr>
+    <tr><td>Added v4 enhanced visuals.</td></tr>
+    <tr><td>Added Home Assistant 2024.8+ action support.</td></tr>
+    <tr><td>Kept legacy config aliases supported.</td></tr>
+  </tbody>
+</table>
