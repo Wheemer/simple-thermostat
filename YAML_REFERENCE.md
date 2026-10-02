@@ -106,7 +106,7 @@ The group card renders one normal Simple Thermostat card at a time and adds a co
 
 Use `selector.style: tabs` when a small group should show every card as a visible tab button.
 
-Targets whose main entity is `unavailable` or `unknown` are omitted from the selector. A target with an independent header toggle remains available so that control can still be used. Targets return automatically when Home Assistant reports them as available again.
+Targets whose main entity is `unavailable` or `unknown` are omitted from the selector, even when that card has independent header toggles. Targets return automatically when Home Assistant reports them as available again.
 
 ```yaml
 type: custom:simple-thermostat-group

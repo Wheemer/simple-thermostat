@@ -1137,10 +1137,8 @@ export default class SimpleThermostatGroup extends LitElement {
   private getAvailableTargets() {
     if (!this.hass) return this.targets
 
-    return this.targets.filter(
-      (target) =>
-        isEntityAvailable(this.hass.states?.[target.entity]) ||
-        this.getHeaderToggleConfigs(target).length > 0
+    return this.targets.filter((target) =>
+      isEntityAvailable(this.hass.states?.[target.entity])
     )
   }
 

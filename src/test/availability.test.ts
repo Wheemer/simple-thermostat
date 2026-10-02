@@ -143,7 +143,7 @@ test('queued setpoint is not sent after thermostat becomes unavailable', async (
 })
 
 test.each(['off', 'unknown', 'unavailable', 'missing'])(
-  'group header checks relay state %s instead of thermostat state',
+  'group omits an unavailable thermostat even when its header relay is %s',
   async (state) => {
     const h = hass('unavailable', state)
     if (state === 'missing') delete h.states['switch.power']
@@ -161,19 +161,9 @@ test.each(['off', 'unknown', 'unavailable', 'missing'])(
     group.hass = h as any
     document.body.append(group)
     await group.updateComplete
-    const toggle = group.shadowRoot!.querySelector(
-      '.group-toggle ha-switch'
-    ) as any
-    if (state === 'missing') {
-      expect(toggle).toBeNull()
-      ;(group as any).toggleHeaderEntity(new Event('change'), 'switch.power')
-      expect(h.callService).not.toHaveBeenCalled()
-      return
-    }
-    expect(toggle.disabled).toBe(state !== 'off')
-    toggle.checked = true
-    toggle.dispatchEvent(new Event('change'))
-    expect(h.callService).toHaveBeenCalledTimes(state === 'off' ? 1 : 0)
+    expect(group.shadowRoot!.querySelector('.group-card')).toBeNull()
+    expect(group.shadowRoot!.querySelector('.group-toggle')).toBeNull()
+    expect(h.callService).not.toHaveBeenCalled()
   }
 )
 

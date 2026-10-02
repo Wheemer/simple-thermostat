@@ -526,7 +526,13 @@ test('omits unavailable and unknown targets from the group selector', async () =
 
   group.setConfig({
     cards: [
-      { entity: 'climate.retired', header: { name: 'Retired AC' } },
+      {
+        entity: 'climate.retired',
+        header: {
+          name: 'Retired AC',
+          toggle: { entity: 'switch.retired_ac_power' },
+        },
+      },
       { entity: 'climate.starting', header: { name: 'Starting AC' } },
       { entity: 'climate.living_room', header: { name: 'Living AC' } },
       { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },

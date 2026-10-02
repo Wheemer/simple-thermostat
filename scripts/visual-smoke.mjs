@@ -339,16 +339,22 @@ try {
     if (['unavailable', 'unknown'].includes(fixture.variant)) {
       const card = page.locator('simple-thermostat').first()
       await card.locator('ha-switch').click()
-      await page
-        .locator('simple-thermostat-group .group-toggle ha-switch')
-        .click()
       assert.deepEqual(
         await page.evaluate(() => window.auditCalls),
-        [
-          ['homeassistant', 'turn_on', { entity_id: 'switch.power' }],
-          ['homeassistant', 'turn_on', { entity_id: 'switch.power' }],
-        ],
-        'independent power switches must accept actual pointer clicks'
+        [['homeassistant', 'turn_on', { entity_id: 'switch.power' }]],
+        'the standalone independent power switch must accept an actual pointer click'
+      )
+      assert.equal(
+        await page.locator('simple-thermostat-group .group-toggle').count(),
+        0,
+        'an unavailable grouped thermostat must not render its header toggle'
+      )
+      assert.match(
+        await page
+          .locator('simple-thermostat-group')
+          .evaluate((group) => group.shadowRoot?.textContent ?? ''),
+        /Second Thermostat/,
+        'the group must select its remaining available target'
       )
       assert.equal(
         await card.locator('.thermostat-trigger:not([disabled])').count(),

@@ -154,7 +154,7 @@ Group options:
 | `selector`           | object                  | Configure the group selector. Use `style: tabs` for visible tab buttons, or leave unset for the normal header navigation. Also supports `icons`, `names`, and `states`. |
 | `card`               | object                  | Shared Simple Thermostat config merged into every grouped card.                                                                                                         |
 
-Targets whose main entity is `unavailable` or `unknown` are omitted from the group selector. A target with an independent header toggle remains available so that control can still be used. Targets return automatically when Home Assistant reports them as available again.
+Targets whose main entity is `unavailable` or `unknown` are omitted from the group selector, even when that card has independent header toggles. Targets return automatically when Home Assistant reports them as available again.
 
 ## Domain Defaults
 
@@ -226,7 +226,7 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
       <td rowspan="4" nowrap><strong>v4.5.1</strong></td>
       <td>Skips unavailable or unknown thermostats in the multi-card selector and automatically returns to an available card when the current one goes offline.</td>
     </tr>
-    <tr><td>Keeps cards with independent header toggles available when their main thermostat is offline, so those separate controls remain usable.</td></tr>
+    <tr><td>Multi-card availability follows the main thermostat entity, even when a card also has an independent header toggle.</td></tr>
     <tr><td>Improves touch responsiveness for temperature controls and limits Home Assistant editor entity suggestions to climate entities.</td></tr>
     <tr><td>Refreshes the project dependencies and build tooling for current Home Assistant browser environments.</td></tr>
     <tr>
