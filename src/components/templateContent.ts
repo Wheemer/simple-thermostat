@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit'
+import { LitElement, html, type TemplateResult } from 'lit'
 import { property } from 'lit/decorators.js'
 import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 
@@ -31,7 +31,10 @@ if (!customElements.get('simple-thermostat-template-content')) {
   customElements.define('simple-thermostat-template-content', TemplateContent)
 }
 
-export function renderTemplateContent(markup: string, hass: any) {
+export function renderTemplateContent(
+  markup: string,
+  hass: any
+): TemplateResult | ReturnType<typeof unsafeHTML> {
   return markup.includes('<ha-relative-time')
     ? html`<simple-thermostat-template-content
         style="display: contents"

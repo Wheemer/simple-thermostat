@@ -521,6 +521,113 @@ test('renders optional tab selector and switches targets directly', async () => 
   )
 })
 
+test('omits unavailable and unknown targets from the group selector', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      { entity: 'climate.retired', header: { name: 'Retired AC' } },
+      { entity: 'climate.starting', header: { name: 'Starting AC' } },
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.retired': {
+        entity_id: 'climate.retired',
+        state: 'unavailable',
+        attributes: { friendly_name: 'Retired AC' },
+      },
+      'climate.starting': {
+        entity_id: 'climate.starting',
+        state: 'unknown',
+        attributes: { friendly_name: 'Starting AC' },
+      },
+    },
+  } as any
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Living AC'
+  )
+
+  const menuButton = group.shadowRoot?.querySelector(
+    'button[aria-label="Open menu"]'
+  ) as HTMLButtonElement
+  menuButton.click()
+  await group.updateComplete
+
+  const menuText = group.shadowRoot?.querySelector('.group-picker')?.textContent
+  expect(menuText).toContain('Living AC')
+  expect(menuText).toContain('Bedroom AC')
+  expect(menuText).not.toContain('Retired AC')
+  expect(menuText).not.toContain('Starting AC')
+})
+
+test('moves away from a target that becomes unavailable', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [
+      { entity: 'climate.living_room', header: { name: 'Living AC' } },
+      { entity: 'climate.bedroom', header: { name: 'Bedroom AC' } },
+    ],
+  })
+  group.hass = hass as any
+  await group.updateComplete
+
+  const nextButton = group.shadowRoot?.querySelector(
+    'button[aria-label="Next device"]'
+  ) as HTMLButtonElement
+  nextButton.click()
+  await group.updateComplete
+
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.bedroom': {
+        ...hass.states['climate.bedroom'],
+        state: 'unavailable',
+      },
+    },
+  } as any
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-title')?.textContent).toBe(
+    'Living AC'
+  )
+  expect(embeddedSetConfig).toHaveBeenLastCalledWith(
+    expect.objectContaining({ entity: 'climate.living_room' })
+  )
+})
+
+test('renders no group content when every target is unavailable', async () => {
+  const group = createGroup()
+
+  group.setConfig({
+    cards: [{ entity: 'climate.retired', header: { name: 'Retired AC' } }],
+  })
+  group.hass = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'climate.retired': {
+        entity_id: 'climate.retired',
+        state: 'unavailable',
+        attributes: { friendly_name: 'Retired AC' },
+      },
+    },
+  } as any
+  await group.updateComplete
+
+  expect(group.shadowRoot?.querySelector('.group-card')).toBe(null)
+  expect(group.shadowRoot?.querySelector('.embedded-card-host')).toBe(null)
+})
+
 test('tab selector can include state labels', async () => {
   const group = createGroup()
 

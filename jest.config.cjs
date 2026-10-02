@@ -22,7 +22,9 @@ module.exports = {
       },
     ],
   },
-  transformIgnorePatterns: ['node_modules/(?!(lit|@lit))'],
+  transformIgnorePatterns: [
+    'node_modules/(?!\\.pnpm/(?:lit@|lit-html@|lit-element@|@lit\\+)|lit|lit-html|lit-element|@lit)',
+  ],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': '<rootDir>/src/test/__mocks__/styleMock.js',
   },

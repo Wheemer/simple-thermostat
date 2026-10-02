@@ -154,6 +154,8 @@ Group options:
 | `selector`           | object                  | Configure the group selector. Use `style: tabs` for visible tab buttons, or leave unset for the normal header navigation. Also supports `icons`, `names`, and `states`. |
 | `card`               | object                  | Shared Simple Thermostat config merged into every grouped card.                                                                                                         |
 
+Targets whose main entity is `unavailable` or `unknown` are omitted from the group selector. A target with an independent header toggle remains available so that control can still be used. Targets return automatically when Home Assistant reports them as available again.
+
 ## Domain Defaults
 
 Recent-activity selection remembers transitions observed by this browser. Measurement-only updates do not count as activity, including after reload. Without a recorded transition, startup uses the entity's current activity and state-change timestamp; activity cycles that happen entirely while the browser is closed cannot be reconstructed from the current state alone. Selection memory is local to the browser, not shared between devices.
@@ -220,6 +222,13 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td rowspan="4" nowrap><strong>v4.5.1</strong></td>
+      <td>Skips unavailable or unknown thermostats in the multi-card selector and automatically returns to an available card when the current one goes offline.</td>
+    </tr>
+    <tr><td>Keeps cards with independent header toggles available when their main thermostat is offline, so those separate controls remain usable.</td></tr>
+    <tr><td>Improves touch responsiveness for temperature controls and limits Home Assistant editor entity suggestions to climate entities.</td></tr>
+    <tr><td>Refreshes the project dependencies and build tooling for current Home Assistant browser environments.</td></tr>
     <tr>
       <td rowspan="9" nowrap><strong>v4.5.0</strong></td>
       <td>Compatibility and reliability release covering card rendering, target controls, the visual editors, multi-card behavior, localization, and accessibility. Existing visual defaults and configurations remain supported.</td>

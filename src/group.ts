@@ -900,6 +900,7 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   protected override updated() {
+    this.reconcileAvailableSelection()
     this.syncAutoSelectRecentActivity()
     this.syncEmbeddedCard()
     this.syncOutsideClickListener()
@@ -913,7 +914,7 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   getCardSize() {
-    if (!this.config || !this.targets.length) return 1
+    if (!this.config || !this.getAvailableTargets().length) return 1
 
     const embeddedSize = this.embeddedCard?.getCardSize?.()
     if (typeof embeddedSize === 'number' && Number.isFinite(embeddedSize)) {
@@ -921,6 +922,7 @@ export default class SimpleThermostatGroup extends LitElement {
     }
 
     const target = this.getSelectedTarget()
+    if (!target) return 1
     const cardConfig = this.getTargetCardConfig(target)
     const entityCount = Array.isArray(cardConfig.entities)
       ? cardConfig.entities.length
@@ -1125,15 +1127,41 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private getSelectedTarget() {
+    const targets = this.getAvailableTargets()
     return (
-      this.targets.find((target) => target.entity === this.selectedEntity) ??
-      this.targets[0]
+      targets.find((target) => target.entity === this.selectedEntity) ??
+      targets[0]
     )
+  }
+
+  private getAvailableTargets() {
+    if (!this.hass) return this.targets
+
+    return this.targets.filter(
+      (target) =>
+        isEntityAvailable(this.hass.states?.[target.entity]) ||
+        this.getHeaderToggleConfigs(target).length > 0
+    )
+  }
+
+  private reconcileAvailableSelection() {
+    const targets = this.getAvailableTargets()
+    if (!targets.length) {
+      this.menuOpen = false
+      return
+    }
+
+    if (!targets.some((target) => target.entity === this.selectedEntity)) {
+      this.menuOpen = false
+      this.cardFading = false
+      this.fadeInAfterSync = false
+      this.selectedEntity = targets[0].entity
+    }
   }
 
   private getSelectedState() {
     const target = this.getSelectedTarget()
-    return this.hass?.states?.[target.entity]
+    return target ? this.hass?.states?.[target.entity] : undefined
   }
 
   private openSelectedPopover() {
@@ -1194,7 +1222,7 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private getSelectedIndex() {
-    const index = this.targets.findIndex(
+    const index = this.getAvailableTargets().findIndex(
       (target) => target.entity === this.selectedEntity
     )
     return index === -1 ? 0 : index
@@ -1306,7 +1334,7 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private getMostRecentStateActivityCandidate() {
-    return this.targets
+    return this.getAvailableTargets()
       .map((target) => this.getActivityCandidate(target))
       .filter((candidate) => candidate.timestamp > 0)
       .reduce<ActivityCandidate | undefined>((selected, candidate) => {
@@ -1401,7 +1429,7 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private getActivityActiveRank(target: GroupTarget) {
     const state = this.hass?.states?.[target.entity]
-    if (!state) return 0
+    if (!isEntityAvailable(state)) return 0
 
     const domain = getDomain(target.entity)
     const action = getEntityAction(state) ?? state.attributes?.action
@@ -1501,7 +1529,14 @@ export default class SimpleThermostatGroup extends LitElement {
       return
     }
 
-    const latest = changedTargets.reduce((selected, candidate) =>
+    const selectableChanges = changedTargets.filter((candidate) =>
+      this.getAvailableTargets().some(
+        (target) => target.entity === candidate.target.entity
+      )
+    )
+    if (!selectableChanges.length) return
+
+    const latest = selectableChanges.reduce((selected, candidate) =>
       this.isBetterActivityCandidate(candidate, selected) ? candidate : selected
     )
     this.selectEntity(latest.target.entity, false)
@@ -1580,6 +1615,7 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private getEmbeddedConfig() {
     const target = this.getSelectedTarget()
+    if (!target) return undefined
     return this.getTargetCardConfig(target)
   }
 
@@ -1652,9 +1688,10 @@ export default class SimpleThermostatGroup extends LitElement {
       this.embeddedCardPendingSignature = ''
       return
     }
+    const currentConfig = this.getEmbeddedConfig()
     if (
-      this.getEmbeddedConfigSignature(this.getEmbeddedConfig()) !==
-      configSignature
+      !currentConfig ||
+      this.getEmbeddedConfigSignature(currentConfig) !== configSignature
     ) {
       return
     }
@@ -1676,9 +1713,15 @@ export default class SimpleThermostatGroup extends LitElement {
     if (!this.config || !this.hass) return
 
     const host = this.renderRoot.querySelector('.embedded-card-host')
-    if (!host) return
-
     const embeddedConfig = this.getEmbeddedConfig()
+    if (!host || !embeddedConfig) {
+      this.embeddedCard = undefined
+      this.embeddedCardEntity = ''
+      this.embeddedCardConfigSignature = ''
+      this.embeddedCardPendingSignature = ''
+      return
+    }
+
     const configSignature = this.getEmbeddedConfigSignature(embeddedConfig)
 
     if (
@@ -1860,12 +1903,12 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private selectOffset(offset: number) {
-    if (this.targets.length < 2) return
+    const targets = this.getAvailableTargets()
+    if (targets.length < 2) return
 
     const next =
-      (this.getSelectedIndex() + offset + this.targets.length) %
-      this.targets.length
-    this.selectEntity(this.targets[next].entity)
+      (this.getSelectedIndex() + offset + targets.length) % targets.length
+    this.selectEntity(targets[next].entity)
   }
 
   private toggleHeaderEntity(ev: Event, entityId: string) {
@@ -1930,7 +1973,7 @@ export default class SimpleThermostatGroup extends LitElement {
   }
 
   private toggleMenu() {
-    if (this.targets.length < 2) return
+    if (this.getAvailableTargets().length < 2) return
     this.menuOpen = !this.menuOpen
   }
 
@@ -1995,9 +2038,11 @@ export default class SimpleThermostatGroup extends LitElement {
   private renderPicker() {
     if (!this.menuOpen) return nothing
 
+    const targets = this.getAvailableTargets()
+
     return html`
       <div class="group-picker" role="menu">
-        ${this.targets.map((target) => {
+        ${targets.map((target) => {
           const label = this.getTargetLabel(target)
           const icon = this.getTargetIcon(target)
           const selected = target.entity === this.selectedEntity
@@ -2066,11 +2111,12 @@ export default class SimpleThermostatGroup extends LitElement {
 
   private renderTabSelector() {
     const selector = this.config?.selector ?? DEFAULT_SELECTOR
+    const targets = this.getAvailableTargets()
 
     return html`
       <div class="group-selector tabs">
         <div class="group-tabs" role="tablist">
-          ${this.targets.map((target) => {
+          ${targets.map((target) => {
             const label = this.getTargetLabel(target)
             const icon = this.getTargetIcon(target)
             const selected = target.entity === this.selectedEntity
@@ -2124,6 +2170,8 @@ export default class SimpleThermostatGroup extends LitElement {
     }
 
     const target = this.getSelectedTarget()
+    if (!target) return nothing
+    const targetCount = this.getAvailableTargets().length
     const label = this.getTargetLabel(target)
     const previousLabel = this.localizeNavigationLabel(
       'ui.common.previous',
@@ -2158,7 +2206,7 @@ export default class SimpleThermostatGroup extends LitElement {
             class="group-nav previous"
             type="button"
             aria-label=${previousLabel}
-            ?disabled=${this.targets.length < 2}
+            ?disabled=${targetCount < 2}
             @click=${() => this.selectOffset(-1)}
           >
             <ha-icon icon="mdi:chevron-left"></ha-icon>
@@ -2167,7 +2215,7 @@ export default class SimpleThermostatGroup extends LitElement {
             class="group-nav next"
             type="button"
             aria-label=${nextLabel}
-            ?disabled=${this.targets.length < 2}
+            ?disabled=${targetCount < 2}
             @click=${() => this.selectOffset(1)}
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
@@ -2178,7 +2226,7 @@ export default class SimpleThermostatGroup extends LitElement {
             aria-label=${menuLabel}
             aria-haspopup="menu"
             aria-expanded=${this.menuOpen ? 'true' : 'false'}
-            ?disabled=${this.targets.length < 2}
+            ?disabled=${targetCount < 2}
             @click=${() => this.toggleMenu()}
           >
             <ha-icon icon="mdi:dots-vertical"></ha-icon>
@@ -2198,6 +2246,7 @@ export default class SimpleThermostatGroup extends LitElement {
 
   override render() {
     if (!this.config) return html`<ha-card></ha-card>`
+    if (!this.getAvailableTargets().length) return nothing
 
     return html`
       <div

@@ -17,6 +17,20 @@ test('card styles do not use CSS containment for responsive layout', () => {
   expect(styles).not.toContain('@container')
 })
 
+test('setpoint buttons avoid double-tap zoom delays on touch screens', () => {
+  const styles = fs.readFileSync(
+    path.join(__dirname, '..', 'styles.css'),
+    'utf8'
+  )
+  const triggerRules = [
+    ...styles.matchAll(/\.thermostat-trigger\s*\{[^}]*\}/g),
+  ].map(([rule]) => rule)
+
+  expect(triggerRules).toContainEqual(
+    expect.stringContaining('touch-action: manipulation')
+  )
+})
+
 test('base ha-card keeps the default Home Assistant display contract', () => {
   const styles = fs.readFileSync(
     path.join(__dirname, '..', 'styles.css'),

@@ -743,6 +743,7 @@ ha-card.cooling .header__icon-wrap::before {
 }
 .thermostat-trigger {
   appearance: none;
+  touch-action: manipulation;
   position: relative;
   display: inline-grid;
   place-items: center;

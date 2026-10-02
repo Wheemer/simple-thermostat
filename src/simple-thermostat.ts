@@ -17,7 +17,10 @@ if (!customElements.get(`${CARD_NAME}-group`)) {
 }
 
 if (!customElements.get(`${CARD_NAME}-group-editor`)) {
-  customElements.define(`${CARD_NAME}-group-editor`, SimpleThermostatGroupEditor)
+  customElements.define(
+    `${CARD_NAME}-group-editor`,
+    SimpleThermostatGroupEditor
+  )
 }
 
 console.info(
@@ -34,6 +37,16 @@ if (!w.customCards.find((c: any) => c.type === CARD_NAME)) {
     preview: true,
     description: 'A different take on the thermostat card',
     documentationURL: 'https://github.com/Wheemer/simple-thermostat',
+    getEntitySuggestion: (_hass: unknown, entityId: string) => {
+      if (entityId.split('.')[0] !== 'climate') return null
+
+      return {
+        config: {
+          type: `custom:${CARD_NAME}`,
+          entity: entityId,
+        },
+      }
+    },
   })
 }
 if (!w.customCards.find((c: any) => c.type === `${CARD_NAME}-group`)) {
