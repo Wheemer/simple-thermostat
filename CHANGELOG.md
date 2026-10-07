@@ -11,6 +11,10 @@ All notable changes to Simple Thermostat are documented here.
   </thead>
   <tbody>
     <tr>
+      <td nowrap><strong>v4.5.2</strong></td>
+      <td>Fixes footer controls for <code>button</code> and <code>input_button</code> entities. Footer actions now use the entity's normal Home Assistant service, including <code>press</code> for buttons and <code>turn_on</code> for scripts and scenes.</td>
+    </tr>
+    <tr>
       <td rowspan="4" nowrap><strong>v4.5.1</strong></td>
       <td>Skips unavailable or unknown thermostats in the multi-card selector and automatically returns to an available card when the current one goes offline.</td>
     </tr>
