@@ -642,7 +642,7 @@ The `temperature` key is kept for compatibility and means the built-in current v
 
 ## Footer Controls
 
-Use `footer` for switch-style helpers that should look like the card's other control buttons instead of extra entity rows.
+Use `footer` for helper toggles and actions that should look like the card's other control buttons instead of extra entity rows.
 
 ```yaml
 footer:
@@ -664,12 +664,12 @@ Footer options:
 
 | Option          | Type            | Description                                                   |
 | --------------- | --------------- | ------------------------------------------------------------- |
-| `entity`        | string          | Toggle-capable entity id.                                     |
+| `entity`        | string          | Toggle-capable entity id, `button`, `input_button`, `script`, or `scene`. |
 | `name`          | string, `false` | Label override, or `false` to show only the icon.             |
 | `icon`          | string, `false` | Icon override, or `false` to hide the icon.                   |
 | `hide_when_off` | boolean         | Hide this footer control while the main card entity is `off`. |
 
-Footer controls call `homeassistant.turn_on` and `homeassistant.turn_off` for the configured entity.
+Footer controls use the entity's normal Home Assistant action: toggle-capable domains use `homeassistant.turn_on` and `homeassistant.turn_off`; `button` and `input_button` use `press`; and `script` / `scene` use `turn_on`.
 
 ## Setpoints
 

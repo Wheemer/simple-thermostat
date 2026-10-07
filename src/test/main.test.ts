@@ -386,6 +386,76 @@ test('renders footer toggles as a control row and toggles the entity', async () 
   })
 })
 
+test('footer controls use domain-aware actions for buttons and scripts', async () => {
+  document.body.innerHTML = ''
+  const card = createCard()
+  document.body.appendChild(card)
+  const callService = jest.fn()
+
+  card.setConfig({
+    entity: 'climate.living_room',
+    control: false,
+    hide_setpoint: true,
+    footer: [
+      { entity: 'button.lg_ac_jet_mode', name: 'Jet mode' },
+      { entity: 'input_button.toggle_vertical_swing', name: 'Swing' },
+      { entity: 'script.eco_mode', name: 'Eco mode' },
+      { entity: 'scene.night_mode', name: 'Night mode' },
+    ],
+  } as any)
+  card.hass = {
+    callService,
+    states: {
+      'climate.living_room': {
+        entity_id: 'climate.living_room',
+        state: 'cool',
+        attributes: { current_temperature: 21, min_temp: 7, max_temp: 30 },
+      },
+      'button.lg_ac_jet_mode': {
+        entity_id: 'button.lg_ac_jet_mode',
+        state: 'unknown',
+        attributes: {},
+      },
+      'input_button.toggle_vertical_swing': {
+        entity_id: 'input_button.toggle_vertical_swing',
+        state: 'unknown',
+        attributes: {},
+      },
+      'script.eco_mode': {
+        entity_id: 'script.eco_mode',
+        state: 'off',
+        attributes: {},
+      },
+      'scene.night_mode': {
+        entity_id: 'scene.night_mode',
+        state: 'scening',
+        attributes: {},
+      },
+    },
+    config: { unit_system: { temperature: '°C' } },
+    localize: (key: string) => key,
+  }
+
+  await card.updateComplete
+
+  const buttons = card.shadowRoot?.querySelectorAll('.footer-toggle') ?? []
+  expect(buttons).toHaveLength(4)
+  ;[...buttons].forEach((button) => (button as HTMLElement).click())
+
+  expect(callService).toHaveBeenNthCalledWith(1, 'button', 'press', {
+    entity_id: 'button.lg_ac_jet_mode',
+  })
+  expect(callService).toHaveBeenNthCalledWith(2, 'input_button', 'press', {
+    entity_id: 'input_button.toggle_vertical_swing',
+  })
+  expect(callService).toHaveBeenNthCalledWith(3, 'script', 'turn_on', {
+    entity_id: 'script.eco_mode',
+  })
+  expect(callService).toHaveBeenNthCalledWith(4, 'scene', 'turn_on', {
+    entity_id: 'scene.night_mode',
+  })
+})
+
 test('footer toggles can hide while the main entity is off', async () => {
   document.body.innerHTML = ''
   const card = createCard()

@@ -1,5 +1,10 @@
 import { html, nothing } from 'lit'
 import { isEntityAvailable } from '../entityAvailability'
+import {
+  BUTTON_DOMAINS,
+  callEntityAction,
+  TOGGLE_DOMAINS,
+} from '../entityAction'
 import formatNumber from '../formatNumber'
 import { appendUnit } from '../unitFormat'
 import { LooseObject } from '../types'
@@ -8,15 +13,6 @@ import { renderTemplate } from '../template'
 import './timerRemaining'
 import { renderTemplateContent } from './templateContent'
 
-const TOGGLE_DOMAINS = [
-  'automation',
-  'fan',
-  'humidifier',
-  'input_boolean',
-  'light',
-  'switch',
-]
-const BUTTON_DOMAINS = ['button', 'input_button', 'script', 'scene']
 const DISPLAY_VALUES = ['row', 'auto', 'button', 'toggle', 'chip']
 
 interface InfoItemDetails extends LooseObject {
@@ -44,42 +40,8 @@ interface InfoItemOptions {
   details: InfoItemDetails
 }
 
-function toggleEntity(hass, entityId: string, checked: boolean) {
-  if (!isEntityAvailable(hass.states?.[entityId])) return
-  const service = `turn_${checked ? 'on' : 'off'}`
-  if (typeof hass.performAction === 'function') {
-    hass.performAction({
-      action: `homeassistant.${service}`,
-      data: { entity_id: entityId },
-    })
-  } else {
-    hass.callService('homeassistant', service, { entity_id: entityId })
-  }
-}
-
 function safeClass(value: unknown) {
   return String(value ?? '').replace(/[^a-z0-9_-]/gi, '')
-}
-
-function callEntityAction(hass, entityId: string, domain: string) {
-  if (!isEntityAvailable(hass.states?.[entityId])) return
-  if (TOGGLE_DOMAINS.includes(domain)) {
-    const checked = hass.states?.[entityId]?.state !== 'on'
-    toggleEntity(hass, entityId, checked)
-    return
-  }
-
-  const service =
-    domain === 'button' || domain === 'input_button' ? 'press' : 'turn_on'
-
-  if (typeof hass.performAction === 'function') {
-    hass.performAction({
-      action: `${domain}.${service}`,
-      data: { entity_id: entityId },
-    })
-  } else {
-    hass.callService(domain, service, { entity_id: entityId })
-  }
 }
 
 function renderIconTemplate({
@@ -393,7 +355,7 @@ export default function renderInfoItem({
           aria-pressed=${isToggleEntity ? String(active) : nothing}
           @click=${() =>
             supportsAction
-              ? callEntityAction(hass, state.entity_id, domain)
+              ? callEntityAction(hass, state.entity_id)
               : canOpenEntity
                 ? openEntityPopover(state.entity_id)
                 : undefined}
@@ -432,7 +394,7 @@ export default function renderInfoItem({
             .checked=${state.state === 'on'}
             .disabled=${!isEntityAvailable(state)}
             @change=${(ev: Event) =>
-              toggleEntity(
+              callEntityAction(
                 hass,
                 state.entity_id,
                 (ev.target as HTMLInputElement).checked

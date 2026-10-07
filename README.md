@@ -197,7 +197,7 @@ Extra entity display modes include `row`, `auto`, `button`, `toggle`, and `chip`
 
 The visual editor can suggest available entities registered to the same Home Assistant device. Suggestions are only added when selected and never change a card automatically.
 
-Footer controls can show switch-style helper entities below the normal mode rows:
+Footer controls can show helper switches and actions below the normal mode rows. They support toggle-capable entities, `button` and `input_button` presses, plus `script` and `scene` actions:
 
 ```yaml
 footer:

@@ -1,4 +1,42 @@
-import type { LooseObject } from './types'
+import { isEntityAvailable } from './entityAvailability'
+import type { HASS, LooseObject } from './types'
+
+export const TOGGLE_DOMAINS = [
+  'automation',
+  'fan',
+  'humidifier',
+  'input_boolean',
+  'light',
+  'switch',
+]
+export const BUTTON_DOMAINS = ['button', 'input_button', 'script', 'scene']
+
+export function callEntityAction(
+  hass: HASS,
+  entityId: string,
+  checked?: boolean
+) {
+  const state = hass.states?.[entityId]
+  if (!isEntityAvailable(state)) return
+
+  const [domain] = entityId.split('.')
+  const isToggle = TOGGLE_DOMAINS.includes(domain)
+  const service = isToggle
+    ? `turn_${checked ?? (state.state !== 'on') ? 'on' : 'off'}`
+    : domain === 'button' || domain === 'input_button'
+      ? 'press'
+      : 'turn_on'
+  const actionDomain = isToggle ? 'homeassistant' : domain
+
+  if (typeof hass.performAction === 'function') {
+    hass.performAction({
+      action: `${actionDomain}.${service}`,
+      data: { entity_id: entityId },
+    })
+  } else {
+    hass.callService?.(actionDomain, service, { entity_id: entityId })
+  }
+}
 
 type EntityStateLike = LooseObject & {
   entity_id?: string

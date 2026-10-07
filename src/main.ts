@@ -16,7 +16,7 @@ import { isEntityAvailable } from './entityAvailability'
 import renderEntities from './components/entities'
 import renderModeType from './components/modeType'
 import renderFooter from './components/footer'
-import { getEntityAction } from './entityAction'
+import { callEntityAction, getEntityAction } from './entityAction'
 import normalizeConfig from './config/normalize'
 
 import parseHeader, {
@@ -1147,10 +1147,8 @@ export default class SimpleThermostat extends LitElement {
   }
 
   toggleFooterEntity = (entityId: string, checked: boolean) => {
-    if (!isEntityAvailable(this._hass?.states?.[entityId])) return
-    this._callAction(`homeassistant.turn_${checked ? 'on' : 'off'}`, {
-      entity_id: entityId,
-    })
+    if (!this._hass) return
+    callEntityAction(this._hass, entityId, checked)
     fireEvent(this, 'haptic', 'light')
   }
 
