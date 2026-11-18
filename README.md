@@ -2,44 +2,38 @@
 
 # Simple Thermostat
 
-### An HVAC, thermostat, climate, fan, and humidifier card for Home Assistant Lovelace UI
+Compact dashboard controls for Home Assistant
 
 [![HACS Default](https://img.shields.io/badge/HACS-DEFAULT-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://github.com/hacs/integration)
 [![Home Assistant 2024.8+](https://img.shields.io/badge/HOME%20ASSISTANT-2024.8%2B-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://www.home-assistant.io/)
 [![Latest release](https://img.shields.io/github/v/release/Wheemer/simple-thermostat?style=for-the-badge&logo=github&logoColor=white&label=RELEASE&labelColor=555555&color=22C55E)](https://github.com/Wheemer/simple-thermostat/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Wheemer/simple-thermostat/total?style=for-the-badge&logo=github&logoColor=white&label=DOWNLOADS&labelColor=555555&color=8A2BE2)](https://github.com/Wheemer/simple-thermostat/releases)
 
-<p>
-  <strong>⭐ NEW V4 RELEASE ⭐</strong><br>
-  Fan, humidifier, dehumidifier, modern actions, and enhanced visuals
-</p>
-
-<p>
-  <strong>Now available in the default HACS catalog.</strong>
-</p>
-
 </div>
 
 A community maintained fork of [simple-thermostat](https://github.com/nervetattoo/simple-thermostat) by [@nervetattoo](https://github.com/nervetattoo), kept working with current Home Assistant releases. The v4 modernization was heavily influenced by [duczz/ha-simple-thermostat](https://github.com/duczz/ha-simple-thermostat).
 
-A compact Lovelace card for Home Assistant climate, fan, humidifier, and dehumidifier entities. It keeps the original small-card style while adding domain-aware setpoints, current values, action handling, richer mode controls, and enhanced visuals.
+A compact dashboard card for controlling existing climate, fan, humidifier, and dehumidifier entities. Use one card per device, or switch between devices in a [group card](#group-card).
+
+**Simple Thermostat is a dashboard card, not a climate integration.** It does not create entities or provide `platform: simple_thermostat` in `configuration.yaml`. For a thermostat built from a switch and a temperature sensor, start with Home Assistant's [Generic Thermostat](https://www.home-assistant.io/integrations/generic_thermostat/).
+
+[Installation](#installation) · [Add a card](#add-a-card) · [Group card](#group-card) · [YAML reference](YAML_REFERENCE.md) · [Changelog](CHANGELOG.md)
 
 <div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
   <strong style="color: #41bdf5;">New in v4:</strong> Fan, humidifier, and dehumidifier support, domain-aware controls, modern Home Assistant actions, richer mode buttons, and enhanced visuals.
 </div>
 
-![Simple Thermostat v4 examples](examples.png)
+## Examples
 
-The example image uses the horizontal setpoint layout explicitly:
+**Desktop: dual temperature targets and extra sensor readings**
 
-```yaml
-layout:
-  step: row
-  mode:
-    headings: false
-    icons: true
-    names: true
-```
+![Desktop thermostat with horizontal setpoint controls](examples/thermostat-desktop.png)
+
+**Mobile: two thermostats in one tabbed group**
+
+![Tabbed thermostat group on a narrow mobile screen](examples/thermostat-mobile.png)
+
+Both screenshots show the actual card rendered in Chromium with sample entities. The desktop card uses `layout.step: row`; the mobile group uses `selector.style: tabs`.
 
 <div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
   <strong style="color: #41bdf5;">Requires:</strong> Home Assistant 2024.8 or newer. v4 uses Home Assistant's current frontend action API.
@@ -156,9 +150,9 @@ Group options:
 
 Targets whose main entity is `unavailable` or `unknown` are omitted from the group selector, even when that card has independent header toggles. Targets return automatically when Home Assistant reports them as available again.
 
-## Domain Defaults
-
 Recent-activity selection remembers transitions observed by this browser. Measurement-only updates do not count as activity, including after reload. Without a recorded transition, startup uses the entity's current activity and state-change timestamp; activity cycles that happen entirely while the browser is closed cannot be reconstructed from the current state alone. Selection memory is local to the browser, not shared between devices.
+
+## Domain Defaults
 
 The card chooses sensible defaults from the selected entity:
 
