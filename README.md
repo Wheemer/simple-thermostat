@@ -25,15 +25,9 @@ A compact dashboard card for controlling existing climate, fan, humidifier, and 
 
 ## Examples
 
-**Desktop: dual temperature targets and extra sensor readings**
+![Simple Thermostat v4 examples](examples.png)
 
-![Desktop thermostat with horizontal setpoint controls](examples/thermostat-desktop.png)
-
-**Mobile: two thermostats in one tabbed group**
-
-![Tabbed thermostat group on a narrow mobile screen](examples/thermostat-mobile.png)
-
-Both screenshots show the actual card rendered in Chromium with sample entities. The desktop card uses `layout.step: row`; the mobile group uses `selector.style: tabs`.
+The examples use horizontal setpoint controls (`layout.step: row`).
 
 <div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
   <strong style="color: #41bdf5;">Requires:</strong> Home Assistant 2024.8 or newer. v4 uses Home Assistant's current frontend action API.
