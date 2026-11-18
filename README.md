@@ -2,7 +2,7 @@
 
 # Simple Thermostat
 
-Compact dashboard controls for Home Assistant
+**Your climate controls, in less dashboard space.**
 
 [![HACS Default](https://img.shields.io/badge/HACS-DEFAULT-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://github.com/hacs/integration)
 [![Home Assistant 2024.8+](https://img.shields.io/badge/HOME%20ASSISTANT-2024.8%2B-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white&labelColor=555555)](https://www.home-assistant.io/)
@@ -13,9 +13,10 @@ Compact dashboard controls for Home Assistant
 
 A compact dashboard card for controlling existing climate, fan, humidifier, and dehumidifier entities. Use one card per device, or switch between devices in a [group card](#group-card).
 
-**Simple Thermostat is a dashboard card, not a climate integration.** It does not create entities or provide `platform: simple_thermostat` in `configuration.yaml`. For a thermostat built from a switch and a temperature sensor, start with Home Assistant's [Generic Thermostat](https://www.home-assistant.io/integrations/generic_thermostat/).
+📦 [Installation](#installation) · 🎛️ [Add a card](#add-a-card) · 🗂️ [Group card](#group-card) · 📖 [YAML reference](YAML_REFERENCE.md) · 📝 [Changelog](CHANGELOG.md)
 
-[Installation](#installation) · [Add a card](#add-a-card) · [Group card](#group-card) · [YAML reference](YAML_REFERENCE.md) · [Changelog](CHANGELOG.md)
+> [!TIP]
+> **Start with one card.** Pick an existing device in the visual editor, then add the readings and controls you want. Use a [group card](#group-card) to switch between devices in the same dashboard space.
 
 ## Installation
 
@@ -60,6 +61,8 @@ entity: climate.living_room
 ```
 
 ## Examples
+
+🌡️ **Thermostats and ACs** · 🌀 **Fan speeds and swing controls** · 💧 **Humidity targets**
 
 ![Simple Thermostat examples: climate, fan, dehumidifier, swing, and vane controls](examples.png)
 
