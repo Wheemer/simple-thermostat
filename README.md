@@ -1,6 +1,6 @@
 <div align="center">
 
-# Simple Thermostat
+# ♨️ Simple Thermostat
 
 **Your climate controls, in less dashboard space.**
 
