@@ -11,88 +11,59 @@ Compact dashboard controls for Home Assistant
 
 </div>
 
-A community maintained fork of [simple-thermostat](https://github.com/nervetattoo/simple-thermostat) by [@nervetattoo](https://github.com/nervetattoo), kept working with current Home Assistant releases. The v4 modernization was heavily influenced by [duczz/ha-simple-thermostat](https://github.com/duczz/ha-simple-thermostat).
-
 A compact dashboard card for controlling existing climate, fan, humidifier, and dehumidifier entities. Use one card per device, or switch between devices in a [group card](#group-card).
 
 **Simple Thermostat is a dashboard card, not a climate integration.** It does not create entities or provide `platform: simple_thermostat` in `configuration.yaml`. For a thermostat built from a switch and a temperature sensor, start with Home Assistant's [Generic Thermostat](https://www.home-assistant.io/integrations/generic_thermostat/).
 
 [Installation](#installation) · [Add a card](#add-a-card) · [Group card](#group-card) · [YAML reference](YAML_REFERENCE.md) · [Changelog](CHANGELOG.md)
 
-<div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
-  <strong style="color: #41bdf5;">New in v4:</strong> Fan, humidifier, and dehumidifier support, domain-aware controls, modern Home Assistant actions, richer mode buttons, and enhanced visuals.
-</div>
-
-## Examples
-
-![Simple Thermostat v4 examples](examples.png)
-
-The examples use horizontal setpoint controls (`layout.step: row`).
-
-<div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
-  <strong style="color: #41bdf5;">Requires:</strong> Home Assistant 2024.8 or newer. v4 uses Home Assistant's current frontend action API.
-</div>
-
-<div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
-  <strong style="color: #41bdf5;">Compatibility:</strong> v4 imports older <code>current_temperature_entity</code>, <code>sensors</code>, and <code>layout.sensors</code> YAML into the current <code>current_value_entity</code>, <code>entities</code>, and <code>layout.entities</code> config shape. If you are staying on v3, use the <a href="https://github.com/Wheemer/simple-thermostat/tree/v3">v3 documentation</a>.
-</div>
-
-<div style="border: 1px solid rgba(65, 189, 245, 0.45); border-radius: 8px; padding: 16px 18px; margin: 18px 0;">
-  <strong style="color: #41bdf5;">Known browser limitation:</strong> Brave Mobile may render some compact entity-row layouts differently from the Home Assistant companion app and other mobile browsers. The Home Assistant app, Firefox Mobile, DuckDuckGo Mobile, and most desktop browsers are expected to render these layouts normally.
-</div>
-
 ## Installation
 
-### HACS
+**Requires Home Assistant 2024.8 or newer.**
+
+### HACS (recommended)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Wheemer&repository=simple-thermostat&category=plugin)
 
 1. Open **HACS** in Home Assistant.
-2. Go to **Frontend** or search for **Simple Thermostat**.
-3. Install **Simple Thermostat**.
-4. Refresh Home Assistant and clear the browser cache if the old card is still loaded.
+2. Search for **Simple Thermostat** and choose **Download**.
+3. Refresh the dashboard, then [add the card](#add-a-card).
 
-If you are helping test an unreleased fix, see [Trying prereleases with HACS](PRERELEASES.md). Most users should stay on the normal release channel.
-
-### Migrating from another fork
-
-If you installed `simple-thermostat` from another repository, uninstall the old HACS entry first. Then install **Simple Thermostat** from the default HACS catalog.
-
-If you are not upgrading to v4, keep using the [v3 documentation](https://github.com/Wheemer/simple-thermostat/tree/v3) for the older config surface.
+Testing a fix? [Trying prereleases with HACS](PRERELEASES.md) is optional.
 
 ### Manual install
 
 1. Download `simple-thermostat.js` from the [latest release](https://github.com/Wheemer/simple-thermostat/releases/latest).
-2. Put it in your Home Assistant `www` folder.
-3. Add this Lovelace resource:
+2. Put it in Home Assistant's `config/www/` folder.
+3. Register `/local/simple-thermostat.js` as a **JavaScript Module** in the dashboard's resource settings. For YAML-managed resources, use:
 
    ```yaml
    resources:
      - url: /local/simple-thermostat.js
        type: module
    ```
+4. Refresh the dashboard, then [add the card](#add-a-card).
 
 ## Add a Card
-
-Use the Home Assistant visual editor for normal setup. In v4, the card reads the selected entity and shows the options that apply to that device, so most cards can be configured without opening YAML.
 
 1. Open a dashboard and choose **Edit dashboard**.
 2. Select **Add card**.
 3. Search for **Simple Thermostat**.
 4. Pick your climate, fan, humidifier, or dehumidifier entity.
-5. Adjust the controls, header toggles, extra entity rows, target controls, and appearance in the editor.
+5. Save the card. The editor shows the controls available for that entity and lets you customize the layout, appearance, and extra rows.
 
-The editor handles the common v4 setup:
+For dashboard YAML, start with this and replace the entity ID with your own:
 
-- Entity and current value selection.
-- Climate, fan, humidifier, and dehumidifier controls.
-- Header toggles and toggle icons.
-- Extra entity rows, names, icons, row layout, and optional button/toggle/chip display.
-- Footer toggle controls for helper switches shown below the normal mode rows.
-- Setpoint visibility, off-state display options, and v4 enhanced visuals.
-- Advanced labels, precision, action type, and mode display options.
+```yaml
+type: custom:simple-thermostat
+entity: climate.living_room
+```
 
-Use the YAML reference for specialized extra row formatting such as attributes, units, decimals, relative time, timer countdowns, and custom CSS.
+## Examples
+
+![Simple Thermostat examples: climate, fan, dehumidifier, swing, and vane controls](examples.png)
+
+The gallery uses horizontal setpoint controls (`layout.step: row`).
 
 ## Group Card
 
@@ -166,8 +137,6 @@ Custom names, labels, and `state_labels` are displayed exactly as configured. Th
 
 ## Advanced YAML
 
-YAML is still supported for advanced customization, migration, and manual dashboard editing, but it is no longer the recommended starting point for v4.
-
 Use the [YAML reference](YAML_REFERENCE.md) for:
 
 - advanced mode filtering,
@@ -196,6 +165,18 @@ footer:
 
 ## Troubleshooting
 
+### The card is missing or still looks like the old version
+
+Refresh the dashboard. If the browser still loads an old copy, clear its cache for Home Assistant. If you installed the card manually, check that the JavaScript module resource points to the file you downloaded.
+
+### Switching from another Simple Thermostat card
+
+If you installed this card from a different repository, remove that HACS entry before installing this one. Older card YAML keys such as `current_temperature_entity`, `sensors`, and `layout.sensors` are imported into the current configuration format. See the [YAML reference](YAML_REFERENCE.md) for current options.
+
+### Compact rows look different in Brave Mobile
+
+Brave Mobile can display some compact entity rows differently. Compare the same dashboard in the Home Assistant companion app or another browser.
+
 ### Setpoint controls stop at an unexpected temperature
 
 Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home Assistant entity. If a step button becomes disabled unexpectedly or Home Assistant rejects a temperature change, check those attributes under **Developer Tools → States**. Incorrect limits must be corrected in the integration or device configuration that provides the entity; the card cannot override Home Assistant's temperature validation.
@@ -203,3 +184,5 @@ Simple Thermostat uses the `min_temp` and `max_temp` limits reported by the Home
 ## Changelog
 
 Release history is maintained in [CHANGELOG.md](CHANGELOG.md).
+
+Originally created by [@nervetattoo](https://github.com/nervetattoo/simple-thermostat), with modernization inspired by [duczz/ha-simple-thermostat](https://github.com/duczz/ha-simple-thermostat).
