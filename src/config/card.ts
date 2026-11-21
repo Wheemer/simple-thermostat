@@ -82,7 +82,7 @@ interface CardConfig {
       separator?: boolean
       alignment?: 'left' | 'right'
     }
-    step: 'row' | 'column'
+    step: 'auto' | 'row' | 'column'
   }
   unit?: boolean | string
   fallback?: string

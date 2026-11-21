@@ -15,7 +15,7 @@ function normalizeDecimals(value: unknown, fallback = 1) {
     : fallback
 }
 
-function escapeHtml(value: unknown): string {
+export function escapeHtml(value: unknown): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -166,14 +166,14 @@ export function renderTemplate({
       typeof str === 'string' &&
       str in attributes
     ) {
-      return hass.formatEntityAttributeValue(stateObj, str)
+      return escapeHtml(hass.formatEntityAttributeValue(stateObj, str))
     }
 
     if (!prefix && (domain === 'climate' || domain === 'humidifier')) {
-      return localize(str, `state_attributes.${domain}.${str}`)
+      return escapeHtml(localize(str, `state_attributes.${domain}.${str}`))
     }
 
-    return localize(str, prefix)
+    return escapeHtml(localize(str, prefix))
   })
 
   try {

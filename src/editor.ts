@@ -135,8 +135,9 @@ const ACTION_OPTIONS = [
 ]
 
 const STEP_LAYOUT_OPTIONS = [
-  { value: 'row', label: 'Row' },
-  { value: 'column', label: 'Column' },
+  { value: 'auto', label: 'Automatic' },
+  { value: 'row', label: 'Horizontal (+/-)' },
+  { value: 'column', label: 'Vertical (up/down)' },
 ]
 
 const STEP_SIZE_OPTIONS = [
@@ -223,23 +224,15 @@ function getChangedFormPaths(current: FormData, updated: FormData) {
   )
 }
 
-function ignoreImplicitDefaultChanges(
-  changedPaths: Set<string>,
-  config: CardConfig
-) {
-  if (!changedPaths.has('enhanced_visuals')) return
-
-  if (!config.layout?.step) {
-    changedPaths.delete('layout.step')
-  }
-}
-
 function setNested(obj: Record<string, unknown>, path: string, value: unknown) {
   const parts = path.split('.')
   let target = obj
   while (parts.length > 1) {
     const part = parts.shift()
-    if (!Object.prototype.hasOwnProperty.call(target, part)) target[part] = {}
+    const nested = Object.prototype.hasOwnProperty.call(target, part)
+      ? target[part]
+      : undefined
+    if (!nested || typeof nested !== 'object' || Array.isArray(nested)) target[part] = {}
     target = target[part] as Record<string, unknown>
   }
   target[parts[0]] = value
@@ -803,10 +796,7 @@ export default class SimpleThermostatEditor extends LitElement {
       'layout.mode.headings': this.config.layout?.mode?.headings === true,
       decimals: this.config.decimals ?? '',
       unit: typeof this.config.unit === 'string' ? this.config.unit : '',
-      'layout.step':
-        this.config.enhanced_visuals === false
-          ? (this.config.layout?.step ?? 'column')
-          : (this.config.layout?.step ?? 'row'),
+      'layout.step': this.config.layout?.step ?? 'auto',
       step_size:
         this.config.step_size != null ? String(this.config.step_size) : 'auto',
       fallback: this.config.fallback ?? '',
@@ -822,7 +812,7 @@ export default class SimpleThermostatEditor extends LitElement {
       disable_setpoint_change: this.config.disable_setpoint_change === true,
       disable_setpoint_change_when_off:
         this.config.disable_setpoint_change_when_off === true,
-      'hide.setpoint_label': this.config.hide?.setpoint_label === true,
+      'hide.setpoint_label': this.config.hide?.setpoint_label !== false,
       hide_setpoint_when_off:
         this.config.hide_setpoint_when_off === true ||
         this.config.hide?.setpoint_when_off === true,
@@ -854,7 +844,6 @@ export default class SimpleThermostatEditor extends LitElement {
   _applyFormChange(updated: FormData) {
     const currentFormData = this._buildFormData()
     const changedPaths = getChangedFormPaths(currentFormData, updated)
-    ignoreImplicitDefaultChanges(changedPaths, this.config)
     const formData = { ...currentFormData, ...updated }
     const copy = cloneDeep(this.config) as unknown as Record<string, unknown>
 

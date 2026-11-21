@@ -9,7 +9,7 @@ import formatNumber from '../formatNumber'
 import { appendUnit } from '../unitFormat'
 import { LooseObject } from '../types'
 import { getToggleKind, getToggleKindClass } from '../toggleKind'
-import { renderTemplate } from '../template'
+import { escapeHtml, renderTemplate } from '../template'
 import './timerRemaining'
 import { renderTemplateContent } from './templateContent'
 
@@ -166,7 +166,7 @@ function renderInfoValue(
           variables,
           localize,
         }),
-        unit || false
+        unit ? escapeHtml(unit) : false
       ),
       hass
     )

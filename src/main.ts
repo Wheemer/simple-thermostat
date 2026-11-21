@@ -759,7 +759,58 @@ export default class SimpleThermostat extends LitElement {
     this.updateFromHass(hass)
   }
 
+  private _layoutObserver?: ResizeObserver
+  private _automaticColumn?: boolean
+
+  protected override updated() {
+    this._measureAutomaticStepLayout()
+  }
+
+  private _measureAutomaticStepLayout() {
+    const step = this.config?.layout?.step
+    if ((step && step !== 'auto') || this.config?.enhanced_visuals === false) return
+    const body = this.renderRoot.querySelector<HTMLElement>('.body')
+    const targets = body?.querySelector<HTMLElement>('.setpoints')
+    if (!body?.clientWidth || !targets) return
+
+    const readings = body.querySelector('.entities')
+    const wrappers = Array.from(targets.querySelectorAll('.current-wrapper'))
+    const wasColumn = body.classList.contains('step-column')
+    // Measure the horizontal layout synchronously and restore it before paint.
+    if (wasColumn) {
+      body.classList.replace('step-column', 'step-row')
+      wrappers.forEach((wrapper) => wrapper.classList.replace('column', 'row'))
+    }
+    try {
+      const targetBox = targets.getBoundingClientRect()
+      const readingBox = readings?.getBoundingClientRect()
+      const rtl = getComputedStyle(body).direction === 'rtl'
+      const firstTop = wrappers[0]?.getBoundingClientRect().top
+      const column =
+        (!!readingBox?.width &&
+          (rtl ? targetBox.right > readingBox.left + 1 : targetBox.left < readingBox.right - 1)) ||
+        wrappers.some((wrapper) => {
+          const box = wrapper.getBoundingClientRect()
+          const value = wrapper.querySelector('.current--value')
+          return box.top > firstTop + 1 || box.right > targetBox.right + 1 ||
+            box.left < targetBox.left - 1 ||
+            (!!value && value.scrollWidth > value.clientWidth + 1)
+        })
+      if (this._automaticColumn !== column) {
+        this._automaticColumn = column
+        this.requestUpdate()
+      }
+    } finally {
+      if (wasColumn) {
+        body.classList.replace('step-row', 'step-column')
+        wrappers.forEach((wrapper) => wrapper.classList.replace('row', 'column'))
+      }
+    }
+  }
+
   override disconnectedCallback() {
+    this._layoutObserver?.disconnect()
+    this._layoutObserver = undefined
     this._clearOptimisticSetpointState()
 
     if (this._holdTimer) {
@@ -780,6 +831,10 @@ export default class SimpleThermostat extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback()
+    if (typeof ResizeObserver !== 'undefined' && !this._layoutObserver) {
+      this._layoutObserver = new ResizeObserver(() => this._measureAutomaticStepLayout())
+      this._layoutObserver.observe(this)
+    }
     if (this.config?.entity && this._hass?.states?.[this.config.entity]) {
       this.updateFromHass(this._hass)
     }
@@ -1010,12 +1065,14 @@ export default class SimpleThermostat extends LitElement {
     const setpointCount = this.areSetpointsHidden()
       ? 0
       : Object.keys(_values).length
-    const configuredStepLayout = this.config?.layout?.step
-    const compactDualEntitySetpoints =
-      !configuredStepLayout && this.showEntities && setpointCount > 1
+    const requestedStepLayout = this.config?.layout?.step
+    const configuredStepLayout =
+      requestedStepLayout === 'auto' ? undefined : requestedStepLayout
+    const dualWithReadings = this.showEntities && setpointCount > 1
+    const narrowSetpoints = this._automaticColumn ?? dualWithReadings
     const stepLayout =
       configuredStepLayout ??
-      (this.config.enhanced_visuals === false || compactDualEntitySetpoints
+      (this.config.enhanced_visuals === false || narrowSetpoints
         ? 'column'
         : 'row')
     const row = stepLayout === 'row'
@@ -1223,7 +1280,7 @@ export default class SimpleThermostat extends LitElement {
   }
 
   renderSetpointLabel({ field }: SetpointRenderOptions) {
-    if (this.config.hide?.setpoint_label === true) return nothing
+    if (this.config.hide?.setpoint_label !== false) return nothing
 
     const label = this._getSetpointLabel(field)
 

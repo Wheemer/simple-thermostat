@@ -2720,7 +2720,6 @@ test('enhanced visuals off preserves explicitly configured row step layout', asy
     expect.stringContaining('decrease'),
     expect.stringContaining('current--value'),
     expect.stringContaining('increase'),
-    'current--label',
   ])
 })
 
@@ -2785,7 +2784,6 @@ test('dual setpoints with entity rows default to compact column steppers', async
     expect.stringContaining('increase'),
     expect.stringContaining('current--value'),
     expect.stringContaining('decrease'),
-    'current--label',
   ])
 })
 

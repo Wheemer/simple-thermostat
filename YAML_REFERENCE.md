@@ -163,7 +163,7 @@ Nested `hide` options:
 | ---------------------------- | --------------------------------------------------------------------------- |
 | `temperature`                | Hide the built-in current value row.                                        |
 | `state`                      | Hide the built-in state row.                                                |
-| `setpoint_label`             | Hide the target label while keeping the target value and controls.          |
+| `setpoint_label`             | Target labels are hidden by default. Set to `false` to show them.          |
 | `current_value_when_off`     | Legacy nested form of `hide_current_value_when_off`.                        |
 | `temperature_when_off`       | Legacy alias for `hide.current_value_when_off`.                             |
 | `setpoint_when_off`          | Legacy nested form of `hide_setpoint_when_off`.                             |
@@ -360,7 +360,7 @@ Layout options:
 
 | Option                   | Type            | Description                                                                                                                                                                                                                             |
 | ------------------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layout.step`            | `row`, `column` | Setpoint control layout. Unset cards use the safer column chevron layout. Set `layout.step: row` when you want the horizontal minus/value/plus layout. Explicit `layout.step` values are always respected. |
+| `layout.step`            | `auto`, `row`, `column` | Automatic by default: uses horizontal controls when they fit and vertical arrows otherwise. Classic visuals keep vertical arrows by default. Explicit `row` or `column` always wins. |
 | `layout.mode.names`      | boolean         | Show text on mode buttons.                                                                                                                                                                                                              |
 | `layout.mode.icons`      | boolean         | Show icons on mode buttons.                                                                                                                                                                                                             |
 | `layout.mode.headings`   | boolean         | Show mode row headings. Defaults to hidden.                                                                                                                                                                                             |

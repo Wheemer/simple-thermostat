@@ -907,7 +907,7 @@ test('editor updates its local form data when enhanced visuals changes', () => {
   expect(editor.config.enhanced_visuals).toBe(false)
   expect(editor.config.layout?.step).toBeUndefined()
   expect(editor._buildFormData().enhanced_visuals).toBe(false)
-  expect(editor._buildFormData()['layout.step']).toBe('column')
+  expect(editor._buildFormData()['layout.step']).toBe('auto')
   expect(configChanged).toHaveBeenCalledWith(
     expect.objectContaining({
       detail: expect.objectContaining({
@@ -917,7 +917,7 @@ test('editor updates its local form data when enhanced visuals changes', () => {
   )
 })
 
-test('enhanced visuals on returns to row default when step layout was never explicit', () => {
+test('enhanced visuals preserves the automatic step choice when never explicit', () => {
   if (!customElements.get('simple-thermostat-editor-test')) {
     customElements.define(
       'simple-thermostat-editor-test',
@@ -942,12 +942,34 @@ test('enhanced visuals on returns to row default when step layout was never expl
 
   editor.config = editor._applyFormChange({ enhanced_visuals: false } as any)
   expect(editor.config.layout?.step).toBeUndefined()
-  expect(editor._buildFormData()['layout.step']).toBe('column')
+  expect(editor._buildFormData()['layout.step']).toBe('auto')
 
   editor.config = editor._applyFormChange({ enhanced_visuals: true } as any)
   expect(editor.config.enhanced_visuals).toBe(true)
   expect(editor.config.layout?.step).toBeUndefined()
-  expect(editor._buildFormData()['layout.step']).toBe('row')
+  expect(editor._buildFormData()['layout.step']).toBe('auto')
+})
+
+test('target controls save both manual layouts, automatic, and label visibility', () => {
+  const editor = new SimpleThermostatEditor()
+  editor.setConfig({ entity: 'climate.living_room', header: false })
+  expect(editor._buildFormData()['layout.step']).toBe('auto')
+  expect(editor._buildFormData()['hide.setpoint_label']).toBe(true)
+  const combined = editor._applyFormChange({
+    enhanced_visuals: false,
+    'layout.step': 'row',
+  } as any)
+  expect(combined.enhanced_visuals).toBe(false)
+  expect(combined.layout?.step).toBe('row')
+
+  for (const step of ['row', 'column', 'auto']) {
+    editor.config = editor._applyFormChange({ 'layout.step': step } as any)
+    expect(editor.config.layout?.step).toBe(step)
+    expect(editor._buildFormData()['layout.step']).toBe(step)
+  }
+  editor.config = editor._applyFormChange({ 'hide.setpoint_label': false } as any)
+  expect(editor.config.hide?.setpoint_label).toBe(false)
+  expect(editor._buildFormData()['hide.setpoint_label']).toBe(false)
 })
 
 test('enhanced visuals toggle does not save unrelated displayed defaults', () => {
@@ -1005,7 +1027,6 @@ test('enhanced visuals toggle ignores full-form step default changes', () => {
   const offForm = {
     ...editor._buildFormData(),
     enhanced_visuals: false,
-    'layout.step': 'column',
   }
   const offConfig = editor._applyFormChange(offForm as any)
   expect(offConfig).toEqual({
@@ -1017,7 +1038,6 @@ test('enhanced visuals toggle ignores full-form step default changes', () => {
   const onForm = {
     ...editor._buildFormData(),
     enhanced_visuals: true,
-    'layout.step': 'row',
   }
   const onConfig = editor._applyFormChange(onForm as any)
   expect(onConfig).toEqual({

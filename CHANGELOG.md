@@ -11,6 +11,10 @@ All notable changes to Simple Thermostat are documented here.
   </thead>
   <tbody>
     <tr>
+      <td nowrap><strong>v4.6.0</strong></td>
+      <td>Automatic setpoint controls use horizontal plus/minus buttons when they fit and vertical arrows when space is tight. Target labels are hidden by default. Both settings can be overridden in the visual editor. Also improves group card recovery and template text handling, and updates build dependencies.</td>
+    </tr>
+    <tr>
       <td nowrap><strong>v4.5.2</strong></td>
       <td>Fixes footer controls for <code>button</code> and <code>input_button</code> entities. Footer actions now use the entity's normal Home Assistant service, including <code>press</code> for buttons and <code>turn_on</code> for scripts and scenes.</td>
     </tr>

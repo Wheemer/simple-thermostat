@@ -1656,7 +1656,10 @@ export default class SimpleThermostatGroup extends LitElement {
     if (!this.cardHelpersPromise) {
       this.cardHelpersPromise =
         typeof window.loadCardHelpers === 'function'
-          ? window.loadCardHelpers()
+          ? Promise.resolve().then(() => window.loadCardHelpers!()).catch((error) => {
+              this.cardHelpersPromise = undefined
+              throw error
+            })
           : Promise.reject(new Error('Home Assistant card helpers unavailable'))
     }
 
