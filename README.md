@@ -176,6 +176,10 @@ Refresh the dashboard. If the browser still loads an old copy, clear its cache f
 
 If you installed this card from a different repository, remove that HACS entry before installing this one. Older card YAML keys such as `current_temperature_entity`, `sensors`, and `layout.sensors` are imported into the current configuration format. See the [YAML reference](YAML_REFERENCE.md) for current options.
 
+### Marketplace says the directory belongs to another repository
+
+If an update says "The simple-thermostat directory belongs to ..." and names an older fork, check whether that fork is also marked **Installed** in Marketplace. Back up your card YAML, uninstall only the older fork through Marketplace, then retry the update for `Wheemer/simple-thermostat` right away. The card may be temporarily unavailable until the update restores the shared files. If the older fork is not listed as installed, report the error instead of deleting the folder manually. See [issue #57](https://github.com/Wheemer/simple-thermostat/issues/57).
+
 ### Compact rows look different in Brave Mobile
 
 Brave Mobile can display some compact entity rows differently. Compare the same dashboard in the Home Assistant companion app or another browser.
